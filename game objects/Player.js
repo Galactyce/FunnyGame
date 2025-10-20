@@ -27,7 +27,6 @@ Player.prototype.adjustHitbox = function() {
     this.hitbox = new powerupjs.Rectangle(this.boundingBox.x + this.width / 16, this.boundingBox.y + this.height / 16,
         this.boundingBox.width - this.width / 8, this.boundingBox.height - this.height / 16
     ) 
-    
 }
 
 Player.prototype.simulateGravity = function() {
@@ -36,14 +35,15 @@ Player.prototype.simulateGravity = function() {
 }
 
 Player.prototype.handleCollisions = function() {
+
     for (var i = 0; i < WorldSettings.levels[this.currentLevelIndex].tileFields.length; i++) {
             var field = WorldSettings.levels[this.currentLevelIndex].tileFields[i];
 
             for (var l = 0; l < field.length; l++) {
                 var tile = field.at(l);
                 var tileBounds = tile.hitbox;
-                var boundingBox = this.hitbox;
-                // boundingBox.height += 1;
+                var boundingBox = new powerupjs.Rectangle(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height);
+                boundingBox.height += 1;
 
                 if (!tileBounds.intersects(boundingBox))
                     continue;
@@ -52,19 +52,19 @@ Player.prototype.handleCollisions = function() {
                 }
                 
                     var depth = boundingBox.calculateIntersectionDepth(tileBounds);
-                    console.log(depth.y)
                     if (Math.abs(depth.x) < Math.abs(depth.y)) {
                         this.position.x += depth.x;
+                        continue
                     }
-                       else if (this.previousYPosition <= tileBounds.top) {
-                            if (this.velocity.y > 0) this.grounded = true;
-                            this.velocity.y = 0;
-                            this.position.y += depth.y;
-                        }
-                        else if (boundingBox.top <= tileBounds.bottom) {
-                            this.velocity.y *= -0.1;
-                            this.position.y += depth.y;
-                        }
+                    if (this.previousYPosition <= tileBounds.top) {
+                        if (this.velocity.y > 0) this.grounded = true;
+                        this.velocity.y = 0;
+                    }
+                    if (boundingBox.top <= tileBounds.bottom) {
+                        this.velocity.y *= -0.1;
+                    }
+                    this.position.y += depth.y;
+                    this.adjustHitbox()
                     
                 }
                 if (this.velocity.y != 0) this.grounded = false;

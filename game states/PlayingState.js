@@ -5,6 +5,11 @@ function PlayingState(layer) {
     this.player.playAnimation("idle");
     this.tileFields = new powerupjs.GameObjectList();
     this.add(this.tileFields);
+     this.player.currentLevelIndex = WorldSettings.currentLevelIndex;
+    this.player.position = powerupjs.GameStateManager.get(ID.game_state_editor).find(ID.player_spawn).position.copy();
+    this.player.spawnPosition = this.player.position.copy();
+    this.player.adjustHitbox();
+    this.add(this.player);
 }
 
 
@@ -26,9 +31,5 @@ PlayingState.prototype.loadLevel = function() {
     };
     
     this.add(this.tileFields);
-    this.player.currentLevelIndex = WorldSettings.currentLevelIndex;
-    this.player.position = powerupjs.GameStateManager.get(ID.game_state_editor).find(ID.player_spawn).position.copy();
-    this.player.spawnPosition = this.player.position.copy();
-    this.player.adjustHitbox();
-    this.add(this.player);
+   
 }
