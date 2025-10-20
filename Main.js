@@ -57,12 +57,12 @@ powerupjs.Game.initialize = function () {
     ID.game_state_playing = powerupjs.GameStateManager.add(new PlayingState());
     powerupjs.GameStateManager.switchTo(ID.game_state_title);
 
-    WorldSettings.blockSprites = [
+    WorldSettings.blockSprites = [ // list of block sprites
         sprites.defaultTile,
         sprites.spike
     ]
-    WorldSettings.loadLevels();
+    WorldSettings.loadLevels(); // load levels from window.LEVELS
 
-    powerupjs.GameStateManager.get(ID.game_state_editor).objectMenu.loadBlocks();
-    powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers();
+    powerupjs.GameStateManager.get(ID.game_state_editor).objectMenu.loadBlocks(); // load blocks into object menu
+    powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers(); // load editor layers
 };

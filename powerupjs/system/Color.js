@@ -2,7 +2,7 @@
 
 var powerupjs = (function (powerupjs) {
 
-    var Color = {
+    var Color = { // hex codes by predefined color names
         aliceBlue: "#F0F8FF",
         antiqueWhite: "#FAEBD7",
         aqua: "#00FFFF",

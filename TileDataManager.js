@@ -4,20 +4,22 @@ function TileDataManager_Singleton() {
 
 }
 
-TileDataManager_Singleton.prototype.writeTiles = function(tiles) {
-    
-    for (var i = 0; i < tiles.length; i++) {
-        var tile = tiles[i];
-        var dataString = tile.key + "|" + tile.position.x + "|" + tile.position.y + 
-            "|" + WorldSettings.indexOfSprite(tile.sprite);
-        this.dataStrings.push(dataString);
+TileDataManager_Singleton.prototype.writeTiles = function (tiles) { // tiles is an array of Tile objects
+    this.dataStrings = []; // reset data strings
+
+    for (var i = 0; i < tiles.length; i++) {    // for each tile
+        var tile = tiles[i]; // get tile
+        var dataString = tile.key + "|" + tile.position.x + "|" + tile.position.y +
+            "|" + WorldSettings.indexOfSprite(tile.sprite); // create data string ==> (key|x|y|spriteIndex)
+        this.dataStrings.push(dataString); // add to data strings array
     }
-    var data = "";
-    for (var i = 0; i < this.dataStrings.length; i++) {
-        data += this.dataStrings[i] 
-        if (i < this.dataStrings.length - 1) data += "/";
+    var data = ""; // final data string
+    for (var i = 0; i < this.dataStrings.length; i++) { // concatenate data strings
+        data += this.dataStrings[i];
+        if (i < this.dataStrings.length - 1)
+            data += "/"; // add separator if not last
     }
-    return data;
+    return data; // return final data string
 }
 
 

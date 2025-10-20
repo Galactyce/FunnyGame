@@ -12,12 +12,12 @@ var powerupjs = (function (powerupjs) {
 
     Button.prototype = Object.create(powerupjs.SpriteGameObject.prototype);
 
-    Button.prototype.handleInput = function (delta) {
-        var boundingBox = this.boundingBox;
+    Button.prototype.handleInput = function (delta) { // handle input method
+        var boundingBox = this.boundingBox; // get button bounding box
         this.pressed = this.visible && (powerupjs.Touch.containsTouchPress(boundingBox) ||
-            powerupjs.Mouse.containsMousePress(boundingBox));
+            powerupjs.Mouse.containsMousePress(boundingBox)); // check for press
         this.down = this.visible && (powerupjs.Touch.containsTouch(boundingBox) ||
-            powerupjs.Mouse.containsMouseDown(boundingBox));
+            powerupjs.Mouse.containsMouseDown(boundingBox)); // check for down
     };
 
     powerupjs.Button = Button;

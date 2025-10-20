@@ -2,7 +2,7 @@
 
 var powerupjs = (function (powerupjs) {
 
-    var Keys = {
+    var Keys = { // key codes
         none: 0,
         back: 8,
         tab: 9,

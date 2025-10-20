@@ -2,61 +2,60 @@
 
 var powerupjs = (function (powerupjs) {
 
-    function GameObjectGrid(rows, columns, layer, id) {
-        powerupjs.GameObjectList.call(this, layer, id);
+    function GameObjectGrid(rows, columns, layer, id) { // game object grid constructor
+        powerupjs.GameObjectList.call(this, layer, id); // call GameObjectList constructor
 
-        this.cellWidth = 0;
-        this.cellHeight = 0;
-        this._rows = rows;
-        this._columns = columns;
+        this.cellWidth = 0; // width of each cell
+        this.cellHeight = 0; // height of each cell
+        this._rows = rows; // number of rows
+        this._columns = columns; // number of columns
     }
 
-    GameObjectGrid.prototype = Object.create(powerupjs.GameObjectList.prototype);
+    GameObjectGrid.prototype = Object.create(powerupjs.GameObjectList.prototype); // inherit from GameObjectList
 
-    Object.defineProperty(GameObjectGrid.prototype, "rows", {
+    Object.defineProperty(GameObjectGrid.prototype, "rows", { // number of rows
         get: function () {
-            return this._rows;
+            return this._rows; // number of rows
         }
     });
 
-    Object.defineProperty(GameObjectGrid.prototype, "columns", {
+    Object.defineProperty(GameObjectGrid.prototype, "columns", { // number of columns
         get: function () {
-            return this._columns;
+            return this._columns; // number of columns
         }
     });
 
-    GameObjectGrid.prototype.add = function (gameobject) {
-        var row = Math.floor(this._gameObjects.length / this._columns);
-        var col = this._gameObjects.length % this._columns;
-        this._gameObjects.push(gameobject);
-        gameobject.parent = this;
-        gameobject.position = new powerupjs.Vector2(col * this.cellWidth, row * this.cellHeight);
+    GameObjectGrid.prototype.add = function (gameobject) { // add game object to grid
+        var row = Math.floor(this._gameObjects.length / this._columns); // calculate row
+        var col = this._gameObjects.length % this._columns; // calculate column
+        this._gameObjects.push(gameobject); // add to internal array
+        gameobject.parent = this; // set parent to this grid
+        gameobject.position = new powerupjs.Vector2(col * this.cellWidth, row * this.cellHeight); // set position based on grid cell
     };
 
-    GameObjectGrid.prototype.addAt = function (gameobject, col, row) {
-        this._gameObjects[row * this._columns + col] = gameobject;
-        
-        gameobject.parent = this;
-        gameobject.position = new powerupjs.Vector2(col * this.cellWidth, row * this.cellHeight);
+    GameObjectGrid.prototype.addAt = function (gameobject, col, row) { // add game object at specific grid cell
+        this._gameObjects[row * this._columns + col] = gameobject; // add to internal array at calculated index
+        gameobject.parent = this; // set parent to this grid
+        gameobject.position = new powerupjs.Vector2(col * this.cellWidth, row * this.cellHeight); // set position based on grid cell
     };
 
-    GameObjectGrid.prototype.at = function (col, row) {
-        var index = row * this._columns + col;
-        if (index < 0 || index >= this._gameObjects.length)
-            return null;
+    GameObjectGrid.prototype.at = function (col, row) { // get game object at specific grid cell
+        var index = row * this._columns + col; // calculate index
+        if (index < 0 || index >= this._gameObjects.length) // index out of bounds
+            return null; // return null
         else
-            return this._gameObjects[index];
+            return this._gameObjects[index]; // return game object at index
     };
 
-    GameObjectGrid.prototype.getAnchorPosition = function (gameobject) {
-        var l = this._gameObjects.length;
-        for (var i = 0; i < l; ++i)
-            if (this._gameObjects[i] == gameobject) {
-                var row = Math.floor(i / this.columns);
-                var col = i - row * this.columns;
-                return new powerupjs.Vector2(col * this.cellWidth, row * this.cellHeight);
+    GameObjectGrid.prototype.getAnchorPosition = function (gameobject) { // get position of game object in grid
+        var l = this._gameObjects.length; // length of internal array
+        for (var i = 0; i < l; ++i) // iterate through internal array
+            if (this._gameObjects[i] == gameobject) { // found game object
+                var row = Math.floor(i / this.columns); // calculate row
+                var col = i - row * this.columns; // calculate column
+                return new powerupjs.Vector2(col * this.cellWidth, row * this.cellHeight); // return position
             }
-        return powerupjs.Vector2.zero;
+        return powerupjs.Vector2.zero; // not found, return zero vector
     };
 
     powerupjs.GameObjectGrid = GameObjectGrid;

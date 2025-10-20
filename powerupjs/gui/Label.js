@@ -52,7 +52,7 @@ var powerupjs = (function (powerupjs) {
             }
         });
 
-        Object.defineProperty(Label.prototype, "center",
+    Object.defineProperty(Label.prototype, "center",
         {
             get: function () {
                 return new powerupjs.Vector2(this._size.x / 2, this._size.y / 2);

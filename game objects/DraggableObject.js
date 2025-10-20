@@ -7,13 +7,16 @@ function DraggableObject(sprites, layer, id) {
 
 DraggableObject.prototype = Object.create(powerupjs.SpriteGameObject.prototype);
 
-DraggableObject.prototype.handleInput = function(delta) {
+DraggableObject.prototype.handleInput = function (delta) {
     powerupjs.SpriteGameObject.prototype.handleInput.call(this, delta);
 
     if (powerupjs.Mouse.down && this.boundingBox.contains(powerupjs.Mouse.position) && this.draggable) {
-        this.position = powerupjs.Mouse.position.copy().subtractFrom(this.lastMousePosition);
-        
+        this.position = powerupjs.Mouse.screenPosition.copy().subtractFrom(this.lastMousePosition);
+        this.dragging = true;
+    }
+    else {
+        this.dragging = false;
     }
 
-    this.lastMousePosition = powerupjs.Mouse.position.copy();
+    this.lastMousePosition = powerupjs.Mouse.screenPosition.copy();
 }

@@ -1,9 +1,9 @@
 ﻿"use strict";
 
 var powerupjs = (function (powerupjs) {
-    function ButtonState() {
-        this.down = false;
-        this.pressed = false;
+    function ButtonState() { // button state constructor
+        this.down = false; // is the button currently down
+        this.pressed = false; // was the button pressed this frame
     }
 
     powerupjs.ButtonState = ButtonState;

@@ -3,10 +3,11 @@
 var powerupjs = (function (powerupjs) {
 
     function Canvas2D_Singleton() {
-        this._canvas = null;
-        this._canvasContext = null;
-        this._pixeldrawingCanvas = null;
-        this._canvasOffset = powerupjs.Vector2.zero;
+        this._canvas = null; // main canvas
+        this._canvasContext = null; // context for drawing
+        this._div = null; // div containing the canvas
+        this._pixeldrawingCanvas = null; // offscreen canvas for pixel drawing
+        this._canvasOffset = powerupjs.Vector2.zero; // offset of canvas in the page
     }
 
     Object.defineProperty(Canvas2D_Singleton.prototype, "offset",
@@ -19,26 +20,28 @@ var powerupjs = (function (powerupjs) {
     Object.defineProperty(Canvas2D_Singleton.prototype, "scale",
         {
             get: function () {
-                return new powerupjs.Vector2(this._canvas.width / powerupjs.Game.size.x,
+                return new powerupjs.Vector2(this._canvas.width / powerupjs.Game.size.x, // scale factors
                     this._canvas.height / powerupjs.Game.size.y);
             }
         });
 
     Canvas2D_Singleton.prototype.initialize = function (divName, canvasName) {
-        this._canvas = document.getElementById(canvasName);
-        this._div = document.getElementById(divName);
+        this._canvas = document.getElementById(canvasName); // get canvas element
+        this._div = document.getElementById(divName); // get div element
 
-        if (this._canvas.getContext)
-            this._canvasContext = this._canvas.getContext('2d');
+        if (this._canvas.getContext) // check for canvas support
+            this._canvasContext = this._canvas.getContext('2d'); // get 2D context
         else {
-            alert('Your browser is not HTML5 compatible.!');
+            alert('Your browser is not HTML5 compatible.!'); // alert if no support
             return;
         }
 
-        this._pixeldrawingCanvas = document.createElement('canvas');
+        this._pixeldrawingCanvas = document.createElement('canvas'); // create offscreen canvas
+        this._pixeldrawingCanvas.width = powerupjs.Game.size.x;
+        this._pixeldrawingCanvas.height = powerupjs.Game.size.y;
 
-        window.onresize = this.resize;
-        this.resize();
+        window.onresize = this.resize; // handle window resize
+        this.resize(); // initial resize
     };
 
     Canvas2D_Singleton.prototype.clear = function () {
@@ -46,41 +49,43 @@ var powerupjs = (function (powerupjs) {
     };
 
     Canvas2D_Singleton.prototype.resize = function () {
-        var gameCanvas = powerupjs.Canvas2D._canvas;
-        var gameArea = powerupjs.Canvas2D._div;
-        var widthToHeight = powerupjs.Game.size.x / powerupjs.Game.size.y;
-        var newWidth = window.innerWidth;
-        var newHeight = window.innerHeight;
-        var newWidthToHeight = newWidth / newHeight;
+        var gameCanvas = powerupjs.Canvas2D._canvas; // get main canvas
+        var gameArea = powerupjs.Canvas2D._div; // get div containing canvas
+        var widthToHeight = powerupjs.Game.size.x / powerupjs.Game.size.y; // aspect ratio
+        var newWidth = window.innerWidth; // new width based on window size
+        var newHeight = window.innerHeight; // new height based on window size
+        var newWidthToHeight = newWidth / newHeight; // new aspect ratio
 
-        if (newWidthToHeight > widthToHeight) {
-            newWidth = newHeight * widthToHeight;
+        if (newWidthToHeight > widthToHeight) { // wider than aspect ratio
+            newWidth = newHeight * widthToHeight; // adjust width
         } else {
-            newHeight = newWidth / widthToHeight;
+            newHeight = newWidth / widthToHeight; // adjust height
         }
-        gameArea.style.width = newWidth + 'px';
-        gameArea.style.height = newHeight + 'px';
+        gameArea.style.width = newWidth + 'px'; // set div size
+        gameArea.style.height = newHeight + 'px'; // set div size
 
-        gameArea.style.marginTop = (window.innerHeight - newHeight) / 2 + 'px';
-        gameArea.style.marginLeft = (window.innerWidth - newWidth) / 2 + 'px';
-        gameArea.style.marginBottom = (window.innerHeight - newHeight) / 2 + 'px';
-        gameArea.style.marginRight = (window.innerWidth - newWidth) / 2 + 'px';
+        gameArea.style.marginTop = (window.innerHeight - newHeight) / 2 + 'px'; // center div
+        gameArea.style.marginLeft = (window.innerWidth - newWidth) / 2 + 'px'; // center div
+        gameArea.style.marginBottom = (window.innerHeight - newHeight) / 2 + 'px'; // center div
+        gameArea.style.marginRight = (window.innerWidth - newWidth) / 2 + 'px'; // center div
 
-        gameCanvas.width = newWidth;
-        gameCanvas.height = newHeight;
+        gameCanvas.width = newWidth; // set canvas size
+        gameCanvas.height = newHeight; // set canvas size
 
-        var offset = powerupjs.Vector2.zero;
-        if (gameCanvas.offsetParent) {
+        var offset = powerupjs.Vector2.zero; // calculate canvas offset
+        if (gameCanvas.offsetParent) { // traverse offset parents
             do {
-                offset.x += gameCanvas.offsetLeft;
-                offset.y += gameCanvas.offsetTop;
-            } while ((gameCanvas = gameCanvas.offsetParent));
+                offset.x += gameCanvas.offsetLeft; // accumulate left offset
+                offset.y += gameCanvas.offsetTop; // accumulate top offset
+            } while ((gameCanvas = gameCanvas.offsetParent)); // move to parent
         }
-        powerupjs.Canvas2D._canvasOffset = offset;
+        powerupjs.Canvas2D._canvasOffset = offset; // store canvas offset
     };
 
     Canvas2D_Singleton.prototype.drawImage = function (sprite, position, rotation, scale, origin, sourceRect, mirror) {
-        var canvasScale = this.scale;
+        var canvasScale = this.scale; // get canvas scale factors
+
+        mirror = typeof mirror !== 'undefined' ? mirror : false;
 
         position = typeof position !== 'undefined' ? position : powerupjs.Vector2.zero;
         rotation = typeof rotation !== 'undefined' ? rotation : 0;
@@ -88,26 +93,26 @@ var powerupjs = (function (powerupjs) {
         origin = typeof origin !== 'undefined' ? origin : powerupjs.Vector2.zero;
         sourceRect = typeof sourceRect !== 'undefined' ? sourceRect : new powerupjs.Rectangle(0, 0, sprite.width, sprite.height);
 
-        this._canvasContext.save();
-        if (mirror) {
-            this._canvasContext.scale(scale * canvasScale.x * -1, scale * canvasScale.y);
-            this._canvasContext.translate(-position.x - sourceRect.width, position.y);
-            this._canvasContext.rotate(rotation);
-            this._canvasContext.drawImage(sprite, sourceRect.x, sourceRect.y,
-                sourceRect.width, sourceRect.height,
-                sourceRect.width - origin.x, -origin.y,
-                sourceRect.width, sourceRect.height);
+        this._canvasContext.save(); // save current context state
+        if (mirror) { // mirrored drawing
+            this._canvasContext.scale(scale * canvasScale.x * -1, scale * canvasScale.y); // flip horizontally
+            this._canvasContext.translate(-position.x - sourceRect.width, position.y); // adjust position
+            this._canvasContext.rotate(rotation); // apply rotation
+            this._canvasContext.drawImage(sprite, sourceRect.x, sourceRect.y, // draw image
+                sourceRect.width, sourceRect.height, // source rectangle
+                sourceRect.width - origin.x, -origin.y, // destination position
+                sourceRect.width, sourceRect.height); // destination size
         }
         else {
-            this._canvasContext.scale(scale * canvasScale.x, scale * canvasScale.y);
-            this._canvasContext.translate(position.x, position.y);
-            this._canvasContext.rotate(rotation);
-            this._canvasContext.drawImage(sprite, sourceRect.x, sourceRect.y,
-                sourceRect.width, sourceRect.height,
-                -origin.x, -origin.y,
-                sourceRect.width, sourceRect.height);
+            this._canvasContext.scale(scale * canvasScale.x, scale * canvasScale.y); // normal scaling
+            this._canvasContext.translate(position.x, position.y); // translate to position
+            this._canvasContext.rotate(rotation); // apply rotation
+            this._canvasContext.drawImage(sprite, sourceRect.x, sourceRect.y, // draw image
+                sourceRect.width, sourceRect.height, // source rectangle
+                -origin.x, -origin.y, // destination position
+                sourceRect.width, sourceRect.height); // destination size
         }
-        this._canvasContext.restore();
+        this._canvasContext.restore(); // restore context state
     };
 
     Canvas2D_Singleton.prototype.drawText = function (text, position, origin, color, textAlign, fontname, fontsize) {
