@@ -11,6 +11,7 @@ var powerupjs = (function (powerupjs) {
         this.mirror = false;
         this._sheetIndex = 0;
         this.hitbox;
+        this.ui = false;
     }
 
     SpriteGameObject.prototype = Object.create(powerupjs.GameObject.prototype);
@@ -94,8 +95,13 @@ var powerupjs = (function (powerupjs) {
         });
 
     SpriteGameObject.prototype.draw = function () {
-        if (this._visible)
+        if (this._visible) {
+            if (this.ui) {
+                this.sprite.draw(this.worldPosition, this.origin, this._sheetIndex, this.mirror);
+                return;
+            }
             this.sprite.draw(this.screenPosition, this.origin, this._sheetIndex, this.mirror);
+        }
     };
 
     SpriteGameObject.prototype.collidesWith = function (obj) {

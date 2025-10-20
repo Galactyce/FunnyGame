@@ -73,6 +73,13 @@ var powerupjs = (function (powerupjs) {
     Object.defineProperty(Mouse_Singleton.prototype, "position",
         {
             get: function () {
+                return this._position.copy().addTo(powerupjs.Camera.position);
+            }
+        });
+
+    Object.defineProperty(Mouse_Singleton.prototype, "screenPosition",
+        {
+            get: function () {
                 return this._position.copy();
             }
         });

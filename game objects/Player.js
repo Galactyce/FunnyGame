@@ -52,8 +52,9 @@ Player.prototype.handleCollisions = function() {
                 }
                 
                     var depth = boundingBox.calculateIntersectionDepth(tileBounds);
-                    if (Math.abs(depth.x) < Math.abs(depth.y)) {
-                        this.position.x += depth.x;
+                    if (Math.abs(depth.x) < Math.abs(depth.y) ) {
+                        this.position.x += (depth.x * 1.05);
+                        this.velocity.x = 0;
                         continue
                     }
                     if (this.previousYPosition <= tileBounds.top) {
@@ -63,7 +64,9 @@ Player.prototype.handleCollisions = function() {
                     if (boundingBox.top <= tileBounds.bottom) {
                         this.velocity.y *= -0.1;
                     }
+                    if (boundingBox.intersects(tileBounds))
                     this.position.y += depth.y;
+                    
                     this.adjustHitbox()
                     
                 }
@@ -82,11 +85,15 @@ Player.prototype.handleInput = function(delta) {
     powerupjs.AnimatedGameObject.prototype.handleInput.call(this, delta);
     
     if (powerupjs.Keyboard.down(powerupjs.Keys.left)) {
-        this.velocity.x = -this.moveSpeed;
+        if (this.velocity.x > 0) this.velocity.x = 0;
+        this.velocity.x -= this.moveSpeed * (delta * 2);
+        if (this.velocity.x < -this.moveSpeed) this.velocity.x = -this.moveSpeed;  
         this.mirror = true;
     }
     else if (powerupjs.Keyboard.down(powerupjs.Keys.right)) {
-        this.velocity.x = this.moveSpeed;
+        if (this.velocity.x < 0) this.velocity.x = 0;
+        this.velocity.x += this.moveSpeed * (delta * 2);
+        if (this.velocity.x > this.moveSpeed) this.velocity.x = this.moveSpeed;
         this.mirror = false
     }
     else {

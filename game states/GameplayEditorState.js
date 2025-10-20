@@ -3,6 +3,7 @@ function GameplayEditorState(layer) {
     this.levelEditing;
     this.currentEditorLayer = 0;
     this.selectedBlock;
+    this.previousMousePosition = powerupjs.Vector2.zero;
     this.mode = "Drawing";
     this.drawingRect = new powerupjs.Rectangle(100, 100, powerupjs.Game.size.x - 100, powerupjs.Game.size.y - 100);
 
@@ -18,9 +19,11 @@ function GameplayEditorState(layer) {
 
     this.playButton = new LabelledButton(sprites.button_default, "Return", "Arial", "20px", ID.layer_overlays);
     this.playButton.position = new powerupjs.Vector2(900, 15);
+    this.playButton.ui = true;
     this.add(this.playButton);
 
     this.modeButton = new LabelledButton(sprites.button_default, this.mode, "Arial", "20px", ID.layer_overlays);
+    this.modeButton.ui = true;
     this.modeButton.position = new powerupjs.Vector2(200, 700);
     this.add(this.modeButton);
 
@@ -74,6 +77,7 @@ GameplayEditorState.prototype.handleInput = function(delta) {
 
     if (this.playButton.pressed) {
         powerupjs.GameStateManager.switchTo(ID.game_state_title);
+        powerupjs.Camera.position = powerupjs.Vector2.zero;
         return
     }
     if (this.modeButton.pressed) {
@@ -100,6 +104,12 @@ GameplayEditorState.prototype.handleInput = function(delta) {
     if (this.moving) this.panSpeed += delta * 15;
     else this.panSpeed = 35;
 
+    if (powerupjs.Mouse.middle.down) {
+        powerupjs.Camera.position.addTo(powerupjs.Mouse.screenPosition.subtractFrom(this.previousMousePosition).multiplyWith(-1));
+    }
+        console.log(powerupjs.Mouse.screenPosition.subtractFrom(this.previousMousePosition))
+
+    this.previousMousePosition = powerupjs.Mouse.screenPosition.copy();
 }
 
 GameplayEditorState.prototype.update = function(delta) {

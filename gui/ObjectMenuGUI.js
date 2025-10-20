@@ -1,7 +1,7 @@
 function ObjectMenuGUI() {
     powerupjs.GameObjectList.call(this);
     var frame = new powerupjs.SpriteGameObject(sprites.woodenFrame);
-    
+    frame.ui = true;
     this.add(frame);
     this.blocks = new powerupjs.GameObjectList();
     this.blocks.position = new powerupjs.Vector2(40, 40);
@@ -10,6 +10,7 @@ function ObjectMenuGUI() {
     this.blockSelector = new powerupjs.SpriteGameObject(sprites.editorBlockSelector);
     this.blockSelector.visible = false;
     this.blockSelector.origin = this.blockSelector.center;
+    this.blockSelector.ui = true;
     this.add(this.blockSelector);
 
     this.add(this.blocks);
@@ -22,6 +23,7 @@ ObjectMenuGUI.prototype.loadBlocks = function() {
         var block = WorldSettings.blockSprites[i];
             for (var l = 0; l < block.nrSheetElements; l++) {
                 var piece = new powerupjs.SpriteGameObject(block);
+                piece.ui = true;
                 piece.sheetIndex = l;
                 piece.origin = piece.center;
                 this.blocks.add(piece);
