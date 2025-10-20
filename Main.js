@@ -22,7 +22,7 @@ powerupjs.Game.loadAssets = function () {
     sprites.woodenFrame = loadSprite("wooden_frame5x2.png")
     sprites.editorBlockSelector = loadSprite("editorBlockSelectFrame.png")
     sprites.portal = loadSprite("portal.png")
-
+    sprites.editingButtons = loadSprite("editorButtons@6.png")
 };
 
 powerupjs.Game.initialize = function () {
@@ -64,5 +64,6 @@ powerupjs.Game.initialize = function () {
     WorldSettings.loadLevels(); // load levels from window.LEVELS
 
     powerupjs.GameStateManager.get(ID.game_state_editor).objectMenu.loadBlocks(); // load blocks into object menu
+    powerupjs.GameStateManager.get(ID.game_state_editor).editingMunu.loadButtons(); // load buttons into editing menu
     powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers(); // load editor layers
 };

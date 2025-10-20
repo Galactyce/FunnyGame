@@ -10,15 +10,23 @@ function PlayingState(layer) {
     this.player.spawnPosition = this.player.position.copy(); // set spawn position
     this.player.adjustHitbox(); // adjust hitbox to match sprite
     this.add(this.player);
+
+    this.returnButton = new LabelledButton(sprites.button_default, "Return", "Arial", "20px", ID.layer_overlays); // button to return to title screen
+    this.returnButton.position = new powerupjs.Vector2(900, 15);
+    this.returnButton.ui = true;
+    this.add(this.returnButton);
 }
 
 
 
 PlayingState.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
-PlayingState.prototype.update = function (delta) {
-    powerupjs.GameObjectList.prototype.update.call(this, delta);
-
+PlayingState.prototype.handleInput = function (delta) {
+    powerupjs.GameObjectList.prototype.handleInput.call(this, delta);
+    if (this.returnButton.pressed) {
+        powerupjs.Camera.position = powerupjs.Vector2.zero;
+        powerupjs.GameStateManager.switchTo(ID.game_state_title);
+    }
 }
 
 

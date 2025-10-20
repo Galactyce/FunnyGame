@@ -10,7 +10,7 @@ TileDataManager_Singleton.prototype.writeTiles = function (tiles) { // tiles is 
     for (var i = 0; i < tiles.length; i++) {    // for each tile
         var tile = tiles[i]; // get tile
         var dataString = tile.key + "|" + tile.position.x + "|" + tile.position.y +
-            "|" + WorldSettings.indexOfSprite(tile.sprite); // create data string ==> (key|x|y|spriteIndex)
+            "|" + WorldSettings.indexOfSprite(tile.sprite) + "|" + tile.rotation; // create data string ==> (key|x|y|spriteIndex|rotation)
         this.dataStrings.push(dataString); // add to data strings array
     }
     var data = ""; // final data string

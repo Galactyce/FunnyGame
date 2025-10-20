@@ -12,6 +12,7 @@ var powerupjs = (function (powerupjs) {
         this._sheetIndex = 0; // default sheet index 0
         this.hitbox = null; // no hitbox by default
         this.ui = false; // not a UI element by default
+        this.rotation = 0;
     }
 
     SpriteGameObject.prototype = Object.create(powerupjs.GameObject.prototype); // inherit from GameObject
@@ -97,10 +98,11 @@ var powerupjs = (function (powerupjs) {
     SpriteGameObject.prototype.draw = function () {
         if (this._visible) {
             if (this.ui) { // if UI element, draw at world position
-                this.sprite.draw(this.worldPosition, this.origin, this._sheetIndex, this.mirror); // draw sprite at world position
+                this.sprite.draw(this.worldPosition, this.origin, this.rotation, this._sheetIndex, this.mirror); // draw sprite at world position
                 return; // exit after drawing UI element
             }
-            this.sprite.draw(this.screenPosition, this.origin, this._sheetIndex, this.mirror); // draw sprite at screen position
+            
+            this.sprite.draw(this.screenPosition, this.origin, this.rotation, this._sheetIndex, this.mirror); // draw sprite at screen position
         }
     };
 

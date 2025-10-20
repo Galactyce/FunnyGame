@@ -75,8 +75,15 @@ var powerupjs = (function (powerupjs) {
         else { // all assets loaded
             powerupjs.Game.initialize(); // initialize game
             requestAnimationFrame(powerupjs.Game.mainLoop); // start main loop
+            window.setTimeout(powerupjs.Game.drawingLoop, 1000 / 60); // start drawing loop
         }
     };
+
+    Game_Singleton.prototype.drawingLoop = function () {
+        powerupjs.Canvas2D.clear(); // clear canvas
+        powerupjs.GameStateManager.draw(); // draw game state
+        requestAnimationFrame(powerupjs.Game.drawingLoop); // request next frame
+    }
 
     Game_Singleton.prototype.mainLoop = function () { // main game loop
         var delta = 1 / 60; // fixed delta time for simplicity
@@ -84,13 +91,12 @@ var powerupjs = (function (powerupjs) {
 
         powerupjs.GameStateManager.handleInput(delta); // handle input
         powerupjs.GameStateManager.update(delta); // update game state
-        powerupjs.Canvas2D.clear(); // clear canvas
-        powerupjs.GameStateManager.draw(); // draw game state
+        
 
         powerupjs.Keyboard.reset(); // reset keyboard state
         powerupjs.Mouse.reset(); // reset mouse state
         powerupjs.Touch.reset(); // reset touch state
-        requestAnimationFrame(powerupjs.Game.mainLoop); // request next frame
+        window.setTimeout(powerupjs.Game.mainLoop, delta); // schedule next frame
     };
 
     powerupjs.Game = new Game_Singleton();

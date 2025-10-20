@@ -23,6 +23,8 @@ var powerupjs = (function (powerupjs) {
         var pathSplit = imageName.split('/'); // split path by '/'
         var fileName = pathSplit[pathSplit.length - 1]; // get the file name
         var fileSplit = fileName.split("/")[0].split(".")[0].split("@"); // split by '@' to find sheet info
+        if (fileSplit.length > 1)
+            this._sheetColumns = parseInt(fileSplit[1]);
         if (fileSplit.length <= 1) // no sheet info
             return; // exit
         var colRow = fileSplit[fileSplit.length - 1].split("x"); // split by 'x' to get columns and rows
@@ -108,14 +110,15 @@ var powerupjs = (function (powerupjs) {
             return this._collisionMask[arrayIndex]; // return alpha value
     };
 
-    SpriteSheet.prototype.draw = function (position, origin, sheetIndex, mirror) { // draw a specific sprite from the sheet
+    SpriteSheet.prototype.draw = function (position, origin, rotation, sheetIndex, mirror) { // draw a specific sprite from the sheet
+        sheetIndex = typeof sheetIndex !== 'undefined' ? sheetIndex : 0;
         var columnIndex = sheetIndex % this._sheetColumns; // calculate column index
         var rowIndex = Math.floor(sheetIndex / this._sheetColumns) % this._sheetRows; // calculate row index
         origin = typeof origin !== 'undefined' ? origin : powerupjs.Vector2.zero; // default origin
         mirror = typeof mirror !== 'undefined' ? mirror : false; // default mirror
         var imagePart = new powerupjs.Rectangle(columnIndex * this.width, rowIndex * this.height,
             this.width, this.height); // define source rectangle
-        powerupjs.Canvas2D.drawImage(this._image, position, 0, this.scale, origin, imagePart, mirror); // draw the image
+        powerupjs.Canvas2D.drawImage(this._image, position, rotation, this.scale, origin, imagePart, mirror); // draw the image
     };
 
     powerupjs.SpriteSheet = SpriteSheet;
