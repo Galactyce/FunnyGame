@@ -2,7 +2,7 @@
 
 var powerupjs = (function (powerupjs) {
 
-    function SpriteSheet(imageName, hitbox) { // creates a new sprite sheet from an image
+    function SpriteSheet(imageName, isAnimated) { // creates a new sprite sheet from an image
         console.log("Loading sprite: " + imageName); // log sprite loading
         powerupjs.Game._spritesStillLoading += 1; // increment sprites still loading
         powerupjs.Game._totalSprites += 1; // increment total sprites
@@ -14,6 +14,7 @@ var powerupjs = (function (powerupjs) {
         this._collisionMask = null; // initialize collision mask
         this.scale = 1; // default scale
         var sprite = this; // reference to this sprite sheet
+        this.isAnimated = isAnimated;
         this._image.onload = function () { // when image loads
             console.log("Sprite loaded: " + imageName); // log sprite loaded
             powerupjs.Game._spritesStillLoading -= 1; // decrement sprites still loading

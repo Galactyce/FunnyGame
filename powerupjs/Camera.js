@@ -20,6 +20,14 @@ var powerupjs = (function (powerupjs) {
         this.position = this.position.add(this.velocity.multiply(delta)); // update camera position based on velocity
     }
 
+    Camera.prototype.manageBoundaries = function(bounds) {
+        console.log(this.position)
+        if (this.position.x < bounds.x) this.position.x = bounds.x;
+        if (this.position.y < bounds.y) this.position.y = bounds.y;
+        if (this.position.x + this.viewWidth > bounds.right) this.position.x = bounds.right - this.viewWidth;
+        if (this.position.y + this.viewHeight > bounds.bottom) this.position.y = bounds.bottom - this.viewHeight;
+    }
+
     Object.defineProperty(Camera.prototype, "center", {
         get: function () {
             return new powerupjs.Vector2(this.position.x + (this.viewWidth / 2),  // center of camera

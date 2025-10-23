@@ -21,14 +21,25 @@ ObjectMenuGUI.prototype = Object.create(powerupjs.GameObjectList.prototype);
 ObjectMenuGUI.prototype.loadBlocks = function () {
     for (var i = 0; i < WorldSettings.blockSprites.length; i++) { // for each block sprite
         var block = WorldSettings.blockSprites[i]; // get block sprite
-        for (var l = 0; l < block.nrSheetElements; l++) { // for each variation of the block
-            var piece = new powerupjs.SpriteGameObject(block); // create sprite game object
+        console.log(block.isAnimated)
+        if (block.isAnimated) {
+            var piece = new powerupjs.AnimatedGameObject(); // create sprite game object
+            piece.loadAnimation(block, "moving")
             piece.ui = true; // set as UI element
-            piece.sheetIndex = l; // set sheet index
+            piece.playAnimation("moving");
             piece.origin = piece.center; // set origin to center
             this.blocks.add(piece);
         }
-
+        else {
+            console.log(block)
+            for (var l = 0; l < block.nrSheetElements; l++) { // for each variation of the block
+                var piece = new powerupjs.SpriteGameObject(block); // create sprite game object
+                piece.ui = true; // set as UI element
+                piece.sheetIndex = l; // set sheet index
+                piece.origin = piece.center; // set origin to center
+                this.blocks.add(piece);
+            }
+        }
     }
     for (var i = 0; i < this.blocks.length; i++) { // position blocks in a row
         this.blocks.at(i).position.x = this.cellWidth * i; // position based on index

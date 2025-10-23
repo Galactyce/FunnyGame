@@ -6,6 +6,7 @@ function Player(layer, id) {
     this.moveSpeed = 55;
     this.jumpForce = -155;
     this.spawnPosition;
+    this.circleHitbox = new powerupjs.Circle();
 }
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
@@ -16,10 +17,7 @@ Player.prototype.update = function (delta) {
     this.adjustHitbox(); // adjust hitbox to match position
     this.simulateGravity(); // apply gravity
     this.handleCollisions(); // handle collisions before moving
-    var targetPosition = new powerupjs.Vector2(this.position.x - powerupjs.Game.size.x / 2, // center camera on player
-        this.position.y - powerupjs.Game.size.y / 2
-    );
-    var V = targetPosition.subtract(powerupjs.Camera.position); // vector from camera to player
+    var V = this.centerOfCamera.subtract(powerupjs.Camera.position); // vector from camera to player
     V = V.multiply(1 / powerupjs.Camera.smoothingFactor); // scale by smoothing factor
     powerupjs.Camera.velocity = V; // set camera velocity
     if (powerupjs.Camera.velocity.x > this.moveSpeed) powerupjs.Camera.velocity.x = this.moveSpeed; // cap camera velocity
@@ -27,6 +25,10 @@ Player.prototype.update = function (delta) {
     if (powerupjs.Camera.velocity.y > this.moveSpeed) powerupjs.Camera.velocity.y = this.moveSpeed;
     if (powerupjs.Camera.velocity.y < -this.moveSpeed) powerupjs.Camera.velocity.y = -this.moveSpeed;
     powerupjs.Camera.update(delta); // update camera position
+    powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.cameraBounds);
+    if (this.position.y > WorldSettings.currentLevel.cameraBounds.bottom) {
+        this.die();
+    }
 }
 
 Player.prototype.adjustHitbox = function () {
@@ -37,6 +39,11 @@ Player.prototype.adjustHitbox = function () {
         this.boundingBox.width - this.width / 8,
         this.boundingBox.height - this.height / 16
     )
+
+    this.circleHitbox = new powerupjs.Circle(
+        this.position.x, this.position.y, this.hitbox.width / 2
+    );
+
 }
 
 Player.prototype.simulateGravity = function () {
@@ -48,22 +55,26 @@ Player.prototype.simulateGravity = function () {
 
 Player.prototype.handleCollisions = function () {
 
-    for (var i = 0; i < WorldSettings.levels[this.currentLevelIndex].tileFields.length; i++) {  // for each tile field
-        var field = WorldSettings.levels[this.currentLevelIndex].tileFields[i]; // get tile field
+    for (var i = 0; i < WorldSettings.currentLevel.tileFields.length; i++) {  // for each tile field
+        var field = WorldSettings.currentLevel.tileFields[i]; // get tile field
 
         for (var l = 0; l < field.length; l++) { // for each tile in field
             var tile = field.at(l); // get tile
             if (tile == null || tile.hitboxType == "none") // empty tile or non-collidable tile
                 continue;
             var tileBounds = tile.hitbox; // get tile hitbox
-            var boundingBox = new powerupjs.Rectangle(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height); // copy of player hitbox
+            if (tile.hitbox.radius != null) {
+                var boundingBox = this.circleHitbox;
+                this.circleHitbox.draw()
+
+            }
+            else var boundingBox = new powerupjs.Rectangle(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height); // copy of player hitbox
             boundingBox.height += 1; // extend hitbox downwards slightly to prevent getting stuck on corners
 
             if (!tileBounds.intersects(boundingBox)) // no collision
                 continue;
             if (tile.hitboxType == "hurt") { // hurtful tile
-                this.position = this.spawnPosition.copy(); // respawn player
-                this.velocity = new powerupjs.Vector2(0, 0);
+                this.die()
                 continue;
             }
 
@@ -93,9 +104,19 @@ Player.prototype.handleCollisions = function () {
     this.previousYPosition = this.position.y;
 }
 
-Player.prototype.groundCheck = function () {
-
+Player.prototype.die = function () {
+    this.position = this.spawnPosition.copy(); // respawn player
+    this.velocity = new powerupjs.Vector2(0, 0);
+    powerupjs.Camera.position = this.centerOfCamera;
 }
+
+Object.defineProperty(Player.prototype, "centerOfCamera", {
+    get: function() {
+        return new powerupjs.Vector2(this.position.x - powerupjs.Game.size.x / 2, // center camera on player
+        this.position.y - powerupjs.Game.size.y / 2
+    );
+    }
+})
 
 
 Player.prototype.handleInput = function (delta) {
@@ -139,6 +160,8 @@ Player.prototype.handleInput = function (delta) {
 
 Player.prototype.draw = function () {
     powerupjs.AnimatedGameObject.prototype.draw.call(this);
-    if (powerupjs.Keyboard.down(powerupjs.Keys.P))
-        this.hitbox.draw(); // draw hitbox for debugging
+    if (powerupjs.Keyboard.down(powerupjs.Keys.P)) {
+        this.hitbox.draw("red"); // draw hitbox for debugging
+        this.circleHitbox.draw("red")
+    }
 }

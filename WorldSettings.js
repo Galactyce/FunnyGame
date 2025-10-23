@@ -1,6 +1,7 @@
 function WorldSettings() {
     this.gravity = 2;
     this.currentLevelIndex = 0;
+    this.currentLevel;
     this.activeLayer = 0;
     this.levels = [];
     this.blockSprites = []; // list of block sprites
@@ -14,6 +15,7 @@ WorldSettings.prototype.loadLevels = function () { // load levels from window.LE
     for (var i = 0; i < window.LEVELS.length; i++) { // for each level in window.LEVELS
         var level = new Level(); // create new Level object
         level.tiles = window.LEVELS[i].tiles; // load tile data
+        level.cameraBounds = window.LEVELS[i].cameraBounds
         this.levels.push(level); // add level to levels array
     }
 

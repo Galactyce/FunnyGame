@@ -154,6 +154,17 @@ var powerupjs = (function (powerupjs) {
         this._canvasContext.restore();
     };
 
+    Canvas2D_Singleton.prototype.drawCircle = function(x, y, radius, color) {
+        var canvasScale = this.scale;
+        this._canvasContext.save();
+        this._canvasContext.beginPath();
+        this._canvasContext.scale(canvasScale.x, canvasScale.y);
+        this._canvasContext.strokeStyle = typeof color !== 'undefined' ? color : "blue"
+        this._canvasContext.arc(x, y, radius, 0, 2 * Math.PI, false);
+        this._canvasContext.stroke();
+        this._canvasContext.restore();
+    }
+
     powerupjs.Canvas2D = new Canvas2D_Singleton();
 
     return powerupjs;

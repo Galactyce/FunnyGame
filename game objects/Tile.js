@@ -1,12 +1,13 @@
 function Tile(sprite) {
-    powerupjs.SpriteGameObject.call(this, sprite);
+    powerupjs.AnimatedGameObject.call(this);
     this.rotation = 0;
     this.key;
     this.index;
     this.hitboxType;
+    this.loadAnimation(sprite, "normal", true, 0.2);
 }
 
-Tile.prototype = Object.create(powerupjs.SpriteGameObject.prototype);
+Tile.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
 
 Tile.prototype.draw = function () {
     powerupjs.SpriteGameObject.prototype.draw.call(this);
@@ -56,6 +57,10 @@ Tile.prototype.manageHitboxes = function (sprite) {
                 this.width / 3,
                 this.height / 1.6);
         }
+        this.hitboxType = "hurt"
+    }
+    else if (sprite.image.src == sprites.saw.image.src) {
+        this.hitbox = new powerupjs.Circle(this.position.x, this.position.y, this.width / 2.4)
         this.hitboxType = "hurt"
     }
     else { // default solid hitbox

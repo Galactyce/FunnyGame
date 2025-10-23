@@ -10,7 +10,7 @@ function TitleMenuState(layer) {
     this.playButton.position = new powerupjs.Vector2(powerupjs.Game.screenCenter.x, 400);
     this.add(this.playButton);
 
-
+    this.levelSelectedIndex = 0;
 }
 
 TitleMenuState.prototype = Object.create(powerupjs.GameObjectList.prototype);
@@ -18,10 +18,12 @@ TitleMenuState.prototype = Object.create(powerupjs.GameObjectList.prototype);
 TitleMenuState.prototype.handleInput = function (delta) {
     powerupjs.GameObjectList.prototype.handleInput.call(this, delta);
     if (this.editorButton.pressed) {
+        WorldSettings.currentLevel = WorldSettings.levels[this.levelSelectedIndex];
         powerupjs.GameStateManager.switchTo(ID.game_state_editor); // switch to editor state
         return;
     }
     if (this.playButton.pressed) {
+        WorldSettings.currentLevel = WorldSettings.levels[this.levelSelectedIndex];
         powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
         powerupjs.GameStateManager.switchTo(ID.game_state_playing); // switch to playing state
         return;

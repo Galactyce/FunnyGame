@@ -1,8 +1,8 @@
 function EditingMenuGUI() {
     powerupjs.GameObjectList.call(this);
-    var frame = new powerupjs.SpriteGameObject(sprites.woodenFrame);
-    frame.ui = true;
-    this.add(frame);
+    this.frame = new powerupjs.SpriteGameObject(sprites.woodenFrame);
+    this.frame.ui = true;
+    this.add(this.frame);
     this.buttons = new powerupjs.GameObjectList();
     this.buttons.position = new powerupjs.Vector2(40, 40); // position inside frame
     this.cellWidth = 50; // cell size for button arrangement
@@ -36,6 +36,10 @@ EditingMenuGUI.prototype.handleInput = function (delta) {
             this.handleButtonFunction(i);
         }
     }
+
+    if (this.frame.boundingBox.contains(powerupjs.Mouse.position)) {
+        // TOGGLE BOOL IN EDITOR STATE FOR MANAGING TILE TO FALSE
+    }
 }
 
 EditingMenuGUI.prototype.handleButtonFunction = function (buttonIndex) {
@@ -54,6 +58,7 @@ EditingMenuGUI.prototype.handleButtonFunction = function (buttonIndex) {
                 this.selectedObj.position.y -= 5;
                 break;
             case 3: // move down
+            console.log('up')
                 this.selectedObj.position.y += 5;
                 break;
             case 4: // rotate clockwise
@@ -68,6 +73,8 @@ EditingMenuGUI.prototype.handleButtonFunction = function (buttonIndex) {
                 break;
             default:
                 console.log("No function assigned to this button.");
+
+            this.selectedObj.manageHitboxes();
         }
     }
 }

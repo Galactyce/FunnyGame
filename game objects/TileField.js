@@ -31,8 +31,8 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
     tile.position = new powerupjs.Vector2(index.x * this.cellWidth + (this.cellWidth / 2), index.y * this.cellHeight + (this.cellHeight / 2)); // set tile position based on index
     tile.index = index; // store tile index
     tile.rotation = rotation;
+    tile.playAnimation("normal");
     tile.origin = tile.center;
-
     tile.manageHitboxes(sprite); // set hitbox based on sprite
     this.add(tile);
 }

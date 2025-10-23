@@ -6,8 +6,8 @@ var sprites = {};
 var sounds = {};
 
 powerupjs.Game.loadAssets = function () {
-    var loadSprite = function (sprite, collisionMask) {
-        return new powerupjs.SpriteSheet("sprites/" + sprite/*, collisionMask*/);
+    var loadSprite = function (sprite, isAnimated) {
+        return new powerupjs.SpriteSheet("sprites/" + sprite, isAnimated);
     };
 
     var loadSound = function (sound, looping) {
@@ -17,12 +17,13 @@ powerupjs.Game.loadAssets = function () {
     sprites.button_default = loadSprite("button_default.png");
     sprites.defaultTile = loadSprite("placeholder_tile.png");
     sprites.spike = loadSprite("spike.png")
-    sprites.player_idle = loadSprite("Idle@11.png")
+    sprites.player_idle = loadSprite("Idle@11.png", true)
     sprites.frame = loadSprite("frame.jpeg")
     sprites.woodenFrame = loadSprite("wooden_frame5x2.png")
     sprites.editorBlockSelector = loadSprite("editorBlockSelectFrame.png")
     sprites.portal = loadSprite("portal.png")
     sprites.editingButtons = loadSprite("editorButtons@6.png")
+    sprites.saw = loadSprite("SawOn@8.png", true);
 };
 
 powerupjs.Game.initialize = function () {
@@ -59,7 +60,8 @@ powerupjs.Game.initialize = function () {
 
     WorldSettings.blockSprites = [ // list of block sprites
         sprites.defaultTile,
-        sprites.spike
+        sprites.spike,
+        sprites.saw
     ]
     WorldSettings.loadLevels(); // load levels from window.LEVELS
 

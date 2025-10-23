@@ -31,6 +31,8 @@ PlayingState.prototype.handleInput = function (delta) {
 
 
 PlayingState.prototype.loadLevel = function () {
+    this.tileFields._gameObjects = []
+    console.log(this.tileFields)
     for (var i = 0; i < window.LEVELS[WorldSettings.currentLevelIndex].tiles.length; i++) { // for each tile layer
         var field = new TileField(); // create new tile field
         field.editorLayer = i; // set layer index

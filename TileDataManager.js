@@ -19,6 +19,7 @@ TileDataManager_Singleton.prototype.writeTiles = function (tiles) { // tiles is 
         if (i < this.dataStrings.length - 1)
             data += "/"; // add separator if not last
     }
+    console.log(data)
     return data; // return final data string
 }
 
