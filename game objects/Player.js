@@ -9,6 +9,10 @@ function Player(layer, id) {
     this.circleHitbox = new powerupjs.Circle();
     this.tileLeft = false;
     this.tileRight = false;
+    this.previousWallJumpDir = ""
+    this.jumpAvailable = true;
+    this.airDrag = true;
+    this.timeAfterWallJump = 0;
 }
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
@@ -31,6 +35,10 @@ Player.prototype.update = function (delta) {
     if (this.position.y > WorldSettings.currentLevel.cameraBounds.bottom) {
         this.die();
     }
+
+    if (!this.airDrag && this.velocity.x == 0) {
+        this.airDrag = true;
+    }
 }
 
 Player.prototype.adjustHitbox = function () {
@@ -49,9 +57,16 @@ Player.prototype.adjustHitbox = function () {
 }
 
 Player.prototype.simulateGravity = function () {
-    this.velocity.y += WorldSettings.gravity; // apply gravity
+    if ((this.tileLeft || this.tileRight) && this.velocity.y > 0) {
+        this.velocity.y = WorldSettings.wallSlideSpeed;
+    }
+    else {
+        this.velocity.y += WorldSettings.gravity;
+    }
     if (this.velocity.y > WorldSettings.terminalVelocity) // cap downward velocity
         this.velocity.y = WorldSettings.terminalVelocity;
+
+    
 
 }
 
@@ -71,8 +86,9 @@ Player.prototype.handleCollisions = function () {
 
             }
             else var boundingBox = new powerupjs.Rectangle(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height); // copy of player hitbox
-            boundingBox.height += 1; // extend hitbox downwards slightly to prevent getting stuck on corners
+            boundingBox.height += 0.5; // extend hitbox downwards slightly to prevent getting stuck on corners
 
+            var stableBox = new powerupjs.Rectangle(this.hitbox.x + 5, this.hitbox.y, this.hitbox.width - 10, this.hitbox.height + 1);
             if (!tileBounds.intersects(boundingBox)) // no collision
                 continue;
             if (tile.hitboxType == "hurt") { // hurtful tile
@@ -82,15 +98,15 @@ Player.prototype.handleCollisions = function () {
 
             var depth = boundingBox.calculateIntersectionDepth(tileBounds); // get intersection depth
             if (Math.abs(depth.x) < Math.abs(depth.y)) { // horizontal collision
-                this.position.x += (depth.x * 1.05); // nudge out of collision
-                this.tileLeft = (depth.x > 0);
-                this.tileRight = (depth.x < 0);
-                this.velocity.x = 0; // stop horizontal movement
-                continue
+                    this.position.x += (depth.x * 1.1); // nudge out of collision
+                    this.tileLeft = (depth.x > 0);
+                    this.tileRight = (depth.x < 0);
+                    this.velocity.x = 0; // stop horizontal movement
+                    continue
             }
-            this.tileLeft = false;
-            this.tileRight = false;
-            if (this.previousYPosition <= tileBounds.top) { // if landing on top of tile
+            
+            if (this.previousYPosition <= tileBounds.top ) { // if landing on top of tile
+                if (!stableBox.intersects(tileBounds)) continue;
                 if (this.velocity.y > 0) this.grounded = true;
                 this.velocity.y = 0; // stop downward velocity
             }
@@ -98,6 +114,7 @@ Player.prototype.handleCollisions = function () {
                 this.velocity.y *= -0.1; // small bounce when hitting head
             }
             if (boundingBox.intersects(tileBounds))
+                if (!stableBox.intersects(tileBounds)) continue; // prevent stupid clipping to corners in walls
                 this.position.y += depth.y; // nudge out of collision
 
             this.adjustHitbox();
@@ -127,41 +144,79 @@ Object.defineProperty(Player.prototype, "centerOfCamera", {
 
 Player.prototype.handleInput = function (delta) {
     powerupjs.AnimatedGameObject.prototype.handleInput.call(this, delta);
-
+    this.timeAfterWallJump += delta;
     if (powerupjs.Keyboard.down(powerupjs.Keys.left)) {
+        var speed = this.moveSpeed;
+        if (!this.airDrag && this.previousWallJumpDir == "right") {
+            speed = this.moveSpeed / 1.5;
+        }
         if (this.velocity.x > 0 && this.grounded) // if changing direction on ground, stop first
             this.velocity.x = 0;
         if (this.velocity.x > -this.moveSpeed) // if below max speed, accelerate
-            this.velocity.x -= this.moveSpeed * (delta * 2);
+            this.velocity.x -= speed * (delta * 2);
         if (this.velocity.x < -this.moveSpeed && this.grounded) // if above max speed, set to max speed
-            this.velocity.x = -this.moveSpeed;
+            this.velocity.x = -speed;
         this.mirror = true;
+        this.tileRight = false;
+        
+        
     }
     else if (powerupjs.Keyboard.down(powerupjs.Keys.right)) {
+        var speed = this.moveSpeed;
+        if (!this.airDrag && this.previousWallJumpDir == "left") {
+            speed = this.moveSpeed / 1.5;
+        }
         if (this.velocity.x < 0 && this.grounded) // if changing direction on ground, stop first
             this.velocity.x = 0;
-        if (this.velocity.x < this.moveSpeed)   // if below max speed, accelerate
-            this.velocity.x += this.moveSpeed * (delta * 2);
-        if (this.velocity.x > this.moveSpeed && this.grounded) // if above max speed, set to max speed
-            this.velocity.x = this.moveSpeed;
+        if (this.velocity.x < speed)   // if below max speed, accelerate
+            this.velocity.x += speed * (delta * 2);
+        if (this.velocity.x > speed && this.grounded) // if above max speed, set to max speed
+            this.velocity.x = speed;
         this.mirror = false
+        this.tileLeft = false;
+        
     }
     else {
-        this.velocity.x = 0; // no horizontal input, stop horizontal movement
+         if (this.grounded || this.airDrag || this.timeAfterWallJump > 0.6) // after 0.6 seconds, stop velocity
+            this.velocity.x = 0; // no horizontal input, stop horizontal movement
+         else {
+
+            console.log("sadf")
+        }
+        this.tileLeft = false;
+        this.tileRight = false;
     }
     if (powerupjs.Keyboard.down(this.jumpKey)) {
-        if (this.grounded) {
+        if (this.grounded && this.jumpAvailable) {
             this.velocity.y = this.jumpForce; // jump
             this.grounded = false;
+            this.jumpAvailable = false;
+        }
+        if ((this.tileLeft || this.tileRight) && this.velocity.y > 0 && this.jumpAvailable) {
+            this.velocity.y = this.jumpForce;
+            this.airDrag = false;
+            this.jumpAvailable = false;
+            this.timeAfterWallJump = 0;
+            if (this.tileLeft) {
+                this.velocity.x = -this.jumpForce / 2;
+                this.previousWallJumpDir = "right"
+            }
+            if (this.tileRight) {
+                this.velocity.x = this.jumpForce / 2;
+                this.previousWallJumpDir = "left"
+            }
+            this.tileLeft = false;
+            this.tileRight = false;
         }
     }
     else {
+        this.jumpAvailable = true;
         if (this.velocity.y < 0) {
             this.velocity.y /= 1.06;    // cut jump short when jump key is released
         }
     }
 
-
+    
 }
 
 Player.prototype.draw = function () {
@@ -169,5 +224,9 @@ Player.prototype.draw = function () {
     if (powerupjs.Keyboard.down(powerupjs.Keys.P)) {
         this.hitbox.draw("red"); // draw hitbox for debugging
         this.circleHitbox.draw("red")
+        var stableBox = new powerupjs.Rectangle(this.hitbox.x + 5, this.hitbox.y, this.hitbox.width - 10, this.hitbox.height);
+        stableBox.draw("blue")
     }
+
+    
 }

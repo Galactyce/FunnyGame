@@ -1,5 +1,5 @@
 function WorldSettings() {
-    this.gravity = 2;
+    this.gravity = 2.5;
     this.currentLevelIndex = 0;
     this.currentLevel;
     this.activeLayer = 0;
@@ -8,6 +8,7 @@ function WorldSettings() {
     this.currentBlock; // current block sprite
     this.currentBlockIndex = 0; // index of current block in blockSprites
     this.terminalVelocity = 100; // max downward speed
+    this.wallSlideSpeed = 25;
 }
 
 WorldSettings.prototype.loadLevels = function () { // load levels from window.LEVELS
