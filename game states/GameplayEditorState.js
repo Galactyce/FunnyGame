@@ -100,7 +100,7 @@ GameplayEditorState.prototype.handleInput = function (delta) {
     }
 
     if (this.playButton.pressed) {
-        if (confirm("Save level before exiting?")) this.saveLevel();
+        // if (confirm("Save level before exiting?")) this.saveLevel();
         powerupjs.GameStateManager.switchTo(ID.game_state_title); // return to title screen
         powerupjs.Camera.position = powerupjs.Vector2.zero; // reset camera position
         return

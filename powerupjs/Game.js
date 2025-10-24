@@ -19,6 +19,7 @@ var powerupjs = (function (powerupjs) {
         this._size = null;
         this._spritesStillLoading = 0;
         this._totalSprites = 0;
+        this.savedDate = Date.now()
     }
 
     Object.defineProperty(Game_Singleton.prototype, "totalTime",
@@ -96,6 +97,8 @@ var powerupjs = (function (powerupjs) {
         powerupjs.Keyboard.reset(); // reset keyboard state
         powerupjs.Mouse.reset(); // reset mouse state
         powerupjs.Touch.reset(); // reset touch state
+        // console.log(Date.now() - (powerupjs.Game.savedDate + delta))
+        // powerupjs.Game.savedDate = Date.now()
         window.setTimeout(powerupjs.Game.mainLoop, delta); // schedule next frame
     };
 

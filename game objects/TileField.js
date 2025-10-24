@@ -40,7 +40,7 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
     tile.origin = tile.center;
     tile.manageHitboxes(sprite); // set hitbox based on sprite
     
-    this.parent.parent.editingMenu.selectedObj = tile;
+    powerupjs.GameStateManager.get(ID.game_state_editor).editingMenu.selectedObj = tile;
 
     this.add(tile);
 }

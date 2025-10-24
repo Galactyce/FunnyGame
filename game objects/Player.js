@@ -7,6 +7,8 @@ function Player(layer, id) {
     this.jumpForce = -155;
     this.spawnPosition;
     this.circleHitbox = new powerupjs.Circle();
+    this.tileLeft = false;
+    this.tileRight = false;
 }
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
@@ -81,9 +83,13 @@ Player.prototype.handleCollisions = function () {
             var depth = boundingBox.calculateIntersectionDepth(tileBounds); // get intersection depth
             if (Math.abs(depth.x) < Math.abs(depth.y)) { // horizontal collision
                 this.position.x += (depth.x * 1.05); // nudge out of collision
+                this.tileLeft = (depth.x > 0);
+                this.tileRight = (depth.x < 0);
                 this.velocity.x = 0; // stop horizontal movement
                 continue
             }
+            this.tileLeft = false;
+            this.tileRight = false;
             if (this.previousYPosition <= tileBounds.top) { // if landing on top of tile
                 if (this.velocity.y > 0) this.grounded = true;
                 this.velocity.y = 0; // stop downward velocity
