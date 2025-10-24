@@ -25,6 +25,11 @@ TileField.prototype.update = function (delta) {
 TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
     var sprite = typeof sprite !== 'undefined' ? sprite : sprites.defaultTile; // default sprite if none provided
     rotation = typeof rotation !== 'undefined' ? rotation : 0;
+    for (var i = 0; i < this.length; i++) {
+        if (this.at(i).position.equals(
+            new powerupjs.Vector2(index.x * this.cellWidth + (this.cellWidth / 2), index.y * this.cellHeight + (this.cellHeight / 2))
+        )) return;
+    }
     var tile = new Tile(sprite);
     if (this.tileKey !== null) tile.key = this.tileKey; // use current tile key
     else tile.key = tileKey;
@@ -34,13 +39,20 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
     tile.playAnimation("normal");
     tile.origin = tile.center;
     tile.manageHitboxes(sprite); // set hitbox based on sprite
+    
+    this.parent.parent.editingMenu.selectedObj = tile;
+
     this.add(tile);
 }
 
-TileField.prototype.removeTileAt = function (index) {
+TileField.prototype.removeTileAt = function (position) {
     for (var i = 0; i < this.length; i++) {
-        if (this.at(i).index.equals(index)) { // find tile at index
+        if (this.at(i).boundingBox.contains(position)) { // find tile at index
             this.remove(this.at(i));
+            if (!powerupjs.Keyboard.down(powerupjs.Keys.C)) {
+                console.log("bruh")
+                break;
+            }
         }
     }
 }

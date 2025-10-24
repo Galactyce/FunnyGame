@@ -66,6 +66,6 @@ powerupjs.Game.initialize = function () {
     WorldSettings.loadLevels(); // load levels from window.LEVELS
 
     powerupjs.GameStateManager.get(ID.game_state_editor).objectMenu.loadBlocks(); // load blocks into object menu
-    powerupjs.GameStateManager.get(ID.game_state_editor).editingMunu.loadButtons(); // load buttons into editing menu
+    powerupjs.GameStateManager.get(ID.game_state_editor).editingMenu.loadButtons(); // load buttons into editing menu
     powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers(); // load editor layers
 };

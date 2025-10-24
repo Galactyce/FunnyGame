@@ -23,14 +23,7 @@ var powerupjs = (function (powerupjs) {
         this.sprite = this._current.sprite; // set sprite to current animation's sprite
     };
 
-    Object.defineProperty(AnimatedGameObject.prototype, "scale", {
-        get: function () {
-            return this.sprite.scale; // return sprite scale
-        },
-        set: function (value) {
-            this.sprite.scale = value; // set sprite scale
-        }
-    })
+    
 
     AnimatedGameObject.prototype.animationEnded = function () { // check if current animation has ended
         return !this._current.looping && this.sheetIndex >= this.sprite.nrSheetElements - 1; // return true if not looping and sheet index at last frame

@@ -84,7 +84,6 @@ var powerupjs = (function (powerupjs) {
 
     Canvas2D_Singleton.prototype.drawImage = function (sprite, position, rotation, scale, origin, sourceRect, mirror) {
         var canvasScale = this.scale; // get canvas scale factors
-
         mirror = typeof mirror !== 'undefined' ? mirror : false;
 
         position = typeof position !== 'undefined' ? position : powerupjs.Vector2.zero;
@@ -104,8 +103,9 @@ var powerupjs = (function (powerupjs) {
                 sourceRect.width, sourceRect.height); // destination size
         }
         else {
+            
             this._canvasContext.scale(scale * canvasScale.x, scale * canvasScale.y); // normal scaling
-            this._canvasContext.translate(position.x, position.y); // translate to position
+            this._canvasContext.translate(position.x / scale, position.y / scale); // translate to position
             this._canvasContext.rotate(rotation); // apply rotation
             this._canvasContext.drawImage(sprite, sourceRect.x, sourceRect.y, // draw image
                 sourceRect.width, sourceRect.height, // source rectangle

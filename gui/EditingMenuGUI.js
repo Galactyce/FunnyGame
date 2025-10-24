@@ -37,8 +37,9 @@ EditingMenuGUI.prototype.handleInput = function (delta) {
         }
     }
 
-    if (this.frame.boundingBox.contains(powerupjs.Mouse.position)) {
-        // TOGGLE BOOL IN EDITOR STATE FOR MANAGING TILE TO FALSE
+    if (this.frame.boundingBox.contains(powerupjs.Mouse.screenPosition)) {
+        this.parent.editingTiles = false;
+        console.log("Asdf")
     }
 }
 

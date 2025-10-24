@@ -7,6 +7,7 @@ var powerupjs = (function (powerupjs) {
         back: 8,
         tab: 9,
         enter: 13,
+        ctrl: 17,
         pause: 19,
         escape: 27,
 

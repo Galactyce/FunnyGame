@@ -6,10 +6,7 @@ function PlayingState(layer) {
     this.tileFields = new powerupjs.GameObjectList(); // list to hold tile fields
     this.add(this.tileFields);
     this.player.currentLevelIndex = WorldSettings.currentLevelIndex; // set player's current level
-    this.player.position = powerupjs.GameStateManager.get(ID.game_state_editor).find(ID.player_spawn).position.copy(); // set player position to spawn point
-    this.player.spawnPosition = this.player.position.copy(); // set spawn position
-    this.player.adjustHitbox(); // adjust hitbox to match sprite
-    this.add(this.player);
+
 
     this.returnButton = new LabelledButton(sprites.button_default, "Return", "Arial", "20px", ID.layer_overlays); // button to return to title screen
     this.returnButton.position = new powerupjs.Vector2(900, 15);
@@ -41,5 +38,17 @@ PlayingState.prototype.loadLevel = function () {
     };
 
     this.add(this.tileFields); // add tile fields to game state
+    var spawn = powerupjs.GameStateManager.get(ID.game_state_editor).find(ID.player_spawn);
+    if (!localStorage.levels) return; // nothing to load
+    window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
+    var spawnData = window.LEVELS[WorldSettings.currentLevelIndex].playerStartPos;
+    if (spawnData == undefined) return
+    spawnSplit = spawnData.split(",")
+    console.log(spawnSplit)
+    spawn.position = new powerupjs.Vector2(parseInt(spawnSplit[0]), parseInt(spawnSplit[1]))
 
+    this.player.position = spawn.position.copy(); // set player position to spawn point
+    this.player.spawnPosition = this.player.position.copy(); // set spawn position
+    this.player.adjustHitbox(); // adjust hitbox to match sprite
+    this.add(this.player);
 }

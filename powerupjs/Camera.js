@@ -21,7 +21,6 @@ var powerupjs = (function (powerupjs) {
     }
 
     Camera.prototype.manageBoundaries = function(bounds) {
-        console.log(this.position)
         if (this.position.x < bounds.x) this.position.x = bounds.x;
         if (this.position.y < bounds.y) this.position.y = bounds.y;
         if (this.position.x + this.viewWidth > bounds.right) this.position.x = bounds.right - this.viewWidth;

@@ -13,6 +13,7 @@ function WorldSettings() {
 WorldSettings.prototype.loadLevels = function () { // load levels from window.LEVELS
     this.levels = [];
     for (var i = 0; i < window.LEVELS.length; i++) { // for each level in window.LEVELS
+        console.log(i)
         var level = new Level(); // create new Level object
         level.tiles = window.LEVELS[i].tiles; // load tile data
         level.cameraBounds = window.LEVELS[i].cameraBounds

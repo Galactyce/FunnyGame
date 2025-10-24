@@ -13,6 +13,7 @@ var powerupjs = (function (powerupjs) {
         this.hitbox = null; // no hitbox by default
         this.ui = false; // not a UI element by default
         this.rotation = 0;
+        this.scale = 1;
     }
 
     SpriteGameObject.prototype = Object.create(powerupjs.GameObject.prototype); // inherit from GameObject
@@ -24,15 +25,6 @@ var powerupjs = (function (powerupjs) {
             }
         });
 
-    Object.defineProperty(SpriteGameObject.prototype, "scale", {
-        get: function () {
-            return this.sprite.scale; // return sprite scale
-        },
-        set: function (value) {
-            if (this.sprite == null) return; // guard clause
-            this.sprite.scale = value; // set sprite scale
-        }
-    })
 
     Object.defineProperty(SpriteGameObject.prototype, "width",
         {
@@ -90,19 +82,19 @@ var powerupjs = (function (powerupjs) {
     Object.defineProperty(SpriteGameObject.prototype, "boundingBox",
         {
             get: function () {
-                var leftTop = this.worldPosition.subtractFrom((this.origin)); // calculate top-left corner
-                return new powerupjs.Rectangle(leftTop.x, leftTop.y, this.width, this.height); // return bounding box rectangle
+                var leftTop = this.worldPosition.subtractFrom((this.origin.copy().multiplyWith(this.scale))); // calculate top-left corner
+                return new powerupjs.Rectangle(leftTop.x, leftTop.y, this.width * this.scale, this.height * this.scale); // return bounding box rectangle
             }
         });
 
     SpriteGameObject.prototype.draw = function () {
         if (this._visible) {
             if (this.ui) { // if UI element, draw at world position
-                this.sprite.draw(this.worldPosition, this.origin, this.rotation, this._sheetIndex, this.mirror); // draw sprite at world position
+                this.sprite.draw(this.worldPosition, this.origin, this.scale, this.rotation, this._sheetIndex, this.mirror); // draw sprite at world position
                 return; // exit after drawing UI element
             }
             
-            this.sprite.draw(this.screenPosition, this.origin, this.rotation, this._sheetIndex, this.mirror); // draw sprite at screen position
+            this.sprite.draw(this.screenPosition, this.origin, this.scale, this.rotation, this._sheetIndex, this.mirror); // draw sprite at screen position
         }
     };
 
