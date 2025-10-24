@@ -23,6 +23,10 @@ function Player(layer, id) {
     this.ableToDash = true;
     this.detaching = false;
     this.detachTime = 0;
+
+    this.horizonatalKeysDown = "";
+    this.verticalKeysDown = "";
+    this.keyResetTime = 0;
 }
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
@@ -135,7 +139,10 @@ Player.prototype.handleCollisions = function () {
                         this.tileLeft = (depth.x > 0);
                         this.tileRight = (depth.x < 0);
                         this.detaching = false
-                        this.dashing = false;
+                        if (this.dashing) {
+                            this.dashing = false;
+                            this.velocity.y = 0;
+                        }
                         this.velocity.x = 0; // stop horizontal movement
                         continue
                 }
@@ -191,14 +198,23 @@ Object.defineProperty(Player.prototype, "centerOfCamera", {
     }
 })
 
+Player.prototype.resetDirectionKeys = function() {
+    if (!powerupjs.Keyboard.down(powerupjs.Keys.down) && !powerupjs.Keyboard.down(powerupjs.Keys.up)) {
+        this.verticalKeysDown = ""
+    }
+    if (!powerupjs.Keyboard.down(powerupjs.Keys.right) && !powerupjs.Keyboard.down(powerupjs.Keys.left)) {
+        this.horizonatalKeysDown = ""
+    }
+}
 
 Player.prototype.handleInput = function (delta) {
     powerupjs.AnimatedGameObject.prototype.handleInput.call(this, delta);
     this.timeAfterWallJump += delta;
     this.timeAfterDashing += delta;
+    this.keyResetTime += delta
 
-        if (this.velocity.x < -this.moveSpeed && !this.dashing) this.velocity.x = -this.moveSpeed;
-        if (this.velocity.x > this.moveSpeed && !this.dashing) this.velocity.x = this.moveSpeed;
+    if (this.velocity.x < -this.moveSpeed && !this.dashing) this.velocity.x = -this.moveSpeed;
+    if (this.velocity.x > this.moveSpeed && !this.dashing) this.velocity.x = this.moveSpeed;
 
 
     if (powerupjs.Keyboard.down(powerupjs.Keys.left) && !this.dashing) {
@@ -270,6 +286,31 @@ Player.prototype.handleInput = function (delta) {
         }
     }
 
+    if (powerupjs.Keyboard.down(powerupjs.Keys.up)) {
+        this.verticalKeysDown = "up"
+    }
+    else if (powerupjs.Keyboard.down(powerupjs.Keys.down)) {
+        this.verticalKeysDown = "down"
+    }
+    else {
+        if (this.keyResetTime > 0.25) {
+            this.resetDirectionKeys();
+        }
+    }
+    if (powerupjs.Keyboard.down(powerupjs.Keys.left)) {
+        this.horizonatalKeysDown = "left";
+    }
+    else if (powerupjs.Keyboard.down(powerupjs.Keys.right)) {
+        this.horizonatalKeysDown = "right";
+    }
+    else {
+        if (this.keyResetTime > 0.25) {
+            this.resetDirectionKeys();
+        }
+    }
+
+    console.log(this.horizonatalKeysDown + ", " + this.verticalKeysDown)
+
     if (powerupjs.Keyboard.pressed(this.dashKey) && this.ableToDash) {
         if (this.timeAfterDashing > 0.7) {
             this.timeAfterDashing = 0;
@@ -280,40 +321,28 @@ Player.prototype.handleInput = function (delta) {
             var directionPicked = false;
             this.worldPosition.y -= 10;
             var sideToSide = (powerupjs.Keyboard.down(powerupjs.Keys.left) || powerupjs.Keyboard.down(powerupjs.Keys.right))
-            if (powerupjs.Keyboard.down(powerupjs.Keys.up)) {
-                if (sideToSide) this.velocity.y = -this.dashSpeed
-                else
-                    this.velocity.y = -this.dashSpeed * 1.7;
-                    this.dashDistance = 110;
-
-                directionPicked = true;
+            
+            if (this.horizonatalKeysDown == "left") {
+                this.velocity.x = -this.dashSpeed;
+                this.dashDistance = 110;
+                if (this.horizonatalKeysDown != "") this.dashDistance = 80;
+            } else if (this.horizonatalKeysDown == "right") {
+                this.velocity.x = this.dashSpeed;
+                this.dashDistance = 110;
+                if (this.horizonatalKeysDown != "") this.dashDistance = 80;
             }
-            else if (powerupjs.Keyboard.down(powerupjs.Keys.down)) {
-                if (sideToSide) this.velocity.y = this.dashSpeed
-                else
-                    this.velocity.y = this.dashSpeed;
-                    this.dashDistance = 110;
-
-                directionPicked = true;
-            }
-            if (powerupjs.Keyboard.down(powerupjs.Keys.left)) {
-                
-                    this.velocity.x = -this.dashSpeed;
-                    this.dashDistance = 110;
-                
-                directionPicked = true;
-
-            }
-            else if (powerupjs.Keyboard.down(powerupjs.Keys.right)) {
-                
-                    this.velocity.x = this.dashSpeed;
-                    this.dashDistance = 110;
-                
-                directionPicked = true;
+             if (this.verticalKeysDown == "down") {
+                this.velocity.y = this.dashSpeed;
+                this.dashDistance = 110;
+                if (this.verticalKeysDown != "") this.dashDistance = 80;
+            } else if (this.verticalKeysDown == "up") {
+                this.velocity.y = -this.dashSpeed;
+                this.dashDistance = 110;
+                if (this.verticalKeysDown != "") this.dashDistance = 80;
 
             }
 
-            if (!directionPicked) {
+            if (this.verticalKeysDown == "" && this.horizonatalKeysDown == "") {
 
                 if (this.directionFacing == "left") this.velocity.x = -this.dashSpeed;
                 else if (this.directionFacing == "right") this.velocity.x = this.dashSpeed;
