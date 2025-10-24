@@ -29,6 +29,7 @@ Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
 
 Player.prototype.update = function (delta) {
     powerupjs.AnimatedGameObject.prototype.update.call(this, delta);
+
     this.origin = this.center; // set origin to center for mirroring
     this.adjustHitbox(); // adjust hitbox to match position
 
@@ -55,8 +56,8 @@ Player.prototype.update = function (delta) {
     if (this.dashing && (Math.abs(this.preDashPos.x - this.worldPosition.x) > this.dashDistance ||
         Math.abs(this.preDashPos.y - this.worldPosition.y) > this.dashDistance)) {
         this.dashing = false
-        this.velocity.y = 0;
         this.velocity.x = 0;
+        this.velocity.y = this.velocity.y / 3;
         if (this.velocity.y < -WorldSettings.terminalVelocity * 10) this.velocity.y = -WorldSettings.terminalVelocity * 1;
     }
 
@@ -66,7 +67,6 @@ Player.prototype.update = function (delta) {
             this.tileLeft = false;
             this.tileRight = false;
             this.detaching = false;
-            console.log("dine");
         }
     }
     
@@ -121,37 +121,42 @@ Player.prototype.handleCollisions = function () {
             var stableBox = new powerupjs.Rectangle(this.hitbox.x + 5, this.hitbox.y, this.hitbox.width - 10, this.hitbox.height + 1);
             if (!tileBounds.intersects(boundingBox)) // no collision
                 continue;
+            
+            
             if (tile.hitboxType == "hurt") { // hurtful tile
+                if (this.dashing) continue
                 this.die()
                 continue;
             }
-            var depth = boundingBox.calculateIntersectionDepth(tileBounds); // get intersection depth
-            if (Math.abs(depth.x) < Math.abs(depth.y)) { // horizontal collision
-                    this.position.x += (depth.x * 1.1); // nudge out of collision
-                    this.tileLeft = (depth.x > 0);
-                    this.tileRight = (depth.x < 0);
-                    this.detaching = false
+            else {
+                var depth = boundingBox.calculateIntersectionDepth(tileBounds); // get intersection depth
+                if (Math.abs(depth.x) < Math.abs(depth.y)) { // horizontal collision
+                        this.position.x += (depth.x * 1.1); // nudge out of collision
+                        this.tileLeft = (depth.x > 0);
+                        this.tileRight = (depth.x < 0);
+                        this.detaching = false
+                        this.dashing = false;
+                        this.velocity.x = 0; // stop horizontal movement
+                        continue
+                }
+                
+                if (this.previousYPosition <= tileBounds.top ) { // if landing on top of tile
+                    if (!stableBox.intersects(tileBounds)) continue;
+                    if (this.velocity.y > 0) this.grounded = true;
+                    this.ableToDash = true;
+                    this.velocity.y = 0; // stop downward velocity
+                }
+                else if (boundingBox.top <= tileBounds.bottom) { // if hitting head on bottom of tile
+                if (this.velocity.y < 0)
+                    this.velocity.y *= -0.1;
+                    this.jumpAvailable = false;
                     this.dashing = false;
-                    this.velocity.x = 0; // stop horizontal movement
-                    continue
-            }
-            
-            if (this.previousYPosition <= tileBounds.top ) { // if landing on top of tile
-                if (!stableBox.intersects(tileBounds)) continue;
-                if (this.velocity.y > 0) this.grounded = true;
-                this.ableToDash = true;
-                this.velocity.y = 0; // stop downward velocity
-            }
-            else if (boundingBox.top <= tileBounds.bottom) { // if hitting head on bottom of tile
-            if (this.velocity.y < 0)
-                this.velocity.y *= -0.1;
-                this.jumpAvailable = false;
-                this.dashing = false;
-            }
-            if (boundingBox.intersects(tileBounds)) {
-                if (!stableBox.intersects(tileBounds)) continue; // prevent stupid clipping to corners in walls
-                this.position.y += depth.y; // nudge out of collision
-                this.detachFromWall();
+                }
+                if (boundingBox.intersects(tileBounds)) {
+                    if (!stableBox.intersects(tileBounds)) continue; // prevent stupid clipping to corners in walls
+                    this.position.y += depth.y; // nudge out of collision
+                    this.detachFromWall();
+                }
             }
             this.adjustHitbox();
 
@@ -279,7 +284,7 @@ Player.prototype.handleInput = function (delta) {
                 if (sideToSide) this.velocity.y = -this.dashSpeed
                 else
                     this.velocity.y = -this.dashSpeed * 1.7;
-                    this.dashDistance = 150;
+                    this.dashDistance = 110;
 
                 directionPicked = true;
             }
@@ -287,31 +292,23 @@ Player.prototype.handleInput = function (delta) {
                 if (sideToSide) this.velocity.y = this.dashSpeed
                 else
                     this.velocity.y = this.dashSpeed;
-                                    this.dashDistance = 130;
+                    this.dashDistance = 110;
 
                 directionPicked = true;
             }
             if (powerupjs.Keyboard.down(powerupjs.Keys.left)) {
-                if (sideToSide) {
-                    this.velocity.x = -this.dashSpeed * (Math.sqrt(2)/2);
-                    this.dashDistance = 100
-                }
-                else {
+                
                     this.velocity.x = -this.dashSpeed;
-                    this.dashDistance = 150;
-                }
+                    this.dashDistance = 110;
+                
                 directionPicked = true;
 
             }
             else if (powerupjs.Keyboard.down(powerupjs.Keys.right)) {
-                if (sideToSide) {
-                    this.velocity.x = this.dashSpeed * (Math.sqrt(2)/2);
-                    this.dashDistance = 100;
-                }
-                else {
+                
                     this.velocity.x = this.dashSpeed;
-                    this.dashDistance = 150;
-                }
+                    this.dashDistance = 110;
+                
                 directionPicked = true;
 
             }
@@ -334,5 +331,4 @@ Player.prototype.draw = function () {
         stableBox.draw("blue")
     }
 
-    
 }
