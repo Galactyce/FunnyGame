@@ -19,7 +19,7 @@ function Player(layer, id) {
     this.preDashPos = powerupjs.Vector2.zero;
     this.dashDistance = 130
     this.dashing = false;
-    this.directionFacing;
+    this.directionFacing = "right";
     this.ableToDash = true;
 }
 
@@ -50,6 +50,7 @@ Player.prototype.update = function (delta) {
         this.airDrag = true; // reset air drag when stopped
     }
 
+    console.log(Math.abs(this.preDashPos.y - this.worldPosition.y))
     if (Math.abs(this.preDashPos.x - this.worldPosition.x) > this.dashDistance ||
         Math.abs(this.preDashPos.y - this.worldPosition.y) > this.dashDistance ||
         this.timeAfterDashing > 1) {
@@ -60,7 +61,7 @@ Player.prototype.update = function (delta) {
     }
 
 
-    if (Math.abs(this.velocity.x) > 0.2) {
+    if (Math.abs(this.velocity.x) > 1) {
         this.tileLeft = false;
         this.tileRight = false;
     }
@@ -146,6 +147,8 @@ Player.prototype.handleCollisions = function () {
             if (boundingBox.intersects(tileBounds)) {
                 if (!stableBox.intersects(tileBounds)) continue; // prevent stupid clipping to corners in walls
                 this.position.y += depth.y; // nudge out of collision
+                this.tileLeft = false;
+                this.tileRight = false;
             }
             this.adjustHitbox();
 
@@ -262,7 +265,7 @@ Player.prototype.handleInput = function (delta) {
             if (powerupjs.Keyboard.down(powerupjs.Keys.up)) {
                 if (sideToSide) this.velocity.y = -this.dashSpeed * (Math.sqrt(2)/2)
                 else
-                    this.velocity.y = -this.dashSpeed;
+                    this.velocity.y = -this.dashSpeed * 0.8;
 
                 directionPicked = true;
             }
@@ -274,18 +277,26 @@ Player.prototype.handleInput = function (delta) {
                 directionPicked = true;
             }
             if (powerupjs.Keyboard.down(powerupjs.Keys.left)) {
-                if (sideToSide) this.velocity.x = -this.dashSpeed * (Math.sqrt(2)/2)
-                else
+                if (sideToSide) {
+                    this.velocity.x = -this.dashSpeed * (Math.sqrt(2)/2);
+                    this.dashDistance = 130 * (Math.sqrt(2)/2);
+                }
+                else {
                     this.velocity.x = -this.dashSpeed;
-
+                    this.dashDistance = 130;
+                }
                 directionPicked = true;
 
             }
             else if (powerupjs.Keyboard.down(powerupjs.Keys.right)) {
-                if (sideToSide) this.velocity.x = this.dashSpeed * (Math.sqrt(2)/2)
-                else
+                if (sideToSide) {
+                    this.velocity.x = this.dashSpeed * (Math.sqrt(2)/2);
+                    this.dashDistance = 130 * (Math.sqrt(2)/2);
+                }
+                else {
                     this.velocity.x = this.dashSpeed;
-
+                    this.dashDistance = 130;
+                }
                 directionPicked = true;
 
             }
