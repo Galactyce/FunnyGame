@@ -205,7 +205,7 @@ Player.prototype.handleInput = function (delta) {
         var speed = this.moveSpeed;
         this.directionFacing = "left"
         if (!this.airDrag && this.previousWallJumpDir == "right") {
-            speed = this.moveSpeed / 1.5;
+            speed = this.moveSpeed / 2;
         }
         if (this.velocity.x > 0 && (this.grounded)) // if changing direction on ground, stop first
             this.velocity.x = 0;
@@ -222,7 +222,7 @@ Player.prototype.handleInput = function (delta) {
         this.directionFacing = "right"
 
         if (!this.airDrag && this.previousWallJumpDir == "left") {
-            speed = this.moveSpeed / 1.5;
+            speed = this.moveSpeed / 2;
         }
         if (this.velocity.x < 0 && (this.grounded)) // if changing direction on ground, stop first
             this.velocity.x = 0;
