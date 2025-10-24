@@ -15,12 +15,14 @@ function Player(layer, id) {
     this.airDrag = true;
     this.timeAfterWallJump = 0;
     this.timeAfterDashing = 0;
-    this.dashSpeed = 500;
+    this.dashSpeed = 400;
     this.preDashPos = powerupjs.Vector2.zero;
     this.dashDistance = 130
     this.dashing = false;
     this.directionFacing = "right";
     this.ableToDash = true;
+    this.detaching = false;
+    this.detachTime = 0;
 }
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
@@ -50,21 +52,24 @@ Player.prototype.update = function (delta) {
         this.airDrag = true; // reset air drag when stopped
     }
 
-    console.log(Math.abs(this.preDashPos.y - this.worldPosition.y))
-    if (Math.abs(this.preDashPos.x - this.worldPosition.x) > this.dashDistance ||
-        Math.abs(this.preDashPos.y - this.worldPosition.y) > this.dashDistance ||
-        this.timeAfterDashing > 1) {
+    if (this.dashing && (Math.abs(this.preDashPos.x - this.worldPosition.x) > this.dashDistance ||
+        Math.abs(this.preDashPos.y - this.worldPosition.y) > this.dashDistance)) {
         this.dashing = false
-        if (this.velocity.y > WorldSettings.terminalVelocity) this.velocity.y = WorldSettings.terminalVelocity;
-        if (this.velocity.y < -WorldSettings.terminalVelocity * 10) this.velocity.y = -WorldSettings.terminalVelocity * 10;
-        this.airDrag = true;
+        this.velocity.y = 0;
+        this.velocity.x = 0;
+        if (this.velocity.y < -WorldSettings.terminalVelocity * 10) this.velocity.y = -WorldSettings.terminalVelocity * 1;
     }
 
-
-    if (Math.abs(this.velocity.x) > 1) {
-        this.tileLeft = false;
-        this.tileRight = false;
+    if (this.detaching) {
+        this.detachTime -= delta;
+        if (this.detachTime <= 0) {
+            this.tileLeft = false;
+            this.tileRight = false;
+            this.detaching = false;
+            console.log("dine");
+        }
     }
+    
 }
 
 Player.prototype.adjustHitbox = function () {
@@ -120,12 +125,13 @@ Player.prototype.handleCollisions = function () {
                 this.die()
                 continue;
             }
-            this.dashing = false;
             var depth = boundingBox.calculateIntersectionDepth(tileBounds); // get intersection depth
             if (Math.abs(depth.x) < Math.abs(depth.y)) { // horizontal collision
                     this.position.x += (depth.x * 1.1); // nudge out of collision
                     this.tileLeft = (depth.x > 0);
                     this.tileRight = (depth.x < 0);
+                    this.detaching = false
+                    this.dashing = false;
                     this.velocity.x = 0; // stop horizontal movement
                     continue
             }
@@ -135,20 +141,17 @@ Player.prototype.handleCollisions = function () {
                 if (this.velocity.y > 0) this.grounded = true;
                 this.ableToDash = true;
                 this.velocity.y = 0; // stop downward velocity
-                this.tileLeft = false;
-                this.tileRight = false;
             }
-            if (boundingBox.top <= tileBounds.bottom) { // if hitting head on bottom of tile
-                this.velocity.y *= -0.1; // small bounce when hitting head
-                this.tileLeft = false;
-                this.tileRight = false;
-               
+            else if (boundingBox.top <= tileBounds.bottom) { // if hitting head on bottom of tile
+            if (this.velocity.y < 0)
+                this.velocity.y *= -0.1;
+                this.jumpAvailable = false;
+                this.dashing = false;
             }
             if (boundingBox.intersects(tileBounds)) {
                 if (!stableBox.intersects(tileBounds)) continue; // prevent stupid clipping to corners in walls
                 this.position.y += depth.y; // nudge out of collision
-                this.tileLeft = false;
-                this.tileRight = false;
+                this.detachFromWall();
             }
             this.adjustHitbox();
 
@@ -159,6 +162,15 @@ Player.prototype.handleCollisions = function () {
     }
     this.previousYPosition = this.position.y;
 }
+
+Player.prototype.detachFromWall = function() {
+    if (this.detaching) return
+        this.detaching = true;
+        this.detachTime = 0.2;
+        console.log()
+}
+
+
 
 Player.prototype.die = function () {
     this.position = this.spawnPosition.copy(); // respawn player
@@ -180,37 +192,40 @@ Player.prototype.handleInput = function (delta) {
     this.timeAfterWallJump += delta;
     this.timeAfterDashing += delta;
 
-    if (powerupjs.Keyboard.down(powerupjs.Keys.left)) {
+        if (this.velocity.x < -this.moveSpeed && !this.dashing) this.velocity.x = -this.moveSpeed;
+        if (this.velocity.x > this.moveSpeed && !this.dashing) this.velocity.x = this.moveSpeed;
+
+
+    if (powerupjs.Keyboard.down(powerupjs.Keys.left) && !this.dashing) {
         var speed = this.moveSpeed;
         this.directionFacing = "left"
         if (!this.airDrag && this.previousWallJumpDir == "right") {
-            speed = this.moveSpeed / 2.2;
+            speed = this.moveSpeed / 1.5;
         }
-        if (this.velocity.x > 0 && this.grounded) // if changing direction on ground, stop first
+        if (this.velocity.x > 0 && (this.grounded)) // if changing direction on ground, stop first
             this.velocity.x = 0;
         if (this.velocity.x > -this.moveSpeed) // if below max speed, accelerate
             this.velocity.x -= speed * (delta * 2);
-        if (this.velocity.x < -this.moveSpeed && !this.dashing) this.velocity.x = -this.moveSpeed;
 
         this.mirror = true;
-        this.tileRight = false;
+        this.detachFromWall();
         
         
     }
-    else if (powerupjs.Keyboard.down(powerupjs.Keys.right)) {
+    else if (powerupjs.Keyboard.down(powerupjs.Keys.right) && !this.dashing) {
         var speed = this.moveSpeed;
         this.directionFacing = "right"
 
         if (!this.airDrag && this.previousWallJumpDir == "left") {
-            speed = this.moveSpeed / 2.2;
+            speed = this.moveSpeed / 1.5;
         }
-        if (this.velocity.x < 0 && this.grounded) // if changing direction on ground, stop first
+        if (this.velocity.x < 0 && (this.grounded)) // if changing direction on ground, stop first
             this.velocity.x = 0;
         if (this.velocity.x < speed)   // if below max speed, accelerate
             this.velocity.x += speed * (delta * 2);
-        if (this.velocity.x > this.moveSpeed && !this.dashing) this.velocity.x = this.moveSpeed;
         this.mirror = false
-        this.tileLeft = false;
+        this.detachFromWall();
+
         
     }
     else {
@@ -219,8 +234,7 @@ Player.prototype.handleInput = function (delta) {
          else {
 
         }
-        this.tileLeft = false;
-        this.tileRight = false;
+        this.detachFromWall();
     }
     if (powerupjs.Keyboard.down(this.jumpKey)) {
         if (this.grounded && this.jumpAvailable) {
@@ -228,21 +242,20 @@ Player.prototype.handleInput = function (delta) {
             this.grounded = false;
             this.jumpAvailable = false;
         }
-        if ((this.tileLeft || this.tileRight) && this.velocity.y > 0 && this.jumpAvailable) {
+        if ((this.tileLeft || this.tileRight) && this.jumpAvailable) {
             this.velocity.y = this.jumpForce;
             this.airDrag = false;
             this.jumpAvailable = false;
             this.timeAfterWallJump = 0;
             if (this.tileLeft) {
-                this.velocity.x = -this.jumpForce / 1.5;
+                this.velocity.x = -this.jumpForce / 2;
                 this.previousWallJumpDir = "right"
             }
             if (this.tileRight) {
-                this.velocity.x = this.jumpForce / 1.5;
+                this.velocity.x = this.jumpForce / 2;
                 this.previousWallJumpDir = "left"
             }
-            this.tileLeft = false;
-            this.tileRight = false;
+            this.detachFromWall();
         }
     }
     else {
@@ -263,27 +276,29 @@ Player.prototype.handleInput = function (delta) {
             this.worldPosition.y -= 10;
             var sideToSide = (powerupjs.Keyboard.down(powerupjs.Keys.left) || powerupjs.Keyboard.down(powerupjs.Keys.right))
             if (powerupjs.Keyboard.down(powerupjs.Keys.up)) {
-                if (sideToSide) this.velocity.y = -this.dashSpeed * (Math.sqrt(2)/2)
+                if (sideToSide) this.velocity.y = -this.dashSpeed
                 else
-                    this.velocity.y = -this.dashSpeed * 0.8;
+                    this.velocity.y = -this.dashSpeed * 1.7;
+                    this.dashDistance = 150;
 
                 directionPicked = true;
             }
             else if (powerupjs.Keyboard.down(powerupjs.Keys.down)) {
-                if (sideToSide) this.velocity.y = this.dashSpeed * (Math.sqrt(2)/2)
+                if (sideToSide) this.velocity.y = this.dashSpeed
                 else
                     this.velocity.y = this.dashSpeed;
+                                    this.dashDistance = 130;
 
                 directionPicked = true;
             }
             if (powerupjs.Keyboard.down(powerupjs.Keys.left)) {
                 if (sideToSide) {
                     this.velocity.x = -this.dashSpeed * (Math.sqrt(2)/2);
-                    this.dashDistance = 130 * (Math.sqrt(2)/2);
+                    this.dashDistance = 100
                 }
                 else {
                     this.velocity.x = -this.dashSpeed;
-                    this.dashDistance = 130;
+                    this.dashDistance = 150;
                 }
                 directionPicked = true;
 
@@ -291,11 +306,11 @@ Player.prototype.handleInput = function (delta) {
             else if (powerupjs.Keyboard.down(powerupjs.Keys.right)) {
                 if (sideToSide) {
                     this.velocity.x = this.dashSpeed * (Math.sqrt(2)/2);
-                    this.dashDistance = 130 * (Math.sqrt(2)/2);
+                    this.dashDistance = 100;
                 }
                 else {
                     this.velocity.x = this.dashSpeed;
-                    this.dashDistance = 130;
+                    this.dashDistance = 150;
                 }
                 directionPicked = true;
 
