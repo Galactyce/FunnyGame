@@ -291,7 +291,7 @@ Player.prototype.handleJumps = function() {
     }
     else {
         this.jumpAvailable = true;
-        if (!this.resetJumpVelo) return;
+        if (!this.resetJumpVelo ) return;
         this.resetJumpVelo = false;
         if (this.velocity.y < 0) {
             this.velocity.y /= 3;    // cut jump short when jump key is released
@@ -332,6 +332,7 @@ Player.prototype.handleDashes = function() {
             this.velocity = powerupjs.Vector2.zero;
             this.dashing = true;
             this.worldPosition.y -= 10;
+            this.resetJumpVelo = false;
 
             if (this.horizonatalKeysDown == "left") {
                 this.velocity.x = -this.dashSpeed;
