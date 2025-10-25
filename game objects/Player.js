@@ -2,10 +2,10 @@ function Player(layer, id) {
     powerupjs.AnimatedGameObject.call(this, layer, id);
     this.currentLevelIndex;
     this.previousYPosition;
-    this.jumpKey = powerupjs.Keys.C;
-    this.dashKey = powerupjs.Keys.X;
-    this.moveSpeed = 55;
-    this.jumpForce = -155;
+    this.jumpKey;
+    this.dashKey;
+    this.moveSpeed;
+    this.jumpForce;
     this.spawnPosition;
     this.circleHitbox = new powerupjs.Circle();
     this.tileLeft = false;
@@ -15,18 +15,23 @@ function Player(layer, id) {
     this.airDrag = true;
     this.timeAfterWallJump = 0;
     this.timeAfterDashing = 0;
-    this.dashSpeed = 400;
+    this.dashSpeed;
     this.preDashPos = powerupjs.Vector2.zero;
-    this.dashDistance = 130
+    this.dashDistance;
     this.dashing = false;
     this.directionFacing = "right";
     this.ableToDash = true;
     this.detaching = false;
     this.detachTime = 0;
-
+    this.detachBufferTime;
     this.horizonatalKeysDown = "";
     this.verticalKeysDown = "";
     this.keyResetTime = 0;
+    this.accelerationMultiplier;
+    this.stableBox;
+    this.resetJumpVelo = false;
+    this.neutralJumpTime;
+    this.initialize();
 }
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
@@ -38,7 +43,7 @@ Player.prototype.update = function (delta) {
     this.adjustHitbox(); // adjust hitbox to match position
 
     if (!this.dashing)
-    this.simulateGravity(); // apply gravity
+        this.simulateGravity(); // apply gravity
     this.handleCollisions(); // handle collisions before moving
     var V = this.centerOfCamera.subtract(powerupjs.Camera.position); // vector from camera to player
     V = V.multiply(1 / powerupjs.Camera.smoothingFactor); // scale by smoothing factor
@@ -61,7 +66,8 @@ Player.prototype.update = function (delta) {
         Math.abs(this.preDashPos.y - this.worldPosition.y) > this.dashDistance)) {
         this.dashing = false
         this.velocity.x = 0;
-        this.velocity.y = this.velocity.y / 3;
+        this.velocity.y = this.velocity.y / 4;
+        this.airDrag = true;
         if (this.velocity.y < -WorldSettings.terminalVelocity * 10) this.velocity.y = -WorldSettings.terminalVelocity * 1;
     }
 
@@ -73,7 +79,7 @@ Player.prototype.update = function (delta) {
             this.detaching = false;
         }
     }
-    
+
 }
 
 Player.prototype.adjustHitbox = function () {
@@ -89,6 +95,7 @@ Player.prototype.adjustHitbox = function () {
         this.position.x, this.position.y, this.hitbox.width / 2
     );
 
+    this.stableBox = new powerupjs.Rectangle(this.hitbox.x + 0.5, this.hitbox.y, this.hitbox.width - 1, this.hitbox.height + 1);
 }
 
 Player.prototype.simulateGravity = function () {
@@ -98,9 +105,9 @@ Player.prototype.simulateGravity = function () {
     else {
         this.velocity.y += WorldSettings.gravity;
     }
-   
 
-    
+
+
 
 }
 
@@ -122,11 +129,10 @@ Player.prototype.handleCollisions = function () {
             else var boundingBox = new powerupjs.Rectangle(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height); // copy of player hitbox
             boundingBox.height += 0.5; // extend hitbox downwards slightly to prevent getting stuck on corners
 
-            var stableBox = new powerupjs.Rectangle(this.hitbox.x + 5, this.hitbox.y, this.hitbox.width - 10, this.hitbox.height + 1);
-            if (!tileBounds.intersects(boundingBox)) // no collision
+            if (!tileBounds.intersects(boundingBox) || tile.hitboxType == "void") // no collision
                 continue;
-            
-            
+
+
             if (tile.hitboxType == "hurt") { // hurtful tile
                 if (this.dashing) continue
                 this.die()
@@ -135,32 +141,33 @@ Player.prototype.handleCollisions = function () {
             else {
                 var depth = boundingBox.calculateIntersectionDepth(tileBounds); // get intersection depth
                 if (Math.abs(depth.x) < Math.abs(depth.y)) { // horizontal collision
-                        this.position.x += (depth.x * 1.1); // nudge out of collision
-                        this.tileLeft = (depth.x > 0);
-                        this.tileRight = (depth.x < 0);
-                        this.detaching = false
-                        if (this.dashing) {
-                            this.dashing = false;
-                            this.velocity.y = 0;
-                        }
-                        this.velocity.x = 0; // stop horizontal movement
-                        continue
+                    this.position.x += (depth.x * 1.1); // nudge out of collision
+                    this.tileLeft = (depth.x > 0);
+                    this.tileRight = (depth.x < 0);
+                    this.detaching = false
+                    if (this.dashing) {
+                        this.dashing = false;
+                        this.velocity.y = 0;
+                    }
+                    this.velocity.x = 0; // stop horizontal movement
+                    continue
                 }
-                
-                if (this.previousYPosition <= tileBounds.top ) { // if landing on top of tile
-                    if (!stableBox.intersects(tileBounds)) continue;
+
+                if (this.previousYPosition <= tileBounds.top) { // if landing on top of tile
+                    if (!this.stableBox.intersects(tileBounds)) continue;
                     if (this.velocity.y > 0) this.grounded = true;
                     this.ableToDash = true;
                     this.velocity.y = 0; // stop downward velocity
                 }
                 else if (boundingBox.top <= tileBounds.bottom) { // if hitting head on bottom of tile
-                if (this.velocity.y < 0)
-                    this.velocity.y *= -0.1;
+                    if (this.velocity.y < 0)
+                        this.velocity.y *= -0.1;
+                    this.capMoveSpeed(1.5);
                     this.jumpAvailable = false;
                     this.dashing = false;
                 }
                 if (boundingBox.intersects(tileBounds)) {
-                    if (!stableBox.intersects(tileBounds)) continue; // prevent stupid clipping to corners in walls
+                    if (!this.stableBox.intersects(tileBounds)) continue; // prevent stupid clipping to corners in walls
                     this.position.y += depth.y; // nudge out of collision
                     this.detachFromWall();
                 }
@@ -175,11 +182,11 @@ Player.prototype.handleCollisions = function () {
     this.previousYPosition = this.position.y;
 }
 
-Player.prototype.detachFromWall = function() {
+Player.prototype.detachFromWall = function () {
     if (this.detaching) return
-        this.detaching = true;
-        this.detachTime = 0.2;
-        console.log()
+    this.detaching = true;
+    this.detachTime = this.detachBufferTime;
+    console.log()
 }
 
 
@@ -191,14 +198,14 @@ Player.prototype.die = function () {
 }
 
 Object.defineProperty(Player.prototype, "centerOfCamera", {
-    get: function() {
+    get: function () {
         return new powerupjs.Vector2(this.position.x - powerupjs.Game.size.x / 2, // center camera on player
-        this.position.y - powerupjs.Game.size.y / 2
-    );
+            this.position.y - powerupjs.Game.size.y / 2
+        );
     }
 })
 
-Player.prototype.resetDirectionKeys = function() {
+Player.prototype.resetDirectionKeys = function () {
     if (!powerupjs.Keyboard.down(powerupjs.Keys.down) && !powerupjs.Keyboard.down(powerupjs.Keys.up)) {
         this.verticalKeysDown = ""
     }
@@ -207,31 +214,28 @@ Player.prototype.resetDirectionKeys = function() {
     }
 }
 
-Player.prototype.handleInput = function (delta) {
-    powerupjs.AnimatedGameObject.prototype.handleInput.call(this, delta);
-    this.timeAfterWallJump += delta;
-    this.timeAfterDashing += delta;
-    this.keyResetTime += delta
+Player.prototype.capMoveSpeed = function(modifier) {
+    var modifier = typeof modifier != 'undefined' ? modifier : 1;   // Adjust speed cap in certain scenarios
+    if (this.velocity.x < -this.moveSpeed * modifier) this.velocity.x = -this.moveSpeed * modifier;
+    if (this.velocity.x > this.moveSpeed * modifier) this.velocity.x = this.moveSpeed * modifier;
+}
 
-    if (this.velocity.x < -this.moveSpeed && !this.dashing) this.velocity.x = -this.moveSpeed;
-    if (this.velocity.x > this.moveSpeed && !this.dashing) this.velocity.x = this.moveSpeed;
-
-
-    if (powerupjs.Keyboard.down(powerupjs.Keys.left) && !this.dashing) {
+Player.prototype.handleMoving = function(delta) {
+  if (powerupjs.Keyboard.down(powerupjs.Keys.left) && !this.dashing) {
         var speed = this.moveSpeed;
         this.directionFacing = "left"
         if (!this.airDrag && this.previousWallJumpDir == "right") {
-            speed = this.moveSpeed / 2;
+            speed = this.moveSpeed / 2; // Make it harder to move back to wall
         }
         if (this.velocity.x > 0 && (this.grounded)) // if changing direction on ground, stop first
             this.velocity.x = 0;
         if (this.velocity.x > -this.moveSpeed) // if below max speed, accelerate
-            this.velocity.x -= speed * (delta * 2);
+            this.velocity.x -= speed * (delta * this.accelerationMultiplier);
 
         this.mirror = true;
         this.detachFromWall();
-        
-        
+
+
     }
     else if (powerupjs.Keyboard.down(powerupjs.Keys.right) && !this.dashing) {
         var speed = this.moveSpeed;
@@ -247,27 +251,33 @@ Player.prototype.handleInput = function (delta) {
         this.mirror = false
         this.detachFromWall();
 
-        
+
     }
     else {
-         if ((this.grounded || this.airDrag || this.timeAfterWallJump > 0.6) && !this.dashing) // after 0.6 seconds, stop velocity
+        if ((this.grounded || this.timeAfterWallJump > this.neutralJumpTime) && this.airDrag && !this.dashing) // after 0.6 seconds, stop velocity
             this.velocity.x = 0; // no horizontal input, stop horizontal movement
-         else {
-
+        else {
+            this.velocity.x ^ 0.8;
         }
         this.detachFromWall();
     }
+
+    if (this.grounded) this.airDrag = true;
+}
+
+Player.prototype.handleJumps = function() {
     if (powerupjs.Keyboard.down(this.jumpKey)) {
         if (this.grounded && this.jumpAvailable) {
             this.velocity.y = this.jumpForce; // jump
+            this.resetJumpVelo = true;
             this.grounded = false;
             this.jumpAvailable = false;
         }
         if ((this.tileLeft || this.tileRight) && this.jumpAvailable) {
             this.velocity.y = this.jumpForce;
-            this.airDrag = false;
             this.jumpAvailable = false;
             this.timeAfterWallJump = 0;
+            this.resetJumpVelo = true;
             if (this.tileLeft) {
                 this.velocity.x = -this.jumpForce / 2;
                 this.previousWallJumpDir = "right"
@@ -281,12 +291,16 @@ Player.prototype.handleInput = function (delta) {
     }
     else {
         this.jumpAvailable = true;
+        if (!this.resetJumpVelo) return;
+        this.resetJumpVelo = false;
         if (this.velocity.y < 0) {
-            this.velocity.y /= 1.06;    // cut jump short when jump key is released
+            this.velocity.y /= 3;    // cut jump short when jump key is released
         }
     }
+}
 
-    if (powerupjs.Keyboard.down(powerupjs.Keys.up)) {
+Player.prototype.handleDashes = function() {
+ if (powerupjs.Keyboard.down(powerupjs.Keys.up)) {
         this.verticalKeysDown = "up"
     }
     else if (powerupjs.Keyboard.down(powerupjs.Keys.down)) {
@@ -309,7 +323,6 @@ Player.prototype.handleInput = function (delta) {
         }
     }
 
-    console.log(this.horizonatalKeysDown + ", " + this.verticalKeysDown)
 
     if (powerupjs.Keyboard.pressed(this.dashKey) && this.ableToDash) {
         if (this.timeAfterDashing > 0.7) {
@@ -318,27 +331,25 @@ Player.prototype.handleInput = function (delta) {
             this.preDashPos = this.worldPosition.copy();
             this.velocity = powerupjs.Vector2.zero;
             this.dashing = true;
-            var directionPicked = false;
             this.worldPosition.y -= 10;
-            var sideToSide = (powerupjs.Keyboard.down(powerupjs.Keys.left) || powerupjs.Keyboard.down(powerupjs.Keys.right))
-            
+
             if (this.horizonatalKeysDown == "left") {
                 this.velocity.x = -this.dashSpeed;
-                this.dashDistance = 110;
-                if (this.horizonatalKeysDown != "") this.dashDistance = 80;
+                this.dashDistance = 125;
+                if (this.horizonatalKeysDown != "") this.dashDistance = 70;
             } else if (this.horizonatalKeysDown == "right") {
                 this.velocity.x = this.dashSpeed;
-                this.dashDistance = 110;
-                if (this.horizonatalKeysDown != "") this.dashDistance = 80;
+                this.dashDistance = 125;
+                if (this.horizonatalKeysDown != "") this.dashDistance = 70;
             }
-             if (this.verticalKeysDown == "down") {
+            if (this.verticalKeysDown == "down") {
                 this.velocity.y = this.dashSpeed;
-                this.dashDistance = 110;
-                if (this.verticalKeysDown != "") this.dashDistance = 80;
+                this.dashDistance = 125;
+                if (this.verticalKeysDown != "") this.dashDistance = 70;
             } else if (this.verticalKeysDown == "up") {
                 this.velocity.y = -this.dashSpeed;
-                this.dashDistance = 110;
-                if (this.verticalKeysDown != "") this.dashDistance = 80;
+                this.dashDistance = 125;
+                if (this.verticalKeysDown != "") this.dashDistance = 70;
 
             }
 
@@ -351,13 +362,28 @@ Player.prototype.handleInput = function (delta) {
     }
 }
 
+Player.prototype.handleInput = function (delta) {
+    powerupjs.AnimatedGameObject.prototype.handleInput.call(this, delta);
+    this.timeAfterWallJump += delta;
+    this.timeAfterDashing += delta;
+    this.keyResetTime += delta
+
+    // CAP SPEED ON GROUND
+    if (!this.dashing && this.grounded) this.capMoveSpeed();
+
+    this.handleMoving(delta);
+    this.handleJumps();
+    this.handleDashes();
+
+   
+}
+
 Player.prototype.draw = function () {
     powerupjs.AnimatedGameObject.prototype.draw.call(this);
     if (powerupjs.Keyboard.down(powerupjs.Keys.P)) {
         this.hitbox.draw("red"); // draw hitbox for debugging
         this.circleHitbox.draw("red")
-        var stableBox = new powerupjs.Rectangle(this.hitbox.x + 5, this.hitbox.y, this.hitbox.width - 10, this.hitbox.height);
-        stableBox.draw("blue")
+        this.stableBox.draw("blue")
     }
 
 }

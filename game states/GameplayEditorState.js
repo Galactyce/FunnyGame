@@ -11,7 +11,7 @@ function GameplayEditorState(layer) {
 
     this.editingTiles = true;
 
-    this.editorLayers = new powerupjs.GameObjectList(); // list of tile fields for editing
+    this.editorLayers = new powerupjs.GameObjectList(ID.layer_objects); // list of tile fields for editing
     var field = new TileField(); // create new tile field
     field.editorLayer = 0; // set layer index
     this.editorLayers.add(field); // add tile field to editor layers

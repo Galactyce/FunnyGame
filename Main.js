@@ -24,6 +24,8 @@ powerupjs.Game.loadAssets = function () {
     sprites.portal = loadSprite("portal.png")
     sprites.editingButtons = loadSprite("editorButtons@6.png")
     sprites.saw = loadSprite("SawOn@8.png", true);
+    sprites.spring = loadSprite("springIdle.png");
+    sprites.springBounce = loadSprite("springJump@8.png");
 };
 
 powerupjs.Game.initialize = function () {
@@ -61,7 +63,8 @@ powerupjs.Game.initialize = function () {
     WorldSettings.blockSprites = [ // list of block sprites
         sprites.defaultTile,
         sprites.spike,
-        sprites.saw
+        sprites.saw,
+        sprites.spring
     ]
     WorldSettings.loadLevels(); // load levels from window.LEVELS
 

@@ -1,5 +1,5 @@
 function EditingMenuGUI() {
-    powerupjs.GameObjectList.call(this);
+    powerupjs.GameObjectList.call(this, ID.layer_overlays);
     this.frame = new powerupjs.SpriteGameObject(sprites.woodenFrame);
     this.frame.ui = true;
     this.add(this.frame);
@@ -18,7 +18,7 @@ EditingMenuGUI.prototype.loadButtons = function () {
     
     for (var i = 0; i < buttonSprites.length; i++) {
         for (var j = 0; j < buttonSprites[i].nrSheetElements; j++) {
-            var button = new powerupjs.Button(buttonSprites[i]);
+            var button = new powerupjs.Button(buttonSprites[i], ID.layer_overlays);
             button.sheetIndex = j;
             button.ui = true;
             button.position = new powerupjs.Vector2((i+j) * this.cellWidth, 0);

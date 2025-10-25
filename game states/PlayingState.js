@@ -32,7 +32,6 @@ PlayingState.prototype.handleInput = function (delta) {
 
 PlayingState.prototype.loadLevel = function () {
     this.tileFields.clear()
-    console.log(this.tileFields)
     for (var i = 0; i < window.LEVELS[WorldSettings.currentLevelIndex].tiles.length; i++) { // for each tile layer
         var field = new TileField(); // create new tile field
         field.editorLayer = i; // set layer index
@@ -46,10 +45,10 @@ PlayingState.prototype.loadLevel = function () {
     var spawnData = window.LEVELS[WorldSettings.currentLevelIndex].playerStartPos;
     if (spawnData == undefined) return
     spawnSplit = spawnData.split(",")
-    console.log(spawnSplit)
     spawn.position = new powerupjs.Vector2(parseInt(spawnSplit[0]), parseInt(spawnSplit[1]))
 
     this.player.position = spawn.position.copy(); // set player position to spawn point
     this.player.spawnPosition = this.player.position.copy(); // set spawn position
     this.player.adjustHitbox(); // adjust hitbox to match sprite
+    WorldSettings.activePlayer = this.player;
 }

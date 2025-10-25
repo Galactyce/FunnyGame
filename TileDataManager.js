@@ -23,7 +23,14 @@ TileDataManager_Singleton.prototype.writeTiles = function (tiles) { // tiles is 
     return data; // return final data string
 }
 
-
+TileDataManager_Singleton.prototype.handleObject = function(sprite) {
+    if (sprite.image.src == sprites.spring.image.src) {
+        return new Spring(sprite);
+    }
+    else {
+        return new Tile(sprite);
+    }
+}
 
 
 

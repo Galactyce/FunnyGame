@@ -1,5 +1,5 @@
 function WorldSettings() {
-    this.gravity = 2.5;
+    this.gravity = 2.8;
     this.currentLevelIndex = 0;
     this.currentLevel;
     this.activeLayer = 0;
@@ -9,12 +9,12 @@ function WorldSettings() {
     this.currentBlockIndex = 0; // index of current block in blockSprites
     this.terminalVelocity = 100; // max downward speed
     this.wallSlideSpeed = 25;
+    this.activePlayer;
 }
 
 WorldSettings.prototype.loadLevels = function () { // load levels from window.LEVELS
     this.levels = [];
     for (var i = 0; i < window.LEVELS.length; i++) { // for each level in window.LEVELS
-        console.log(i)
         var level = new Level(); // create new Level object
         level.tiles = window.LEVELS[i].tiles; // load tile data
         level.cameraBounds = window.LEVELS[i].cameraBounds

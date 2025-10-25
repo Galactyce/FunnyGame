@@ -2,7 +2,6 @@ function Tile(sprite) {
     powerupjs.AnimatedGameObject.call(this);
     this.rotation = 0;
     this.key;
-    this.index;
     this.hitboxType;
     this.loadAnimation(sprite, "normal", true, 0.2);
 }
@@ -27,7 +26,6 @@ Tile.prototype.manageHitboxes = function (sprite) {
     sprite = typeof sprite !== 'undefined' ? sprite : this.sprite
     if (sprite.image.src == sprites.spike.image.src) {
         if (this.rotation == Math.PI/2) {
-            console.log("PI / 2")
             this.hitbox = new powerupjs.Rectangle( // smaller hitbox for spikes
                 this.position.x - this.origin.y,
                 this.position.y - this.origin.x + (this.width / 3),
@@ -35,7 +33,6 @@ Tile.prototype.manageHitboxes = function (sprite) {
                 this.width / 3);
         } 
         else if (this.rotation == Math.PI) {
-            console.log("PI")
             this.hitbox = new powerupjs.Rectangle( // smaller hitbox for spikes
                 this.position.x - this.origin.x + (this.width / 3),
                 this.position.y - this.origin.y,
@@ -43,7 +40,6 @@ Tile.prototype.manageHitboxes = function (sprite) {
                 this.height / 1.6);
         }
         else if (this.rotation == (3 * Math.PI) / 2) {
-            console.log("3PI/2")
             this.hitbox = new powerupjs.Rectangle( // smaller hitbox for spikes
                 this.position.x - this.origin.x / 3,
                 this.position.y - this.origin.x + (this.width / 3),

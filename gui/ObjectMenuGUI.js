@@ -45,11 +45,9 @@ ObjectMenuGUI.prototype.loadBlocks = function () {
     for (var i = 0; i < this.blocks.length; i++) { // position blocks in a row
         var piece = new powerupjs.SpriteGameObject(this.blocks.at(i).sprite);
         piece.scale = this.cellWidth / piece.width;
-        console.log(piece.scale);
         piece.position = new powerupjs.Vector2(40 + (i * (this.cellWidth + this.cellPadding)), 40);
         piece.origin = piece.center;
         piece.ui = true;
-        console.log(piece.position)
         this.blockIcons.add(piece);
     }
 

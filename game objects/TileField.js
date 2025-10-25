@@ -30,11 +30,10 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
             new powerupjs.Vector2(index.x * this.cellWidth + (this.cellWidth / 2), index.y * this.cellHeight + (this.cellHeight / 2))
         )) return;
     }
-    var tile = new Tile(sprite);
+    var tile = TileDataManager.handleObject(sprite);
     if (this.tileKey !== null) tile.key = this.tileKey; // use current tile key
     else tile.key = tileKey;
     tile.position = new powerupjs.Vector2(index.x * this.cellWidth + (this.cellWidth / 2), index.y * this.cellHeight + (this.cellHeight / 2)); // set tile position based on index
-    tile.index = index; // store tile index
     tile.rotation = rotation;
     tile.playAnimation("normal");
     tile.origin = tile.center;
