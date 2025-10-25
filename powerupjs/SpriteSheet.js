@@ -6,8 +6,9 @@ var powerupjs = (function (powerupjs) {
         console.log("Loading sprite: " + imageName); // log sprite loading
         powerupjs.Game._spritesStillLoading += 1; // increment sprites still loading
         powerupjs.Game._totalSprites += 1; // increment total sprites
-
+        this.colorShift = 0;
         this._image = new Image(); // create new image
+
         this._image.src = imageName; // set image source
         this._sheetColumns = 1; // initialize sheet columns
         this._sheetRows = 1; // initialize sheet rows
@@ -29,7 +30,7 @@ var powerupjs = (function (powerupjs) {
         if (fileSplit.length <= 1) // no sheet info
             return; // exit
         var colRow = fileSplit[fileSplit.length - 1].split("x"); // split by 'x' to get columns and rows
-        this._sheetColumns = colRow[0]; // set sheet columns
+        this._sheetColumns = parseInt(colRow[0]); // set sheet columns
         if (colRow.length === 2) // if rows specified
             this._sheetRows = colRow[1]; // set sheet rows
     }
@@ -76,23 +77,37 @@ var powerupjs = (function (powerupjs) {
             }
         });
 
-    SpriteSheet.prototype.createPixelCollisionMask = function () { // create pixel collision mask
-        this._collisionMask = []; // initialize collision mask array
-        var w = this._image.width; // image width
-        var h = this._image.height; // image height
-        powerupjs.Canvas2D._pixeldrawingCanvas.width = w; // set offscreen canvas width
-        powerupjs.Canvas2D._pixeldrawingCanvas.height = h; // set offscreen canvas height
-        var ctx = powerupjs.Canvas2D._pixeldrawingCanvas.getContext('2d'); // get offscreen context
+    SpriteSheet.prototype.shiftImageColor = function(hueDegrees) {
+        return new Promise((resolve) => {
+            this._image.crossOrigin = 'Anonymous';
+            // Create an off-screen canvas to do the drawing
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
 
-        ctx.clearRect(0, 0, w, h); // clear offscreen canvas
-        ctx.save();     // save context state
-        ctx.drawImage(this._image, 0, 0, w, h, 0, 0, w, h); // draw image to offscreen canvas
-        ctx.restore(); // restore context state
-        var imageData = ctx.getImageData(0, 0, w, h); // get image data
-        for (var x = 3, l = w * h * 4; x < l; x += 4) { // for each pixel's alpha value
-            this._collisionMask.push(imageData.data[x]); // store alpha value in collision mask
-        }
-    };
+            // Set canvas dimensions to match the source image
+            canvas.width = this._image.width
+            canvas.height = this._image.height
+
+            // Apply the hue-rotate filter to the context before drawing
+            ctx.filter = `hue-rotate(${hueDegrees}deg)`;
+
+            // Draw the image onto the canvas
+            ctx.drawImage(this._image, 0, 0);
+
+            // Get the image data from the canvas as a data URL
+            const imageDataUrl = canvas.toDataURL("image/png");
+
+            // Create a new Image object and set its source to the data URL
+            const shiftedImage = new Image();
+            shiftedImage.onload = () => {
+                resolve(shiftedImage);
+            };
+            shiftedImage.src = imageDataUrl;
+
+            console.log(shiftedImage.src)
+            this._image = shiftedImage
+        });
+    }
 
     SpriteSheet.prototype.getAlpha = function (x, y, sheetIndex, mirror) { // get alpha value at pixel
         if (this._collisionMask === null) // if no collision mask
@@ -119,7 +134,10 @@ var powerupjs = (function (powerupjs) {
         mirror = typeof mirror !== 'undefined' ? mirror : false; // default mirror
         var imagePart = new powerupjs.Rectangle(columnIndex * this.width, rowIndex * this.height,
             this.width, this.height); // define source rectangle
+        
         powerupjs.Canvas2D.drawImage(this._image, position, rotation, scale, origin, imagePart, mirror); // draw the image
+        
+
     };
 
     powerupjs.SpriteSheet = SpriteSheet;

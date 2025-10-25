@@ -38,7 +38,6 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
     tile.playAnimation("normal");
     tile.origin = tile.center;
     tile.manageHitboxes(sprite); // set hitbox based on sprite
-    
     powerupjs.GameStateManager.get(ID.game_state_editor).editingMenu.selectedObj = tile;
 
     this.add(tile);
@@ -83,9 +82,8 @@ TileField.prototype.loadTiles = function () {
     for (var i = 0; i < splitData.length; i++) { // for each tile
         if (splitData[i] == "") continue; // skip empty data
 
-        var tileData = splitData[i].split("|"); // split tile data into components
-        this.addTileAt(new powerupjs.Vector2((tileData[1] - (this.cellWidth / 2)) / this.cellWidth, (tileData[2] - (this.cellHeight / 2)) / this.cellHeight), 
-        tileData[0], WorldSettings.blockSprites[parseInt(tileData[3])], parseFloat(tileData[4])); // add tile at index with sprite
+        var tile = TileDataManager.convertDataToTile(splitData[i])
+        this.add(tile)
 
     }
     WorldSettings.levels[WorldSettings.currentLevelIndex].tileFields[this.editorLayer] = this; // update world settings

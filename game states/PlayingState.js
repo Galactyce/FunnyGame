@@ -4,7 +4,6 @@ function PlayingState(layer) {
     this.player.loadAnimation(sprites.player_idle, "idle", true);
     this.player.playAnimation("idle");
     this.tileFields = new powerupjs.GameObjectList(); // list to hold tile fields
-    this.add(this.tileFields);
     this.player.currentLevelIndex = WorldSettings.currentLevelIndex; // set player's current level
 
 

@@ -32,28 +32,19 @@ function Player(layer, id) {
     this.resetJumpVelo = false;
     this.neutralJumpTime;
     this.initialize();
+    this.baseVelocity = 0;
 }
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
 
 Player.prototype.update = function (delta) {
     powerupjs.AnimatedGameObject.prototype.update.call(this, delta);
-
     this.origin = this.center; // set origin to center for mirroring
     this.adjustHitbox(); // adjust hitbox to match position
-
     if (!this.dashing)
         this.simulateGravity(); // apply gravity
     this.handleCollisions(); // handle collisions before moving
-    var V = this.centerOfCamera.subtract(powerupjs.Camera.position); // vector from camera to player
-    V = V.multiply(1 / powerupjs.Camera.smoothingFactor); // scale by smoothing factor
-    powerupjs.Camera.velocity = V; // set camera velocity
-    if (powerupjs.Camera.velocity.x > this.moveSpeed) powerupjs.Camera.velocity.x = this.moveSpeed; // cap camera velocity
-    if (powerupjs.Camera.velocity.x < -this.moveSpeed) powerupjs.Camera.velocity.x = -this.moveSpeed;
-    if (powerupjs.Camera.velocity.y > this.moveSpeed) powerupjs.Camera.velocity.y = this.moveSpeed;
-    if (powerupjs.Camera.velocity.y < -this.moveSpeed) powerupjs.Camera.velocity.y = -this.moveSpeed;
-    powerupjs.Camera.update(delta); // update camera position
-    powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.cameraBounds);
+    this.handleCameraPos(delta);
     if (this.position.y > WorldSettings.currentLevel.cameraBounds.bottom) {
         this.die();
     }
@@ -80,6 +71,18 @@ Player.prototype.update = function (delta) {
         }
     }
 
+}
+
+Player.prototype.handleCameraPos = function(delta) {
+    var V = this.centerOfCamera.subtract(powerupjs.Camera.position); // vector from camera to player
+    V = V.multiply(1 / powerupjs.Camera.smoothingFactor); // scale by smoothing factor
+    powerupjs.Camera.velocity = V; // set camera velocity
+    if (powerupjs.Camera.velocity.x > this.moveSpeed) powerupjs.Camera.velocity.x = this.moveSpeed; // cap camera velocity
+    if (powerupjs.Camera.velocity.x < -this.moveSpeed) powerupjs.Camera.velocity.x = -this.moveSpeed;
+    if (powerupjs.Camera.velocity.y > this.moveSpeed) powerupjs.Camera.velocity.y = this.moveSpeed;
+    if (powerupjs.Camera.velocity.y < -this.moveSpeed) powerupjs.Camera.velocity.y = -this.moveSpeed;
+    powerupjs.Camera.update(delta); // update camera position
+    powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.cameraBounds);
 }
 
 Player.prototype.adjustHitbox = function () {
@@ -158,6 +161,9 @@ Player.prototype.handleCollisions = function () {
                     if (this.velocity.y > 0) this.grounded = true;
                     this.ableToDash = true;
                     this.velocity.y = 0; // stop downward velocity
+                    this.baseVelocity = tile.velocity.x
+                    // console.log(tile.velocity.x + ", " + this.velocity.x)
+                    
                 }
                 else if (boundingBox.top <= tileBounds.bottom) { // if hitting head on bottom of tile
                     if (this.velocity.y < 0)
@@ -216,15 +222,15 @@ Player.prototype.resetDirectionKeys = function () {
 
 Player.prototype.capMoveSpeed = function(modifier) {
     var modifier = typeof modifier != 'undefined' ? modifier : 1;   // Adjust speed cap in certain scenarios
-    if (this.velocity.x < -this.moveSpeed * modifier) this.velocity.x = -this.moveSpeed * modifier;
-    if (this.velocity.x > this.moveSpeed * modifier) this.velocity.x = this.moveSpeed * modifier;
+    if (this.velocity.x < (this.baseVelocity - this.moveSpeed) * modifier) this.velocity.x = (this.baseVelocity - this.moveSpeed) * modifier;
+    if (this.velocity.x > (this.baseVelocity + this.moveSpeed) * modifier) this.velocity.x = (this.baseVelocity + this.moveSpeed) * modifier;
 }
 
 Player.prototype.handleMoving = function(delta) {
   if (powerupjs.Keyboard.down(powerupjs.Keys.left) && !this.dashing) {
         var speed = this.moveSpeed;
         this.directionFacing = "left"
-        if (!this.airDrag && this.previousWallJumpDir == "right") {
+        if (this.previousWallJumpDir == "right") {
             speed = this.moveSpeed / 2; // Make it harder to move back to wall
         }
         if (this.velocity.x > 0 && (this.grounded)) // if changing direction on ground, stop first
@@ -241,28 +247,34 @@ Player.prototype.handleMoving = function(delta) {
         var speed = this.moveSpeed;
         this.directionFacing = "right"
 
-        if (!this.airDrag && this.previousWallJumpDir == "left") {
+        if (this.previousWallJumpDir == "left") {
             speed = this.moveSpeed / 2;
         }
         if (this.velocity.x < 0 && (this.grounded)) // if changing direction on ground, stop first
             this.velocity.x = 0;
         if (this.velocity.x < speed)   // if below max speed, accelerate
-            this.velocity.x += speed * (delta * 2);
+            this.velocity.x += speed * (delta * this.accelerationMultiplier);
         this.mirror = false
         this.detachFromWall();
 
 
     }
     else {
-        if ((this.grounded || this.timeAfterWallJump > this.neutralJumpTime) && this.airDrag && !this.dashing) // after 0.6 seconds, stop velocity
-            this.velocity.x = 0; // no horizontal input, stop horizontal movement
+        // airDrag : a boolean meant to manage air resistance. If set to false, the player will not stop midair
+        // baseVelocity : if outside sources are adding velocity, carry momentum when dismounting
+        if ((this.grounded || this.timeAfterWallJump > this.neutralJumpTime || this.baseVelocity == 0 ) && 
+             this.airDrag && !this.dashing) // after 0.6 seconds, stop velocity
+            this.velocity.x = this.baseVelocity; // no horizontal input, stop horizontal movement
         else {
             this.velocity.x ^ 0.8;
         }
         this.detachFromWall();
     }
 
-    if (this.grounded) this.airDrag = true;
+    if (this.grounded) {
+        this.airDrag = true;
+        this.previousWallJumpDir = ""
+    }
 }
 
 Player.prototype.handleJumps = function() {
@@ -278,6 +290,7 @@ Player.prototype.handleJumps = function() {
             this.jumpAvailable = false;
             this.timeAfterWallJump = 0;
             this.resetJumpVelo = true;
+            
             if (this.tileLeft) {
                 this.velocity.x = -this.jumpForce / 2;
                 this.previousWallJumpDir = "right"

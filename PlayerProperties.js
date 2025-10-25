@@ -5,7 +5,7 @@ Player.prototype.initialize = function() {
     this.jumpKey = powerupjs.Keys.C;
     this.dashKey = powerupjs.Keys.X;
     this.moveSpeed = 55;
-    this.jumpForce = -180;
+    this.jumpForce = -160;
     this.accelerationMultiplier = 3;
     this.neutralJumpTime = 0.4;
 }

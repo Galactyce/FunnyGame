@@ -1,5 +1,5 @@
 function WorldSettings() {
-    this.gravity = 2.8;
+    this.gravity = 3;
     this.currentLevelIndex = 0;
     this.currentLevel;
     this.activeLayer = 0;

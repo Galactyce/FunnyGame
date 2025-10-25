@@ -17,6 +17,8 @@ powerupjs.Game.loadAssets = function () {
     sprites.button_default = loadSprite("button_default.png");
     sprites.defaultTile = loadSprite("placeholder_tile.png");
     sprites.spike = loadSprite("spike.png")
+    sprites.addButton = loadSprite("addButton.png")
+    sprites.crosshair = loadSprite("crosshair.png")
     sprites.player_idle = loadSprite("Idle@11.png", true)
     sprites.frame = loadSprite("frame.jpeg")
     sprites.woodenFrame = loadSprite("wooden_frame5x2.png")
@@ -26,6 +28,7 @@ powerupjs.Game.loadAssets = function () {
     sprites.saw = loadSprite("SawOn@8.png", true);
     sprites.spring = loadSprite("springIdle.png");
     sprites.springBounce = loadSprite("springJump@8.png");
+    sprites.movingPlatform = loadSprite("MovingPlatform@8.png", true);
 };
 
 powerupjs.Game.initialize = function () {
@@ -64,7 +67,8 @@ powerupjs.Game.initialize = function () {
         sprites.defaultTile,
         sprites.spike,
         sprites.saw,
-        sprites.spring
+        sprites.spring,
+        sprites.movingPlatform
     ]
     WorldSettings.loadLevels(); // load levels from window.LEVELS
 
