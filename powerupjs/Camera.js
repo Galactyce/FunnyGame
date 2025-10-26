@@ -23,9 +23,11 @@ var powerupjs = (function (powerupjs) {
     Camera.prototype.manageBoundaries = function(bounds) {
         if (this.position.x < bounds.x) this.position.x = bounds.x;
         if (this.position.y < bounds.y) this.position.y = bounds.y;
-        if (this.position.x + this.viewWidth > bounds.right) this.position.x = bounds.right - this.viewWidth;
-        if (this.position.y + this.viewHeight > bounds.bottom) this.position.y = bounds.bottom - this.viewHeight;
+        if (this.position.x + this.viewWidth > bounds.x + bounds.width) this.position.x = bounds.x + bounds.width - this.viewWidth;
+        if (this.position.y + this.viewHeight > bounds.y + bounds.height) this.position.y = bounds.y + bounds.height - this.viewHeight;
     }
+
+
 
     Object.defineProperty(Camera.prototype, "center", {
         get: function () {

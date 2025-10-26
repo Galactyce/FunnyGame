@@ -61,6 +61,7 @@ GameplayEditorState.prototype.loadModeButtons = function () {
 }
 
 GameplayEditorState.prototype.update = function (delta) {
+    WorldSettings.currentLevel.update(delta);
     powerupjs.GameObjectList.prototype.update.call(this, delta);
     if (this.mode =="Drawing") {
         this.objectMenu.visible = true;
@@ -70,6 +71,12 @@ GameplayEditorState.prototype.update = function (delta) {
         this.editingMenu.visible = true;
         this.objectMenu.visible = false;
     }
+}
+
+GameplayEditorState.prototype.draw = function() {
+        WorldSettings.currentLevel.draw();
+        powerupjs.GameObjectList.prototype.draw.call(this);
+
 }
 
 GameplayEditorState.prototype.saveLevel = function() {
@@ -135,6 +142,7 @@ GameplayEditorState.prototype.handleInput = function (delta) {
         powerupjs.Camera.position.addTo(
             powerupjs.Mouse.screenPosition.subtractFrom(this.previousMousePosition).multiplyWith(-1) // move camera opposite to mouse movement
         );
+        powerupjs.Camera.manageBoundaries(window.LEVELS[WorldSettings.currentLevelIndex].cameraBounds);
     }
     this.previousMousePosition = powerupjs.Mouse.screenPosition.copy(); // store current mouse position for next frame
     this.editingTiles = true;

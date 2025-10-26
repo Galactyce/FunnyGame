@@ -13,6 +13,7 @@ function PlayingState(layer) {
     this.add(this.returnButton);
     this.add(this.player);
     this.add(this.tileFields); // add tile fields to game state
+    this.currentLevel;
 
 }
 
@@ -31,15 +32,8 @@ PlayingState.prototype.handleInput = function (delta) {
 
 
 PlayingState.prototype.loadLevel = function () {
-    this.tileFields.clear()
-    for (var i = 0; i < window.LEVELS[WorldSettings.currentLevelIndex].tiles.length; i++) { // for each tile layer
-        var field = new TileField(); // create new tile field
-        field.editorLayer = i; // set layer index
-        field.loadTiles();  // load tiles for the layer
-        // WorldSettings.currentLevel.tileFields.push(field)
-        this.tileFields.add(field); // add tile field to list
-    };
-
+   
+    WorldSettings.currentLevel.loadTiles();
     var spawn = powerupjs.GameStateManager.get(ID.game_state_editor).find(ID.player_spawn);
     if (localStorage.levels)
     window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
@@ -57,4 +51,17 @@ PlayingState.prototype.loadLevel = function () {
     this.player.spawnPosition = this.player.position.copy(); // set spawn position
     this.player.adjustHitbox(); // adjust hitbox to match sprite
     WorldSettings.activePlayer = this.player;
+    this.currentLevel = WorldSettings.currentLevel;
+}
+
+PlayingState.prototype.draw = function() {
+    this.currentLevel.draw();
+    powerupjs.GameObjectList.prototype.draw.call(this);
+    
+}
+
+PlayingState.prototype.update = function(delta) {
+    this.currentLevel.update(delta);
+    powerupjs.GameObjectList.prototype.update.call(this, delta);
+    
 }

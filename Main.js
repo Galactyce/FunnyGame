@@ -31,6 +31,8 @@ powerupjs.Game.loadAssets = function () {
     sprites.movingPlatform = loadSprite("MovingPlatform@8.png", true);
     sprites.leftArrow = loadSprite("leftArrow.png");
     sprites.rightArrow = loadSprite("rightArrow.png");
+    sprites.cyberBackground = loadSprite("background.png");
+    sprites.cyberForeground = loadSprite("background1.png")
 
 };
 
@@ -73,6 +75,11 @@ powerupjs.Game.initialize = function () {
         sprites.spring,
         sprites.movingPlatform
     ]
+    WorldSettings.backgrounds = [
+        sprites.cyberBackground,
+        sprites.cyberForeground
+    ]
+
     WorldSettings.loadLevels(); // load levels from window.LEVELS
 
     powerupjs.GameStateManager.get(ID.game_state_editor).objectMenu.loadBlocks(); // load blocks into object menu

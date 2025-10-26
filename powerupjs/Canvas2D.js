@@ -97,6 +97,7 @@ var powerupjs = (function (powerupjs) {
             this._canvasContext.scale(scale * canvasScale.x * -1, scale * canvasScale.y); // flip horizontally
             this._canvasContext.translate(-position.x - sourceRect.width, position.y); // adjust position
             this._canvasContext.rotate(rotation); // apply rotation
+            this._canvasContext.imageSmoothingEnabled = false;
             this._canvasContext.drawImage(sprite, sourceRect.x, sourceRect.y, // draw image
                 sourceRect.width, sourceRect.height, // source rectangle
                 sourceRect.width - origin.x, -origin.y, // destination position
@@ -107,6 +108,7 @@ var powerupjs = (function (powerupjs) {
             this._canvasContext.scale(scale * canvasScale.x, scale * canvasScale.y); // normal scaling
             this._canvasContext.translate(position.x / scale, position.y / scale); // translate to position
             this._canvasContext.rotate(rotation); // apply rotation
+            this._canvasContext.imageSmoothingEnabled = false;
             this._canvasContext.drawImage(sprite, sourceRect.x, sourceRect.y, // draw image
                 sourceRect.width, sourceRect.height, // source rectangle
                 -origin.x, -origin.y, // destination position

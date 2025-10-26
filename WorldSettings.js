@@ -38,7 +38,8 @@ WorldSettings.prototype.createLevel = function() {
         name: "New",
         tiles: [],
         cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
-        playerSpawnPos: ""
+        playerSpawnPos: "",
+        backgrounds: [0, 1]
     })
 }
 
