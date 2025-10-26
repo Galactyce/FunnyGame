@@ -10,6 +10,7 @@ function WorldSettings() {
     this.terminalVelocity = 100; // max downward speed
     this.wallSlideSpeed = 25;
     this.activePlayer;
+    this.currentState;
 }
 
 WorldSettings.prototype.loadLevels = function () { // load levels from window.LEVELS
@@ -17,10 +18,11 @@ WorldSettings.prototype.loadLevels = function () { // load levels from window.LE
     for (var i = 0; i < window.LEVELS.length; i++) { // for each level in window.LEVELS
         var level = new Level(); // create new Level object
         level.tiles = window.LEVELS[i].tiles; // load tile data
+        console.log(level.tiles)
         level.cameraBounds = window.LEVELS[i].cameraBounds
+        level.name = window.LEVELS[i].name;
         this.levels.push(level); // add level to levels array
     }
-
 }
 
 WorldSettings.prototype.indexOfSprite = function (sprite) { // get index of sprite in blockSprites

@@ -25,28 +25,46 @@ MovingPlatform.prototype.update = function(delta) {
 
 MovingPlatform.prototype.draw = function() {
     Tile.prototype.draw.call(this)
-    this.addButton.draw()
-    if (this.addingNode) {
-        console.log("bruh")
-        this.nodeCrosshair.draw();
+    
+    if (WorldSettings.currentState == "editing") {
+        this.addButton.draw()
+        if (this.addingNode) {
+            this.nodeCrosshair.draw();
+        }
     }
 }
 
 MovingPlatform.prototype.movePlatform = function() {
-    if (this.movementNodes.length <= 1) return;
+    if (this.movementNodes.length <= 1 || WorldSettings.currentState != "playing") return;
     var distanceFromNode = this.movementNodes[this.currentNodeIndex].copy().subtractFrom(this.position.copy());
-    if (Math.abs(distanceFromNode.x) > 0.3) {
-        if (distanceFromNode.x > 0)
-            this.velocity.x = this.moveSpeed;
-        else 
-            this.velocity.x = -this.moveSpeed;
+    if (distanceFromNode.y == 0) {
+        if (Math.abs(distanceFromNode.x) > 0.3) {
+            if (distanceFromNode.x > 0)
+                this.velocity.x = this.moveSpeed;
+            else 
+                this.velocity.x = -this.moveSpeed;
+        }
+        else {
+            this.position = this.movementNodes[this.currentNodeIndex].copy()
+            this.currentNodeIndex++;
+            if (this.currentNodeIndex >= this.movementNodes.length) this.currentNodeIndex = 0;
+
+        }
     }
     else {
-        this.position = this.movementNodes[this.currentNodeIndex].copy()
-        this.currentNodeIndex++;
-        if (this.currentNodeIndex >= this.movementNodes.length) this.currentNodeIndex = 0;
+        if (Math.abs(distanceFromNode.y) > 0.3) {
+            if (distanceFromNode.y > 0)
+                this.velocity.y = this.moveSpeed;
+            else 
+                this.velocity.y = -this.moveSpeed;
+        }
+        else {
+            this.position = this.movementNodes[this.currentNodeIndex].copy()
+            this.currentNodeIndex++;
+            if (this.currentNodeIndex >= this.movementNodes.length) this.currentNodeIndex = 0;
 
-    }
+        }
+    }   
 }
 
 MovingPlatform.prototype.handleInput = function(delta) {

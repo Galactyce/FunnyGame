@@ -66,7 +66,8 @@ TileField.prototype.getTileAt = function (position) {
 
 TileField.prototype.saveTiles = function () {
     this.data = TileDataManager.writeTiles(this._gameObjects); // serialize tiles
-    window.LEVELS[WorldSettings.currentLevelIndex].tiles[this.editorLayer] = this.data; // save to LEVELS
+    if (window.LEVELS[WorldSettings.currentLevelIndex])
+        window.LEVELS[WorldSettings.currentLevelIndex].tiles[this.editorLayer] = this.data; // save to LEVELS
     if (!this.data) // nothing to save
         return;
     localStorage.levels = JSON.stringify(window.LEVELS); // save to local storage
@@ -74,8 +75,13 @@ TileField.prototype.saveTiles = function () {
 }
 
 TileField.prototype.loadTiles = function () {
+    // localStorage.clear()
+    // console.log(localStorage)
     if (!localStorage.levels) return; // nothing to load
     window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
+    
+    if (!window.LEVELS[WorldSettings.currentLevelIndex]) return;
+
     this.data = window.LEVELS[WorldSettings.currentLevelIndex].tiles[this.editorLayer]; // get tile data
     if (!this.data) return; // no tile data
     var splitData = this.data.split("/"); // split into individual tile data

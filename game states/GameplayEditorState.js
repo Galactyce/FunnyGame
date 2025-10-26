@@ -40,7 +40,9 @@ function GameplayEditorState(layer) {
 GameplayEditorState.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
 GameplayEditorState.prototype.loadLayers = function () {
+    
     for (var i = 0; i < this.editorLayers.length; i++) {
+        this.editorLayers.at(i).clear();
         this.editorLayers.at(i).loadTiles(); // load tiles for each editor layer
     }
 
@@ -78,6 +80,7 @@ GameplayEditorState.prototype.saveLevel = function() {
     str += this.playerStartPos.position.x + "," + this.playerStartPos.position.y
     window.LEVELS[WorldSettings.currentLevelIndex].playerStartPos = str;
     localStorage.levels = JSON.stringify(window.LEVELS); // save to local storage
+    saveLevelToTxt(WorldSettings.currentLevelIndex)
 }
 
 GameplayEditorState.prototype.handleInput = function (delta) {
@@ -102,6 +105,7 @@ GameplayEditorState.prototype.handleInput = function (delta) {
     if (this.playButton.pressed) {
         // if (confirm("Save level before exiting?")) this.saveLevel();
         powerupjs.GameStateManager.switchTo(ID.game_state_title); // return to title screen
+        WorldSettings.currentState = "title";
         powerupjs.Camera.position = powerupjs.Vector2.zero; // reset camera position
         return
     }

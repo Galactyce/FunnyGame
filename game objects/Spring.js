@@ -47,6 +47,9 @@ Spring.prototype.update = function(delta) {
         if (Math.floor(Math.sin(this.rotation))) {
             player.velocity.y = -180
         }
-        player.airDrag = false;
+        if (Math.cos(this.rotation) != 0) {
+            player.baseVelocity = 0;
+        }
+        
     }
 }

@@ -25,6 +25,7 @@ PlayingState.prototype.handleInput = function (delta) {
     if (this.returnButton.pressed) {
         powerupjs.Camera.position = powerupjs.Vector2.zero;
         powerupjs.GameStateManager.switchTo(ID.game_state_title);
+        WorldSettings.currentState = "title"
     }
 }
 
@@ -35,17 +36,22 @@ PlayingState.prototype.loadLevel = function () {
         var field = new TileField(); // create new tile field
         field.editorLayer = i; // set layer index
         field.loadTiles();  // load tiles for the layer
+        // WorldSettings.currentLevel.tileFields.push(field)
         this.tileFields.add(field); // add tile field to list
     };
 
     var spawn = powerupjs.GameStateManager.get(ID.game_state_editor).find(ID.player_spawn);
-    if (!localStorage.levels) return; // nothing to load
+    if (localStorage.levels)
     window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
     var spawnData = window.LEVELS[WorldSettings.currentLevelIndex].playerStartPos;
-    if (spawnData == undefined) return
+    if (spawnData == undefined) {
+        spawn.position = new powerupjs.Vector2(400, 400)
+    }
+    else {
     spawnSplit = spawnData.split(",")
     spawn.position = new powerupjs.Vector2(parseInt(spawnSplit[0]), parseInt(spawnSplit[1]))
-
+    }
+    console.log(spawn.position)
     this.player.position = spawn.position.copy(); // set player position to spawn point
     this.player.spawnPosition = this.player.position.copy(); // set spawn position
     this.player.adjustHitbox(); // adjust hitbox to match sprite

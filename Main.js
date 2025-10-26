@@ -29,6 +29,9 @@ powerupjs.Game.loadAssets = function () {
     sprites.spring = loadSprite("springIdle.png");
     sprites.springBounce = loadSprite("springJump@8.png");
     sprites.movingPlatform = loadSprite("MovingPlatform@8.png", true);
+    sprites.leftArrow = loadSprite("leftArrow.png");
+    sprites.rightArrow = loadSprite("rightArrow.png");
+
 };
 
 powerupjs.Game.initialize = function () {
@@ -62,7 +65,7 @@ powerupjs.Game.initialize = function () {
     ID.game_state_editor = powerupjs.GameStateManager.add(new GameplayEditorState());
     ID.game_state_playing = powerupjs.GameStateManager.add(new PlayingState());
     powerupjs.GameStateManager.switchTo(ID.game_state_title);
-
+    WorldSettings.currentState = "title"
     WorldSettings.blockSprites = [ // list of block sprites
         sprites.defaultTile,
         sprites.spike,
@@ -74,5 +77,4 @@ powerupjs.Game.initialize = function () {
 
     powerupjs.GameStateManager.get(ID.game_state_editor).objectMenu.loadBlocks(); // load blocks into object menu
     powerupjs.GameStateManager.get(ID.game_state_editor).editingMenu.loadButtons(); // load buttons into editing menu
-    powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers(); // load editor layers
 };

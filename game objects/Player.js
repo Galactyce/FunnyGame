@@ -118,11 +118,11 @@ Player.prototype.handleCollisions = function () {
 
     for (var i = 0; i < WorldSettings.currentLevel.tileFields.length; i++) {  // for each tile field
         var field = WorldSettings.currentLevel.tileFields[i]; // get tile field
-
         for (var l = 0; l < field.length; l++) { // for each tile in field
             var tile = field.at(l); // get tile
             if (tile == null || tile.hitboxType == "none") // empty tile or non-collidable tile
                 continue;
+
             var tileBounds = tile.hitbox; // get tile hitbox
             if (tile.hitbox.radius != null) {
                 var boundingBox = this.circleHitbox;

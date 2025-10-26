@@ -3,6 +3,7 @@ function Level() {
     this.tileFields = []; // array to hold tile fields
     this.playerStartPos = powerupjs.Vector2.zero; // default player start position
     this.cameraBounds;
+    this.name;
 }
 
 Level.prototype = Object.create(powerupjs.GameObjectList.prototype);

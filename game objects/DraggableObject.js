@@ -21,3 +21,5 @@ DraggableObject.prototype.handleInput = function (delta) {
 
     this.lastMousePosition = powerupjs.Mouse.screenPosition.copy();
 }
+
+
