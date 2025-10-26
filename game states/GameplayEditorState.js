@@ -80,6 +80,7 @@ GameplayEditorState.prototype.saveLevel = function() {
     str += this.playerStartPos.position.x + "," + this.playerStartPos.position.y
     window.LEVELS[WorldSettings.currentLevelIndex].playerStartPos = str;
     localStorage.levels = JSON.stringify(window.LEVELS); // save to local storage
+    if (powerupjs.Keyboard.down(17))
     saveLevelToTxt(WorldSettings.currentLevelIndex)
 }
 
