@@ -33,4 +33,13 @@ WorldSettings.prototype.indexOfSprite = function (sprite) { // get index of spri
     return null; // return null if not found
 }
 
+WorldSettings.prototype.createLevel = function() {
+    window.LEVELS.push({
+        name: "New",
+        tiles: [],
+        cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
+        playerSpawnPos: ""
+    })
+}
+
 var WorldSettings = new WorldSettings();

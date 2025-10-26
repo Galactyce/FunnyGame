@@ -43,6 +43,7 @@ PlayingState.prototype.loadLevel = function () {
     var spawn = powerupjs.GameStateManager.get(ID.game_state_editor).find(ID.player_spawn);
     if (localStorage.levels)
     window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
+    if (!window.LEVELS[WorldSettings.currentLevelIndex]) WorldSettings.createLevel();
     var spawnData = window.LEVELS[WorldSettings.currentLevelIndex].playerStartPos;
     if (spawnData == undefined) {
         spawn.position = new powerupjs.Vector2(400, 400)

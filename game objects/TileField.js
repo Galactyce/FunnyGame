@@ -80,7 +80,7 @@ TileField.prototype.loadTiles = function () {
     if (!localStorage.levels) return; // nothing to load
     window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
     
-    if (!window.LEVELS[WorldSettings.currentLevelIndex]) return;
+    if (!window.LEVELS[WorldSettings.currentLevelIndex]) WorldSettings.createLevel();
 
     this.data = window.LEVELS[WorldSettings.currentLevelIndex].tiles[this.editorLayer]; // get tile data
     if (!this.data) return; // no tile data

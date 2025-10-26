@@ -55,3 +55,10 @@ window.LEVELS.push({
     cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
     playerSpawnPos: ""
 })
+
+window.LEVELS.push({
+    name: "Bruh",
+    tiles: [],
+    cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
+    playerSpawnPos: ""
+})
