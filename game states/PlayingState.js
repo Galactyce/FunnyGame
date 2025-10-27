@@ -38,18 +38,21 @@ PlayingState.prototype.loadLevel = function () {
     if (localStorage.levels)
     window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
     if (!window.LEVELS[WorldSettings.currentLevelIndex]) WorldSettings.createLevel();
-    var spawnData = window.LEVELS[WorldSettings.currentLevelIndex].playerSpawnPos;
+    var level = window.LEVELS[WorldSettings.currentLevelIndex];
+    var spawnData = level.playerSpawnPos;
     if (spawnData.x == null) {
-        spawn.position = new powerupjs.Vector2(400, 400)
+        spawn.position = new powerupjs.Vector2(
+            400, 400
+        )
     }
     else {
    
     spawn.position = new powerupjs.Vector2(spawnData.x, spawnData.y)
     }
-    console.log(spawn.position)
     this.player.position = spawn.position.copy(); // set player position to spawn point
     this.player.spawnPosition = this.player.position.copy(); // set spawn position
     this.player.adjustHitbox(); // adjust hitbox to match sprite
+    this.player.scale = WorldSettings.currentLevel.scale
     WorldSettings.activePlayer = this.player;
     this.currentLevel = WorldSettings.currentLevel;
 }

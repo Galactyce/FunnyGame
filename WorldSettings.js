@@ -14,7 +14,7 @@ function WorldSettings() {
 
     this.gravity = 3;
     this.wallSlideSpeed = 25;
-    this.cameraSmoothingFactor = 1.5;
+    this.cameraSmoothingFactor = 5;
     this.terminalVelocity = 130; // max downward speed
 
     // MANAGING PLAYER PROPERTIES CAN BE DONE IN "PlayerProperties.js"
@@ -33,7 +33,8 @@ WorldSettings.prototype.loadLevels = function () { // load levels from window.LE
             tiles: [],
             cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
             playerSpawnPos: "400|400",
-            backgrounds: [0, 1]
+            backgrounds: [0, 1],
+            scale: 1
             })
             DecryptRawLevelData(window.LEVELDATA[i], i)
         }
@@ -41,7 +42,10 @@ WorldSettings.prototype.loadLevels = function () { // load levels from window.LE
     for (var i = 0; i < window.LEVELS.length; i++) {    // Create Level objects for each level;
         var level = new Level(); // create new Level object
         level.tiles = window.LEVELS[i].tiles; // load tile data
-        level.cameraBounds = window.LEVELS[i].cameraBounds
+        level.scale = window.LEVELS[i].scale;
+        var bounds = window.LEVELS[i].cameraBounds
+        level.cameraBounds = new powerupjs.Rectangle(bounds.x * window.LEVELS[i].scale, bounds.y * window.LEVELS[i].scale, 
+            bounds.width * window.LEVELS[i].scale, bounds.height * window.LEVELS[i].scale)
         level.name = window.LEVELS[i].name;
         this.levels.push(level); // add level to levels array
     }
@@ -61,7 +65,8 @@ WorldSettings.prototype.createLevel = function() {
         tiles: [],
         cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
         playerSpawnPos: "400|400",
-        backgrounds: [0, 1]
+        backgrounds: [0, 1],
+        scale: 1
     })
     window.LEVELDATA[window.LEVELS.length - 1] = saveLevelToTxt(window.LEVELS.length - 1)   // Create LEVELDATA with new level
     localStorage.levelData = JSON.stringify(window.LEVELDATA);  // Save level data and levels

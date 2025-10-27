@@ -83,8 +83,6 @@ GameplayEditorState.prototype.saveLevel = function() {
     for (var i = 0; i < this.editorLayers.length; i++)
         this.editorLayers.at(i).saveTiles(); // save current editor layer tiles
     window.LEVELS[WorldSettings.currentLevelIndex].playerSpawnPos = this.playerStartPos.position;
-        console.log(window.LEVELS[WorldSettings.currentLevelIndex])
-
     window.LEVELDATA[WorldSettings.currentLevelIndex] = saveLevelToTxt(WorldSettings.currentLevelIndex)
     console.log(window.LEVELS[WorldSettings.currentLevelIndex]);
     localStorage.levels = JSON.stringify(window.LEVELS); // save to local storage
@@ -100,6 +98,14 @@ GameplayEditorState.prototype.handleInput = function (delta) {
             this.mode = this.modes[i];
             return;
         }
+    }
+
+    if (powerupjs.Keyboard.pressed(powerupjs.Keys.T)) {
+        WorldSettings.currentLevel.scale += 0.1
+        window.LEVELS[WorldSettings.currentLevelIndex].scale = WorldSettings.currentLevel.scale;
+        console.log(WorldSettings.currentLevel.scale)
+                this.saveLevel()
+
     }
 
     if (powerupjs.Keyboard.pressed(powerupjs.Keys.S)) {

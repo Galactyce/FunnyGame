@@ -91,11 +91,11 @@ var powerupjs = (function (powerupjs) {
         scale = typeof scale !== 'undefined' ? scale : 1;
         origin = typeof origin !== 'undefined' ? origin : powerupjs.Vector2.zero;
         sourceRect = typeof sourceRect !== 'undefined' ? sourceRect : new powerupjs.Rectangle(0, 0, sprite.width, sprite.height);
-
+        
         this._canvasContext.save(); // save current context state
         if (mirror) { // mirrored drawing
             this._canvasContext.scale(scale * canvasScale.x * -1, scale * canvasScale.y); // flip horizontally
-            this._canvasContext.translate(-position.x - sourceRect.width, position.y); // adjust position
+            this._canvasContext.translate((-position.x / scale - sourceRect.width), position.y / scale); // adjust position
             this._canvasContext.rotate(rotation); // apply rotation
             this._canvasContext.imageSmoothingEnabled = false;
             this._canvasContext.drawImage(sprite, sourceRect.x, sourceRect.y, // draw image

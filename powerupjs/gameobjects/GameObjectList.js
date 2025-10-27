@@ -6,7 +6,7 @@ var powerupjs = (function (powerupjs) {
 
     function GameObjectList(layer, id) { // game object list constructor
         powerupjs.GameObject.call(this, layer, id); // call GameObject constructor
-
+        this.scale = 1;
         this._gameObjects = []; // internal array of game objects
     }
 

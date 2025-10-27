@@ -14,8 +14,8 @@ function TileField(layer, id) {
 TileField.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
 TileField.prototype.getTileByMouse = function () {
-    return new powerupjs.Vector2(Math.floor((powerupjs.Mouse.position.x - this.position.x) / this.cellWidth), // calculate tile index based on mouse position
-        Math.floor((powerupjs.Mouse.position.y - this.position.y) / this.cellHeight));
+    return new powerupjs.Vector2(Math.floor((powerupjs.Mouse.position.x - this.position.x) / (this.cellWidth * this.scale)), // calculate tile index based on mouse position
+        Math.floor((powerupjs.Mouse.position.y - this.position.y) / (this.cellHeight * this.scale)));
 }
 
 TileField.prototype.update = function (delta) {
@@ -33,11 +33,15 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
     var tile = TileDataManager.handleObject(sprite);
     if (this.tileKey !== null) tile.key = this.tileKey; // use current tile key
     else tile.key = tileKey;
-    tile.position = new powerupjs.Vector2(index.x * this.cellWidth + (this.cellWidth / 2), index.y * this.cellHeight + (this.cellHeight / 2)); // set tile position based on index
+    tile.position = new powerupjs.Vector2(
+        (index.x * this.cellWidth * this.scale) + ((this.cellWidth * this.scale) / 2), (index.y * this.cellHeight * this.scale) + ((this.cellHeight * this.scale) / 2))
+ // set tile position based on index
     tile.rotation = rotation;
     tile.playAnimation("normal");
     tile.origin = tile.center;
     tile.manageHitboxes(sprite); // set hitbox based on sprite
+    tile.scale = this.scale;
+    tile.index = index;
     powerupjs.GameStateManager.get(ID.game_state_editor).editingMenu.selectedObj = tile;
 
     this.add(tile);
@@ -79,7 +83,7 @@ TileField.prototype.loadTiles = function () {
     window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
     
     if (!window.LEVELS[WorldSettings.currentLevelIndex]) WorldSettings.createLevel();
-
+    this.scale = WorldSettings.currentLevel.scale
     this.data = window.LEVELS[WorldSettings.currentLevelIndex].tiles[this.editorLayer]; // get tile data
     if (!this.data) return; // no tile data
     var splitData = this.data.split("/"); // split into individual tile data
@@ -87,6 +91,9 @@ TileField.prototype.loadTiles = function () {
         if (splitData[i] == "") continue; // skip empty data
 
         var tile = TileDataManager.convertDataToTile(splitData[i])
+        tile.scale = this.scale
+        tile.position = new powerupjs.Vector2((tile.index.x * this.cellWidth * this.scale) + ((this.cellWidth * this.scale) / 2), 
+            (tile.index.y * this.cellHeight * this.scale) + ((this.cellHeight * this.scale) / 2))
         this.add(tile)
 
     }

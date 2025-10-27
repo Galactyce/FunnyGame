@@ -33,6 +33,7 @@ function Player(layer, id) {
     this.neutralJumpTime;
     this.initialize();
     this.baseVelocity = 0;
+    this.scale = 1.5
 }
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
@@ -84,11 +85,11 @@ Player.prototype.handleCameraPos = function(delta) {
         return;
     }
     V = V.multiply(1 / powerupjs.Camera.smoothingFactor); // scale by smoothing factor
-    powerupjs.Camera.velocity = V; // set camera velocity
-    if (powerupjs.Camera.velocity.x > this.moveSpeed) powerupjs.Camera.velocity.x = this.moveSpeed; // cap camera velocity
-    if (powerupjs.Camera.velocity.x < -this.moveSpeed) powerupjs.Camera.velocity.x = -this.moveSpeed;
-    if (powerupjs.Camera.velocity.y > this.moveSpeed) powerupjs.Camera.velocity.y = this.moveSpeed;
-    if (powerupjs.Camera.velocity.y < -this.moveSpeed) powerupjs.Camera.velocity.y = -this.moveSpeed;
+    powerupjs.Camera.velocity = V.multiplyWith(this.scale); // set camera velocity
+    if (powerupjs.Camera.velocity.x > this.moveSpeed * this.scale) powerupjs.Camera.velocity.x = this.moveSpeed * this.scale; // cap camera velocity
+    if (powerupjs.Camera.velocity.x < -this.moveSpeed * this.scale) powerupjs.Camera.velocity.x = -this.moveSpeed * this.scale;
+    console.log(V.y + " > " + powerupjs.Camera.viewHeight / 2)
+    if (V.y > 60) powerupjs.Camera.velocity.y = this.velocity.y;
     powerupjs.Camera.update(delta); // update camera position
     powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.cameraBounds);
 }
@@ -111,14 +112,14 @@ Player.prototype.adjustHitbox = function () {
 
 Player.prototype.simulateGravity = function () {
     if ((this.tileLeft || this.tileRight) && this.velocity.y > 0) {
-        this.velocity.y = WorldSettings.wallSlideSpeed;
+        this.velocity.y = WorldSettings.wallSlideSpeed * this.scale;
     }
     else {
-        this.velocity.y += WorldSettings.gravity;
+        this.velocity.y += WorldSettings.gravity * this.scale;
     }
 
 
-    if (this.velocity.y > WorldSettings.terminalVelocity) this.velocity.y = WorldSettings.terminalVelocity
+    if (this.velocity.y > WorldSettings.terminalVelocity * this.scale) this.velocity.y = WorldSettings.terminalVelocity * this.scale;
 
 }
 
@@ -236,7 +237,7 @@ Player.prototype.capMoveSpeed = function(modifier) {
 
 Player.prototype.handleMoving = function(delta) {
   if (powerupjs.Keyboard.down(powerupjs.Keys.left) && !this.dashing) {
-        var speed = this.moveSpeed;
+        var speed = this.moveSpeed * this.scale;
         this.directionFacing = "left"
         if (this.previousWallJumpDir == "right") {
             speed = this.moveSpeed / 2; // Make it harder to move back to wall

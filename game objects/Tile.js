@@ -3,6 +3,7 @@ function Tile(sprite) {
     this.rotation = 0;
     this.key;
     this.hitboxType;
+    this.index;
     this.loadAnimation(sprite, "normal", true, 0.2);
 }
 
@@ -11,6 +12,7 @@ Tile.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
 Tile.prototype.draw = function () {
     powerupjs.SpriteGameObject.prototype.draw.call(this);
     if (this.hitbox == undefined) return;
+    this.manageHitboxes()
     if (powerupjs.Keyboard.down(powerupjs.Keys.P)) {
         this.showHitboxes(); // show hitboxes for debugging
     }

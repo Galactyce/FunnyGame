@@ -11,14 +11,15 @@ function saveLevelToTxt(levelIndex) {
   str += "!"
   var cameraBounds = window.LEVELS[levelIndex].cameraBounds
   str += cameraBounds.x + "|" + cameraBounds.y + "|" + cameraBounds.width + "|" + cameraBounds.height + "!"
-  str += window.LEVELS[levelIndex].playerSpawnPos.x + "|" + window.LEVELS[levelIndex].playerSpawnPos.y + "!"
+  str += (window.LEVELS[levelIndex].playerSpawnPos.x) + 
+    "|" + (window.LEVELS[levelIndex].playerSpawnPos.y) + "!"
   for (var i = 0; i < window.LEVELS[levelIndex].backgrounds.length; i++) {
         str += window.LEVELS[levelIndex].backgrounds[i] 
         if (i < window.LEVELS[levelIndex].backgrounds.length - 1)
             str += "|"
 
   }
-  str += "!"
+  str += "!" + window.LEVELS[levelIndex].scale
   return str;
 //   const blob = new Blob([str], { type: 'text/plain' });
 
@@ -46,12 +47,13 @@ function DecryptRawLevelData(data, levelIndex) {
     for (var i = 0; i < fieldSplit.length; i++) {
         window.LEVELS[levelIndex].tiles[i] = fieldSplit[i];
     }
+    window.LEVELS[levelIndex].scale = parseFloat(dataSplit[5]);
+    var scale = parseFloat(dataSplit[5])
     var boundSplit = dataSplit[2].split("|");
     window.LEVELS[levelIndex].cameraBounds = new powerupjs.Rectangle(
-        parseFloat(boundSplit[0]), parseFloat(boundSplit[1]), parseFloat(boundSplit[2]), parseFloat(boundSplit[3])
+        parseFloat(boundSplit[0]), parseFloat(boundSplit[1]), parseFloat(boundSplit[2]) * scale, parseFloat(boundSplit[3] * scale)
         );
     var spawnSplit = dataSplit[3].split("|");
-    
     window.LEVELS[levelIndex].playerSpawnPos = new powerupjs.Vector2(parseFloat(spawnSplit[0]), parseFloat(spawnSplit[1]));
     var backgroundSplit = dataSplit[4].split("|");
 
@@ -61,6 +63,7 @@ function DecryptRawLevelData(data, levelIndex) {
         console.log(backgroundSplit[i])
         window.LEVELS[levelIndex].backgrounds.push(parseInt(backgroundSplit[i]))
     }
+
 }
 
 

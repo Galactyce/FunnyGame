@@ -43,7 +43,7 @@ TileDataManager_Singleton.prototype.handleObject = function(sprite) {
 }
 
 TileDataManager_Singleton.prototype.writeTile = function(tile) { 
-    return tile.key + "|" + tile.position.x + "|" + tile.position.y +
+    return tile.key + "|" + tile.index.x + "|" + tile.index.y +
         "|" + WorldSettings.indexOfSprite(tile.sprite) + "|" + tile.rotation + "|" + tile.scale + "|"; // create data string ==> (key|x|y|spriteIndex|rotation)
 }
 
@@ -61,7 +61,7 @@ TileDataManager_Singleton.prototype.convertDataToTile = function(data) {
     var tileData = data.split("|"); // split tile data into components
     var tile = this.handleObject(WorldSettings.blockSprites[parseInt(tileData[3])]);
     tile.key = tileData[0]
-    tile.position = new powerupjs.Vector2(parseInt(tileData[1]), parseInt(tileData[2])); // set tile position based on index
+    tile.index = new powerupjs.Vector2(parseInt(tileData[1]), parseInt(tileData[2])); // set tile position based on index
     tile.rotation = parseFloat(tileData[4]);
     tile.scale = parseFloat(tileData[5])
     tile.playAnimation("normal");
