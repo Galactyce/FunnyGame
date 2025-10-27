@@ -94,7 +94,7 @@ var powerupjs = (function (powerupjs) {
 
     Object.defineProperty(Label.prototype, "boundingBox", {
         get: function() {
-            return new powerupjs.Rectangle(this.position.x, this.position.y, this.width, this.height);
+            return new powerupjs.Rectangle(this.position.x - this.origin.x, this.position.y - this.origin.y, this.width, this.height);
         }
     }) 
 

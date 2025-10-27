@@ -92,6 +92,7 @@ TitleMenuState.prototype.handleInput = function (delta) {
         this.levelName.origin = this.levelName.center;
         this.leftArrow.position = new powerupjs.Vector2(this.levelName.position.x - this.leftArrow.width - this.levelName.width / 2, this.levelName.position.y);
         this.rightArrow.position = new powerupjs.Vector2(this.levelName.position.x + this.rightArrow.width + this.levelName.width / 2, this.levelName.position.y);
+        this.addLevelButton.position = new powerupjs.Vector2(this.levelName.position.x + this.addLevelButton.width + this.levelName.width / 2 + 80, this.levelName.position.y);
     }
     else {
         if (!localStorage.levels) { // if no level data
