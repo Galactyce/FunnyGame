@@ -7,13 +7,14 @@ var powerupjs = (function (powerupjs) {
         this.velocity = new powerupjs.Vector2(0, 0);
         this.viewWidth = 0;
         this.viewHeight = 0;
-        this.smoothingFactor = 2;
     }
 
     Camera.prototype.initialize = function () {
         this.viewWidth = powerupjs.Game.size.x;
         this.viewHeight = powerupjs.Game.size.y;
         // this.position = new powerupjs.Vector2(this.viewWidth / -2, this.viewHeight / -2);
+                this.smoothingFactor = WorldSettings.cameraSmoothingFactor;
+
     }
 
     Camera.prototype.update = function (delta) {

@@ -12,6 +12,8 @@ Level.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
 Level.prototype.loadBackground = function () {
     for (var i = 0; i < window.LEVELS[WorldSettings.currentLevelIndex].backgrounds.length; i++) {
+                console.log( window.LEVELDATA[WorldSettings.currentLevelIndex])
+
         var index = window.LEVELS[WorldSettings.currentLevelIndex].backgrounds[i];
         var camBounds =  window.LEVELS[WorldSettings.currentLevelIndex].cameraBounds
         var background = new powerupjs.SpriteGameObject(WorldSettings.backgrounds[index]);
@@ -47,6 +49,5 @@ Level.prototype.update = function(delta) {
         
         background.position.y = powerupjs.Camera.position.y - (((background.height * background.scale) 
             - powerupjs.Camera.viewHeight) * amount.y) / (i + 1)
-        console.log("index: " + i + ", " + background.sprite.image.src)
     }
 }

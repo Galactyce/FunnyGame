@@ -38,13 +38,13 @@ PlayingState.prototype.loadLevel = function () {
     if (localStorage.levels)
     window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
     if (!window.LEVELS[WorldSettings.currentLevelIndex]) WorldSettings.createLevel();
-    var spawnData = window.LEVELS[WorldSettings.currentLevelIndex].playerStartPos;
-    if (spawnData == undefined) {
+    var spawnData = window.LEVELS[WorldSettings.currentLevelIndex].playerSpawnPos;
+    if (spawnData.x == null) {
         spawn.position = new powerupjs.Vector2(400, 400)
     }
     else {
-    spawnSplit = spawnData.split(",")
-    spawn.position = new powerupjs.Vector2(parseInt(spawnSplit[0]), parseInt(spawnSplit[1]))
+   
+    spawn.position = new powerupjs.Vector2(spawnData.x, spawnData.y)
     }
     console.log(spawn.position)
     this.player.position = spawn.position.copy(); // set player position to spawn point

@@ -92,6 +92,12 @@ var powerupjs = (function (powerupjs) {
             }
         });
 
+    Object.defineProperty(Label.prototype, "boundingBox", {
+        get: function() {
+            return new powerupjs.Rectangle(this.position.x, this.position.y, this.width, this.height);
+        }
+    }) 
+
     Label.prototype.draw = function () {
         if (!this.visible)
             return;

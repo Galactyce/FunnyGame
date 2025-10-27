@@ -37,6 +37,10 @@ function Player(layer, id) {
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
 
+Player.prototype.initialize = function() {
+    this.moveSpeed = WorldSettings.maxPlayerSpeed;
+}
+
 Player.prototype.update = function (delta) {
     powerupjs.AnimatedGameObject.prototype.update.call(this, delta);
     this.origin = this.center; // set origin to center for mirroring
@@ -75,6 +79,10 @@ Player.prototype.update = function (delta) {
 
 Player.prototype.handleCameraPos = function(delta) {
     var V = this.centerOfCamera.subtract(powerupjs.Camera.position); // vector from camera to player
+    if (Math.abs(V.y) < 3 && Math.abs(V.x) < 3 && this.velocity.x == 0 && this.velocity.y == 0) { 
+        powerupjs.Camera.position = this.centerOfCamera
+        return;
+    }
     V = V.multiply(1 / powerupjs.Camera.smoothingFactor); // scale by smoothing factor
     powerupjs.Camera.velocity = V; // set camera velocity
     if (powerupjs.Camera.velocity.x > this.moveSpeed) powerupjs.Camera.velocity.x = this.moveSpeed; // cap camera velocity
@@ -110,7 +118,7 @@ Player.prototype.simulateGravity = function () {
     }
 
 
-
+    if (this.velocity.y > WorldSettings.terminalVelocity) this.velocity.y = WorldSettings.terminalVelocity
 
 }
 

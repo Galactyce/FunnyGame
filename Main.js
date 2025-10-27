@@ -15,9 +15,10 @@ powerupjs.Game.loadAssets = function () {
     };
 
     sprites.button_default = loadSprite("button_default.png");
-    sprites.defaultTile = loadSprite("placeholder_tile.png");
-    sprites.spike = loadSprite("spike.png")
-    sprites.addButton = loadSprite("addButton.png")
+    sprites.defaultTile = loadSprite("cyberTile.png");
+    sprites.spike = loadSprite("cyberSpike.png")
+    sprites.addButton = loadSprite("addButton.png");
+    sprites.plusButton = loadSprite("plusButton.png")
     sprites.crosshair = loadSprite("crosshair.png")
     sprites.player_idle = loadSprite("Idle@11.png", true)
     sprites.frame = loadSprite("frame.jpeg")
@@ -29,8 +30,7 @@ powerupjs.Game.loadAssets = function () {
     sprites.spring = loadSprite("springIdle.png");
     sprites.springBounce = loadSprite("springJump@8.png");
     sprites.movingPlatform = loadSprite("MovingPlatform@8.png", true);
-    sprites.leftArrow = loadSprite("leftArrow.png");
-    sprites.rightArrow = loadSprite("rightArrow.png");
+    sprites.arrowButtons = loadSprite("arrowButtons@4.png");
     sprites.cyberBackground = loadSprite("background.png");
     sprites.cyberForeground = loadSprite("background1.png")
 

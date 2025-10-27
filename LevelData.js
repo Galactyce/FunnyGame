@@ -2,64 +2,67 @@
 
 function saveLevelToTxt(levelIndex) {
   var str = ""
+
+  str += window.LEVELS[levelIndex].name + "!"
   for (var i = 0; i < window.LEVELS[levelIndex].tiles.length; i++) {
-    str += window.LEVELS[levelIndex].tiles[i] + "?"
+    if (i < window.LEVELS[levelIndex].tiles.length - 1)
+        str += window.LEVELS[levelIndex].tiles[i] + "?"
   }
-  const blob = new Blob([str], { type: 'text/plain' });
+  str += "!"
+  var cameraBounds = window.LEVELS[levelIndex].cameraBounds
+  str += cameraBounds.x + "|" + cameraBounds.y + "|" + cameraBounds.width + "|" + cameraBounds.height + "!"
+  str += window.LEVELS[levelIndex].playerSpawnPos.x + "|" + window.LEVELS[levelIndex].playerSpawnPos.y + "!"
+  for (var i = 0; i < window.LEVELS[levelIndex].backgrounds.length; i++) {
+        str += window.LEVELS[levelIndex].backgrounds[i] 
+        if (i < window.LEVELS[levelIndex].backgrounds.length - 1)
+            str += "|"
 
-  // 2. Create a temporary URL for the Blob
-  const url = URL.createObjectURL(blob);
+  }
+  str += "!"
+  return str;
+//   const blob = new Blob([str], { type: 'text/plain' });
 
-  // 3. Create a download link
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = "data"; // Set the desired filename
+//   // 2. Create a temporary URL for the Blob
+//   const url = URL.createObjectURL(blob);
 
-  // 4. Trigger the download and clean up
-  document.body.appendChild(a); // Append to body (can be hidden)
-  a.click(); // Programmatically click the link
-  document.body.removeChild(a); // Remove the link from the DOM
-  URL.revokeObjectURL(url); // Release the object URL
+//   // 3. Create a download link
+//   const a = document.createElement('a');
+//   a.href = url;
+//   a.download = "data"; // Set the desired filename
+
+//   // 4. Trigger the download and clean up
+//   document.body.appendChild(a); // Append to body (can be hidden)
+//   a.click(); // Programmatically click the link
+//   document.body.removeChild(a); // Remove the link from the DOM
+//   URL.revokeObjectURL(url); // Release the object URL
 
 }
  
+function DecryptRawLevelData(data, levelIndex) {
+    console.log(data)
+    var dataSplit = data.split("!");    // 0: name, 1: tiles, 2: camera bounds, 3: player spawn pos, 4: backgrounds
+    window.LEVELS[levelIndex].name = dataSplit[0];
+    var fieldSplit = dataSplit[1].split("?");
+    for (var i = 0; i < fieldSplit.length; i++) {
+        window.LEVELS[levelIndex].tiles[i] = fieldSplit[i];
+    }
+    var boundSplit = dataSplit[2].split("|");
+    window.LEVELS[levelIndex].cameraBounds = new powerupjs.Rectangle(
+        parseFloat(boundSplit[0]), parseFloat(boundSplit[1]), parseFloat(boundSplit[2]), parseFloat(boundSplit[3])
+        );
+    var spawnSplit = dataSplit[3].split("|");
+    
+    window.LEVELS[levelIndex].playerSpawnPos = new powerupjs.Vector2(parseFloat(spawnSplit[0]), parseFloat(spawnSplit[1]));
+    var backgroundSplit = dataSplit[4].split("|");
 
+    window.LEVELS[levelIndex].backgrounds = []
+    console.log(backgroundSplit)
+    for (var i = 0; i < backgroundSplit.length; i++) {
+        console.log(backgroundSplit[i])
+        window.LEVELS[levelIndex].backgrounds.push(parseInt(backgroundSplit[i]))
+    }
+}
 
 
 window.LEVELS = [];
-
-window.LEVELS.push({
-    name: "New Beginnings",
-    tiles: [],
-    cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
-    playerSpawnPos: "",
-    backgrounds: [0, 1]
-})
-
-window.LEVELS.push({
-    name: "Final Destination",
-    tiles: [],
-    cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
-    playerSpawnPos: ""
-})
-
-window.LEVELS.push({
-    name: "Apotheosis",
-    tiles: [],
-    cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
-    playerSpawnPos: ""
-})
-
-window.LEVELS.push({
-    name: "Unfair",
-    tiles: [],
-    cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
-    playerSpawnPos: ""
-})
-
-window.LEVELS.push({
-    name: "Bruh",
-    tiles: [],
-    cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
-    playerSpawnPos: ""
-})
+window.LEVELDATA = [];

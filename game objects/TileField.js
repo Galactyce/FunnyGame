@@ -68,10 +68,8 @@ TileField.prototype.saveTiles = function () {
     this.data = TileDataManager.writeTiles(this._gameObjects); // serialize tiles
     if (window.LEVELS[WorldSettings.currentLevelIndex])
         window.LEVELS[WorldSettings.currentLevelIndex].tiles[this.editorLayer] = this.data; // save to LEVELS
-    if (!this.data) // nothing to save
-        return;
-    localStorage.levels = JSON.stringify(window.LEVELS); // save to local storage
-    WorldSettings.levels[WorldSettings.currentLevelIndex].tileFields[this.editorLayer] = this; // update world settings
+
+    WorldSettings.currentLevel.tileFields[this.editorLayer] = this; // update level in world settings
 }
 
 TileField.prototype.loadTiles = function () {

@@ -82,13 +82,13 @@ GameplayEditorState.prototype.draw = function() {
 GameplayEditorState.prototype.saveLevel = function() {
     for (var i = 0; i < this.editorLayers.length; i++)
         this.editorLayers.at(i).saveTiles(); // save current editor layer tiles
+    window.LEVELS[WorldSettings.currentLevelIndex].playerSpawnPos = this.playerStartPos.position;
+        console.log(window.LEVELS[WorldSettings.currentLevelIndex])
 
-    var str = ""
-    str += this.playerStartPos.position.x + "," + this.playerStartPos.position.y
-    window.LEVELS[WorldSettings.currentLevelIndex].playerStartPos = str;
+    window.LEVELDATA[WorldSettings.currentLevelIndex] = saveLevelToTxt(WorldSettings.currentLevelIndex)
+    console.log(window.LEVELS[WorldSettings.currentLevelIndex]);
     localStorage.levels = JSON.stringify(window.LEVELS); // save to local storage
-    if (powerupjs.Keyboard.down(17))
-    saveLevelToTxt(WorldSettings.currentLevelIndex)
+    localStorage.levelData = JSON.stringify(window.LEVELDATA);
 }
 
 GameplayEditorState.prototype.handleInput = function (delta) {
@@ -144,6 +144,9 @@ GameplayEditorState.prototype.handleInput = function (delta) {
         );
         powerupjs.Camera.manageBoundaries(window.LEVELS[WorldSettings.currentLevelIndex].cameraBounds);
     }
+
+
+
     this.previousMousePosition = powerupjs.Mouse.screenPosition.copy(); // store current mouse position for next frame
     this.editingTiles = true;
 }
