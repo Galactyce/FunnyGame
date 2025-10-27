@@ -37,6 +37,7 @@ Level.prototype.loadTiles = function() {
 }
 
 Level.prototype.update = function(delta) {
+    powerupjs.GameObjectList.prototype.update.call(this, delta)
     for (var i = 0; i < this.backgrounds.length; i++) {
     
         var camBounds =  window.LEVELS[WorldSettings.currentLevelIndex].cameraBounds

@@ -38,7 +38,7 @@ Spring.prototype.draw = function() {
 
 Spring.prototype.update = function(delta) {
     if (!WorldSettings.activePlayer) return;
-            var player = WorldSettings.activePlayer;
+    var player = WorldSettings.activePlayer;
     if (player.hitbox.intersects(this.bounceHitbox)) {
         player.dashing = false;
         player.ableToDash = true;

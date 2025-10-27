@@ -20,15 +20,14 @@ function WorldSettings() {
     // MANAGING PLAYER PROPERTIES CAN BE DONE IN "PlayerProperties.js"
 }
 
-WorldSettings.prototype.loadLevels = function () { // load levels from window.LEVELS
+WorldSettings.prototype.loadLevels = function () { // load levels from window.LEVELDATA 
     this.levels = [];
     window.LEVELS = [];
-    console.log(localStorage.levelData)
 
     if (localStorage.levelData) {
         window.LEVELDATA = JSON.parse(localStorage.levelData).filter(item => item !== null);
 
-        for (var i = 0; i < window.LEVELDATA.length; i++) {
+        for (var i = 0; i < window.LEVELDATA.length; i++) {     // Creates window.LEVELS object and edits it with level data
             window.LEVELS.push({
             name: "New",
             tiles: [],
@@ -36,11 +35,10 @@ WorldSettings.prototype.loadLevels = function () { // load levels from window.LE
             playerSpawnPos: "400|400",
             backgrounds: [0, 1]
             })
-            console.log(window.LEVELDATA)
             DecryptRawLevelData(window.LEVELDATA[i], i)
         }
     }   
-    for (var i = 0; i < window.LEVELS.length; i++) {
+    for (var i = 0; i < window.LEVELS.length; i++) {    // Create Level objects for each level;
         var level = new Level(); // create new Level object
         level.tiles = window.LEVELS[i].tiles; // load tile data
         level.cameraBounds = window.LEVELS[i].cameraBounds
@@ -58,20 +56,19 @@ WorldSettings.prototype.indexOfSprite = function (sprite) { // get index of spri
 }
 
 WorldSettings.prototype.createLevel = function() {
-    window.LEVELS.push({
+    window.LEVELS.push({    // Create new level
         name: "New",
         tiles: [],
         cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
         playerSpawnPos: "400|400",
         backgrounds: [0, 1]
     })
-    window.LEVELDATA[window.LEVELS.length - 1] = saveLevelToTxt(window.LEVELS.length - 1)
-            console.log(window.LEVELDATA)
-    localStorage.levelData = JSON.stringify(window.LEVELDATA);
+    window.LEVELDATA[window.LEVELS.length - 1] = saveLevelToTxt(window.LEVELS.length - 1)   // Create LEVELDATA with new level
+    localStorage.levelData = JSON.stringify(window.LEVELDATA);  // Save level data and levels
     localStorage.levels = JSON.stringify(window.LEVELS);
-        this.levels = [];
+    this.levels = [];
 
-    for (var i = 0; i < window.LEVELS.length; i++) {
+    for (var i = 0; i < window.LEVELS.length; i++) {    // Remake the levels
         var level = new Level(); // create new Level object
         level.tiles = window.LEVELS[i].tiles; // load tile data
         level.cameraBounds = window.LEVELS[i].cameraBounds

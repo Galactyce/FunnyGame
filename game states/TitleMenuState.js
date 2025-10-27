@@ -79,7 +79,7 @@ TitleMenuState.prototype.handleInput = function (delta) {
         this.levelSelectedIndex = window.LEVELS.length - 1;
     }
 
-    if (this.levelName.boundingBox.contains(powerupjs.Mouse.position) && powerupjs.Mouse.left.pressed) {
+    if (this.levelName.boundingBox.contains(powerupjs.Mouse.position) && powerupjs.Mouse.left.pressed) {    // Edit level name
         window.LEVELS[this.levelSelectedIndex].name = prompt("Level name:");
         window.LEVELDATA[this.levelSelectedIndex] = saveLevelToTxt(this.levelSelectedIndex)
         localStorage.levelData = JSON.stringify(window.LEVELDATA);
@@ -94,11 +94,8 @@ TitleMenuState.prototype.handleInput = function (delta) {
         this.rightArrow.position = new powerupjs.Vector2(this.levelName.position.x + this.rightArrow.width + this.levelName.width / 2, this.levelName.position.y);
     }
     else {
-        if (!localStorage.levels) {
-            WorldSettings.createLevel();
-            window.LEVELDATA[0] = saveLevelToTxt(0)
-            localStorage.levels = JSON.stringify(window.LEVELS); // save to local storage
-            localStorage.levelData = JSON.stringify(window.LEVELDATA);
+        if (!localStorage.levels) { // if no level data
+            WorldSettings.createLevel();    // create a level
             return;
         }
         
