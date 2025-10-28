@@ -27,6 +27,7 @@ var powerupjs = (function (powerupjs) {
         this._contents = "";
         this._align = "left";
         this._size = powerupjs.Vector2.zero;
+        this.originalContents;
     }
 
     Label.prototype = Object.create(powerupjs.GameObject.prototype);
@@ -87,8 +88,10 @@ var powerupjs = (function (powerupjs) {
             },
 
             set: function (value) {
+                if (this._contents == "") this.originalContents = value;
                 this._contents = value;
                 this._size = calculateTextSize(this._fontname, this._fontsize, value);
+                
             }
         });
 
@@ -105,6 +108,10 @@ var powerupjs = (function (powerupjs) {
             this.origin, this.color, this._align,
             this._fontname, this._fontsize);
     };
+
+    Label.prototype.resetText = function() {
+        this.text = this.originalContents;
+    }
 
     powerupjs.Label = Label;
     return powerupjs;

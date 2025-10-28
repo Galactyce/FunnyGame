@@ -35,16 +35,16 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
     else tile.key = tileKey;
     tile.position = new powerupjs.Vector2(
         (index.x * this.cellWidth * this.scale) + ((this.cellWidth * this.scale) / 2), (index.y * this.cellHeight * this.scale) + ((this.cellHeight * this.scale) / 2))
- // set tile position based on index
     tile.rotation = rotation;
     tile.playAnimation("normal");
     tile.origin = tile.center;
-    tile.manageHitboxes(sprite); // set hitbox based on sprite
     tile.scale = this.scale;
     tile.index = index;
     powerupjs.GameStateManager.get(ID.game_state_editor).editingMenu.selectedObj = tile;
-
+    tile.parent = this;
     this.add(tile);
+    tile.manageHitboxes(sprite); // set hitbox based on sprite
+
 }
 
 TileField.prototype.removeTileAt = function (position) {
@@ -70,18 +70,12 @@ TileField.prototype.getTileAt = function (position) {
 
 TileField.prototype.saveTiles = function () {
     this.data = TileDataManager.writeTiles(this._gameObjects); // serialize tiles
+    console.log(this.data)
     if (window.LEVELS[WorldSettings.currentLevelIndex])
         window.LEVELS[WorldSettings.currentLevelIndex].tiles[this.editorLayer] = this.data; // save to LEVELS
-
-    WorldSettings.currentLevel.tileFields[this.editorLayer] = this; // update level in world settings
 }
 
 TileField.prototype.loadTiles = function () {
-    // localStorage.clear()
-    // console.log(localStorage)
-    if (!localStorage.levels) return; // nothing to load
-    window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
-    
     if (!window.LEVELS[WorldSettings.currentLevelIndex]) WorldSettings.createLevel();
     this.scale = WorldSettings.currentLevel.scale
     this.data = window.LEVELS[WorldSettings.currentLevelIndex].tiles[this.editorLayer]; // get tile data
@@ -95,6 +89,7 @@ TileField.prototype.loadTiles = function () {
         tile.position = new powerupjs.Vector2((tile.index.x * this.cellWidth * this.scale) + ((this.cellWidth * this.scale) / 2), 
             (tile.index.y * this.cellHeight * this.scale) + ((this.cellHeight * this.scale) / 2))
         this.add(tile)
+        tile.manageHitboxes(tile.sprite); // set hitbox based on sprite
 
     }
     WorldSettings.levels[WorldSettings.currentLevelIndex].tileFields[this.editorLayer] = this; // update world settings

@@ -33,14 +33,10 @@ function Player(layer, id) {
     this.neutralJumpTime;
     this.initialize();
     this.baseVelocity = 0;
-    this.scale = 1.5
+
 }
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
-
-Player.prototype.initialize = function() {
-    this.moveSpeed = WorldSettings.maxPlayerSpeed;
-}
 
 Player.prototype.update = function (delta) {
     powerupjs.AnimatedGameObject.prototype.update.call(this, delta);
@@ -50,7 +46,7 @@ Player.prototype.update = function (delta) {
         this.simulateGravity(); // apply gravity
     this.handleCollisions(); // handle collisions before moving
     this.handleCameraPos(delta);
-    if (this.position.y > WorldSettings.currentLevel.cameraBounds.bottom) {
+    if (this.position.y > WorldSettings.mapBottom) {
         this.die();
     }
 
@@ -85,11 +81,10 @@ Player.prototype.handleCameraPos = function(delta) {
         return;
     }
     V = V.multiply(1 / powerupjs.Camera.smoothingFactor); // scale by smoothing factor
-    powerupjs.Camera.velocity = V.multiplyWith(this.scale); // set camera velocity
-    if (powerupjs.Camera.velocity.x > this.moveSpeed * this.scale) powerupjs.Camera.velocity.x = this.moveSpeed * this.scale; // cap camera velocity
-    if (powerupjs.Camera.velocity.x < -this.moveSpeed * this.scale) powerupjs.Camera.velocity.x = -this.moveSpeed * this.scale;
-    console.log(V.y + " > " + powerupjs.Camera.viewHeight / 2)
-    if (V.y > 60) powerupjs.Camera.velocity.y = this.velocity.y;
+    powerupjs.Camera.velocity = V; // set camera velocity
+    if (powerupjs.Camera.velocity.x > this.moveSpeed) powerupjs.Camera.velocity.x = this.moveSpeed; // cap camera velocity
+    if (powerupjs.Camera.velocity.x < -this.moveSpeed) powerupjs.Camera.velocity.x = -this.moveSpeed;
+    // if (V.y > 60) powerupjs.Camera.velocity.y = this.velocity.y;
     powerupjs.Camera.update(delta); // update camera position
     powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.cameraBounds);
 }
@@ -115,7 +110,7 @@ Player.prototype.simulateGravity = function () {
         this.velocity.y = WorldSettings.wallSlideSpeed * this.scale;
     }
     else {
-        this.velocity.y += WorldSettings.gravity * this.scale;
+        this.velocity.y += WorldSettings.gravity / this.scale;
     }
 
 
@@ -237,14 +232,14 @@ Player.prototype.capMoveSpeed = function(modifier) {
 
 Player.prototype.handleMoving = function(delta) {
   if (powerupjs.Keyboard.down(powerupjs.Keys.left) && !this.dashing) {
-        var speed = this.moveSpeed * this.scale;
+        var speed = this.moveSpeed;
         this.directionFacing = "left"
         if (this.previousWallJumpDir == "right") {
-            speed = this.moveSpeed / 2; // Make it harder to move back to wall
+            speed /= 2; // Make it harder to move back to wall
         }
         if (this.velocity.x > 0 && (this.grounded)) // if changing direction on ground, stop first
             this.velocity.x = 0;
-        if (this.velocity.x > -this.moveSpeed) // if below max speed, accelerate
+        if (this.velocity.x > -speed) // if below max speed, accelerate
             this.velocity.x -= speed * (delta * this.accelerationMultiplier);
 
         this.mirror = true;
@@ -255,9 +250,8 @@ Player.prototype.handleMoving = function(delta) {
     else if (powerupjs.Keyboard.down(powerupjs.Keys.right) && !this.dashing) {
         var speed = this.moveSpeed;
         this.directionFacing = "right"
-
         if (this.previousWallJumpDir == "left") {
-            speed = this.moveSpeed / 2;
+            speed /= 2;
         }
         if (this.velocity.x < 0 && (this.grounded)) // if changing direction on ground, stop first
             this.velocity.x = 0;
@@ -316,7 +310,7 @@ Player.prototype.handleJumps = function() {
         if (!this.resetJumpVelo ) return;
         this.resetJumpVelo = false;
         if (this.velocity.y < 0) {
-            this.velocity.y /= 3;    // cut jump short when jump key is released
+            this.velocity.y /= 3 * this.scale;    // cut jump short when jump key is released
         }
     }
 }
@@ -358,20 +352,20 @@ Player.prototype.handleDashes = function() {
 
             if (this.horizonatalKeysDown == "left") {
                 this.velocity.x = -this.dashSpeed;
-                this.dashDistance = 125;
+                this.dashDistance = 125 * this.scale;
                 if (this.horizonatalKeysDown != "") this.dashDistance = 70;
             } else if (this.horizonatalKeysDown == "right") {
                 this.velocity.x = this.dashSpeed;
-                this.dashDistance = 125;
+                this.dashDistance = 125 * this.scale;
                 if (this.horizonatalKeysDown != "") this.dashDistance = 70;
             }
             if (this.verticalKeysDown == "down") {
                 this.velocity.y = this.dashSpeed;
-                this.dashDistance = 125;
+                this.dashDistance = 125 * this.scale;
                 if (this.verticalKeysDown != "") this.dashDistance = 70;
             } else if (this.verticalKeysDown == "up") {
                 this.velocity.y = -this.dashSpeed;
-                this.dashDistance = 125;
+                this.dashDistance = 125 * this.scale;
                 if (this.verticalKeysDown != "") this.dashDistance = 70;
 
             }

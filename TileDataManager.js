@@ -59,14 +59,13 @@ TileDataManager_Singleton.prototype.writeMovingPlatform = function(tile) {
 
 TileDataManager_Singleton.prototype.convertDataToTile = function(data) {
     var tileData = data.split("|"); // split tile data into components
-    var tile = this.handleObject(WorldSettings.blockSprites[parseInt(tileData[3])]);
+    var tile = this.handleObject(WorldSettings.blockSprites[parseInt(tileData[3])]);    // Choose which object to create based on the sprite
     tile.key = tileData[0]
-    tile.index = new powerupjs.Vector2(parseInt(tileData[1]), parseInt(tileData[2])); // set tile position based on index
+    tile.index = new powerupjs.Vector2(parseFloat(tileData[1]), parseFloat(tileData[2])); // set tile position based on index
     tile.rotation = parseFloat(tileData[4]);
     tile.scale = parseFloat(tileData[5])
     tile.playAnimation("normal");
     tile.origin = tile.center;
-    tile.manageHitboxes(tile.sprite); // set hitbox based on sprite
     this.readSpecialTileData(tile, data)
     return tile;
 }

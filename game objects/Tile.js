@@ -12,7 +12,7 @@ Tile.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
 Tile.prototype.draw = function () {
     powerupjs.SpriteGameObject.prototype.draw.call(this);
     if (this.hitbox == undefined) return;
-    this.manageHitboxes()
+    
     if (powerupjs.Keyboard.down(powerupjs.Keys.P)) {
         this.showHitboxes(); // show hitboxes for debugging
     }
@@ -26,6 +26,9 @@ Tile.prototype.showHitboxes = function () {
 
 Tile.prototype.manageHitboxes = function (sprite) {
     sprite = typeof sprite !== 'undefined' ? sprite : this.sprite
+    var field = this.parent;
+    this.index = new powerupjs.Vector2(((this.position.x-((field.cellWidth * field.scale) / 2)) / field.cellWidth / field.scale), 
+            ((this.position.y-((field.cellHeight * field.scale) / 2)) / field.cellHeight / field.scale))
     if (sprite.image.src == sprites.spike.image.src) {
         if (this.rotation == Math.PI/2) {
             this.hitbox = new powerupjs.Rectangle( // smaller hitbox for spikes
@@ -65,4 +68,6 @@ Tile.prototype.manageHitboxes = function (sprite) {
         this.hitbox = this.boundingBox;
         this.hitboxType = "solid"
     }
+        
+
 }

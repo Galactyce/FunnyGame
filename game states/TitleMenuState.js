@@ -38,8 +38,10 @@ TitleMenuState.prototype.handleInput = function (delta) {
         WorldSettings.currentLevel = WorldSettings.levels[this.levelSelectedIndex];
         WorldSettings.currentLevelIndex = this.levelSelectedIndex;
         WorldSettings.currentLevel.loadBackground()
+         if (localStorage.levels)
+            window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
         powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers(); // load editor layers
-        powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
+        // powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
 
         powerupjs.GameStateManager.switchTo(ID.game_state_editor); // switch to editor state
         WorldSettings.currentState = "editing"
@@ -49,8 +51,10 @@ TitleMenuState.prototype.handleInput = function (delta) {
 
         WorldSettings.currentLevel = WorldSettings.levels[this.levelSelectedIndex];
         WorldSettings.currentLevelIndex = this.levelSelectedIndex;
+        console.log()
         WorldSettings.currentLevel.loadBackground()
-        powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers(); // load editor layers
+         if (localStorage.levels)
+            window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
         powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
 
         console.log(WorldSettings.currentLevel)

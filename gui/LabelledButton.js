@@ -27,3 +27,7 @@ Object.defineProperty(LabelledButton.prototype, "text", {
         this.label.text = value;
     }
 })
+
+LabelledButton.prototype.resetText = function() {
+    this.label.resetText();
+}

@@ -1,5 +1,5 @@
-function ObjectMenuGUI() {
-    powerupjs.GameObjectList.call(this);
+function ObjectMenuGUI(layer) {
+    powerupjs.GameObjectList.call(this, layer);
     this.frame = new powerupjs.SpriteGameObject(sprites.woodenFrame);
     this.frame.ui = true;
     this.add(this.frame);

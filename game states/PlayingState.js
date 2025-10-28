@@ -33,11 +33,9 @@ PlayingState.prototype.handleInput = function (delta) {
 
 PlayingState.prototype.loadLevel = function () {
    
-    WorldSettings.currentLevel.loadTiles();
+    
     var spawn = powerupjs.GameStateManager.get(ID.game_state_editor).find(ID.player_spawn);
-    if (localStorage.levels)
-    window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
-    if (!window.LEVELS[WorldSettings.currentLevelIndex]) WorldSettings.createLevel();
+   
     var level = window.LEVELS[WorldSettings.currentLevelIndex];
     var spawnData = level.playerSpawnPos;
     if (spawnData.x == null) {
@@ -53,8 +51,11 @@ PlayingState.prototype.loadLevel = function () {
     this.player.spawnPosition = this.player.position.copy(); // set spawn position
     this.player.adjustHitbox(); // adjust hitbox to match sprite
     this.player.scale = WorldSettings.currentLevel.scale
+    this.player.initialize();
     WorldSettings.activePlayer = this.player;
     this.currentLevel = WorldSettings.currentLevel;
+    WorldSettings.mapBottom = (WorldSettings.currentLevel.cameraBounds.height + WorldSettings.currentLevel.cameraBounds.y) * WorldSettings.currentLevel.scale;
+    WorldSettings.currentLevel.loadTiles();
 }
 
 PlayingState.prototype.draw = function() {
@@ -66,5 +67,5 @@ PlayingState.prototype.draw = function() {
 PlayingState.prototype.update = function(delta) {
     this.currentLevel.update(delta);
     powerupjs.GameObjectList.prototype.update.call(this, delta);
-    
+    console.log(this.player.velocity.x / WorldSettings.currentLevel.scale)
 }

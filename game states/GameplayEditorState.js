@@ -17,7 +17,7 @@ function GameplayEditorState(layer) {
     this.editorLayers.add(field); // add tile field to editor layers
     this.add(this.editorLayers);
 
-    this.objectMenu = new ObjectMenuGUI(); // object selection menu
+    this.objectMenu = new ObjectMenuGUI(ID.layer_overlays) // object selection menu
     this.objectMenu.position = new powerupjs.Vector2(400, 600);
     this.add(this.objectMenu);
 
@@ -26,7 +26,7 @@ function GameplayEditorState(layer) {
     this.add(this.editingMenu);
 
     this.playButton = new LabelledButton(sprites.button_default, "Return", "Arial", "20px", ID.layer_overlays); // button to return to title screen
-    this.playButton.position = new powerupjs.Vector2(900, 15);
+    this.playButton.position = new powerupjs.Vector2(120, 95);
     this.playButton.ui = true;
     this.add(this.playButton);
 
@@ -34,20 +34,44 @@ function GameplayEditorState(layer) {
     this.playerStartPos.position = new powerupjs.Vector2(400, 400);
     this.add(this.playerStartPos);
 
+    this.saveButton = new LabelledButton(sprites.button_default, "Save", "Arial", "20px", ID.layer_overlays);
+    this.saveButton.position = new powerupjs.Vector2(120, 40);
+    this.saveButton.ui = true;
+    this.add(this.saveButton);
+
+    this.scaleUpButton = new powerupjs.Button(sprites.plusButton);
+    this.scaleUpButton.ui = true;
+    this.scaleUpButton.position = new powerupjs.Vector2(1020, 650);
+    this.add(this.scaleUpButton)
+
+    this.scaleDownButton = new powerupjs.Button(sprites.minusButton);
+    this.scaleDownButton.ui = true;
+    this.scaleDownButton.position = new powerupjs.Vector2(1020, 720);
+    this.add(this.scaleDownButton)
+
     this.loadModeButtons(); // load mode buttons
 }
 
 GameplayEditorState.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
 GameplayEditorState.prototype.loadLayers = function () {
-    
+    var level = window.LEVELS[WorldSettings.currentLevelIndex];
+    var spawnData = level.playerSpawnPos;
+    if (spawnData.x == null) {
+        this.playerStartPos.position = new powerupjs.Vector2(400, 400);
+    }
+    else {
+        this.playerStartPos.position = new powerupjs.Vector2(spawnData.x, spawnData.y)
+    }
+    WorldSettings.currentLevel.cameraBounds = window.LEVELS[WorldSettings.currentLevelIndex].cameraBounds
+
     for (var i = 0; i < this.editorLayers.length; i++) {
         this.editorLayers.at(i).clear();
         this.editorLayers.at(i).loadTiles(); // load tiles for each editor layer
     }
 
 
-    
+
 }
 
 GameplayEditorState.prototype.loadModeButtons = function () {
@@ -63,7 +87,7 @@ GameplayEditorState.prototype.loadModeButtons = function () {
 GameplayEditorState.prototype.update = function (delta) {
     WorldSettings.currentLevel.update(delta);
     powerupjs.GameObjectList.prototype.update.call(this, delta);
-    if (this.mode =="Drawing") {
+    if (this.mode == "Drawing") {
         this.objectMenu.visible = true;
         this.editingMenu.visible = false;
     }
@@ -73,13 +97,13 @@ GameplayEditorState.prototype.update = function (delta) {
     }
 }
 
-GameplayEditorState.prototype.draw = function() {
-        WorldSettings.currentLevel.draw();
-        powerupjs.GameObjectList.prototype.draw.call(this);
+GameplayEditorState.prototype.draw = function () {
+    WorldSettings.currentLevel.draw();
+    powerupjs.GameObjectList.prototype.draw.call(this);
 
 }
 
-GameplayEditorState.prototype.saveLevel = function() {
+GameplayEditorState.prototype.saveLevel = function () {
     for (var i = 0; i < this.editorLayers.length; i++)
         this.editorLayers.at(i).saveTiles(); // save current editor layer tiles
     window.LEVELS[WorldSettings.currentLevelIndex].playerSpawnPos = this.playerStartPos.position;
@@ -87,6 +111,17 @@ GameplayEditorState.prototype.saveLevel = function() {
     console.log(window.LEVELS[WorldSettings.currentLevelIndex]);
     localStorage.levels = JSON.stringify(window.LEVELS); // save to local storage
     localStorage.levelData = JSON.stringify(window.LEVELDATA);
+    console.log(localStorage.levelData)
+}
+
+GameplayEditorState.prototype.adjustScale = function(value) {
+    WorldSettings.currentLevel.scale += value
+    window.LEVELS[WorldSettings.currentLevelIndex].scale = WorldSettings.currentLevel.scale;    // Adjust scale
+    WorldSettings.currentLevel.scaleCameraBounds();
+    WorldSettings.currentLevel.loadBackground() // Reload everything
+    this.saveLevel();   // Save level data
+    powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers(); // load editor layers
+    powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
 }
 
 GameplayEditorState.prototype.handleInput = function (delta) {
@@ -100,16 +135,17 @@ GameplayEditorState.prototype.handleInput = function (delta) {
         }
     }
 
-    if (powerupjs.Keyboard.pressed(powerupjs.Keys.T)) {
-        WorldSettings.currentLevel.scale += 0.1
-        window.LEVELS[WorldSettings.currentLevelIndex].scale = WorldSettings.currentLevel.scale;
-        console.log(WorldSettings.currentLevel.scale)
-                this.saveLevel()
-
+    if (this.scaleUpButton.pressed) {
+        this.adjustScale(0.1);
+    }
+    if (this.scaleDownButton.pressed) {
+        this.adjustScale(-0.1);
     }
 
-    if (powerupjs.Keyboard.pressed(powerupjs.Keys.S)) {
-        this.saveLevel()
+    if (this.saveButton.pressed) {
+        this.saveLevel();
+        this.saveButton.text = "Saved!";
+        // setTimeout(this.saveButton.resetText, 5000);
     }
     if (powerupjs.Keyboard.pressed(powerupjs.Keys.A)) {
         if (confirm("Clear all Tiles?")) this.editorLayers.at(this.currentEditorLayer).clear(); // clear current editor layer
@@ -123,9 +159,9 @@ GameplayEditorState.prototype.handleInput = function (delta) {
         powerupjs.Camera.position = powerupjs.Vector2.zero; // reset camera position
         return
     }
-    
-    if ((powerupjs.Mouse.left.pressed || (powerupjs.Mouse.left.down && powerupjs.Keyboard.down(powerupjs.Keys.C))) 
-            && this.editingTiles) { // check if left mouse button is pressed
+
+    if ((powerupjs.Mouse.left.pressed || (powerupjs.Mouse.left.down && powerupjs.Keyboard.down(powerupjs.Keys.C)))
+        && this.editingTiles) { // check if left mouse button is pressed
         if (this.mode == "Drawing") {
             var field = this.editorLayers.at(this.currentEditorLayer) // get current editor layer
             field.addTileAt(field.getTileByMouse(powerupjs.Mouse.position), "#", WorldSettings.currentBlock); // add tile at mouse position
@@ -148,7 +184,7 @@ GameplayEditorState.prototype.handleInput = function (delta) {
         powerupjs.Camera.position.addTo(
             powerupjs.Mouse.screenPosition.subtractFrom(this.previousMousePosition).multiplyWith(-1) // move camera opposite to mouse movement
         );
-        powerupjs.Camera.manageBoundaries(window.LEVELS[WorldSettings.currentLevelIndex].cameraBounds);
+        powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.cameraBounds);
     }
 
 

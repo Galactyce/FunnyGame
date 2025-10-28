@@ -19,6 +19,7 @@ powerupjs.Game.loadAssets = function () {
     sprites.spike = loadSprite("cyberSpike.png")
     sprites.addButton = loadSprite("addButton.png");
     sprites.plusButton = loadSprite("plusButton.png")
+    sprites.minusButton = loadSprite("minusButton.png")
     sprites.crosshair = loadSprite("crosshair.png")
     sprites.player_idle = loadSprite("Idle@11.png", true)
     sprites.frame = loadSprite("frame.jpeg")

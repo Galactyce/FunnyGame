@@ -8,7 +8,7 @@ function WorldSettings() {
     this.currentBlockIndex = 0; // index of current block in blockSprites
     this.activePlayer;
     this.currentState;
-    
+    this.mapBottom;
 
     //  GLOBAL PROPERTIES   //
 
@@ -26,7 +26,7 @@ WorldSettings.prototype.loadLevels = function () { // load levels from window.LE
 
     if (localStorage.levelData) {
         window.LEVELDATA = JSON.parse(localStorage.levelData).filter(item => item !== null);
-
+       
         for (var i = 0; i < window.LEVELDATA.length; i++) {     // Creates window.LEVELS object and edits it with level data
             window.LEVELS.push({
             name: "New",
@@ -38,14 +38,17 @@ WorldSettings.prototype.loadLevels = function () { // load levels from window.LE
             })
             DecryptRawLevelData(window.LEVELDATA[i], i)
         }
-    }   
+    }
+    else {
+        this.createLevel()
+    }
     for (var i = 0; i < window.LEVELS.length; i++) {    // Create Level objects for each level;
         var level = new Level(); // create new Level object
         level.tiles = window.LEVELS[i].tiles; // load tile data
         level.scale = window.LEVELS[i].scale;
         var bounds = window.LEVELS[i].cameraBounds
-        level.cameraBounds = new powerupjs.Rectangle(bounds.x * window.LEVELS[i].scale, bounds.y * window.LEVELS[i].scale, 
-            bounds.width * window.LEVELS[i].scale, bounds.height * window.LEVELS[i].scale)
+        level.cameraBounds = new powerupjs.Rectangle(bounds.x, bounds.y, 
+            bounds.width, bounds.height)
         level.name = window.LEVELS[i].name;
         this.levels.push(level); // add level to levels array
     }
@@ -78,6 +81,7 @@ WorldSettings.prototype.createLevel = function() {
         level.tiles = window.LEVELS[i].tiles; // load tile data
         level.cameraBounds = window.LEVELS[i].cameraBounds
         level.name = window.LEVELS[i].name;
+        level.scale = window.LEVELS[i].scale
         this.levels.push(level); // add level to levels array
         this.currentLevelIndex = i;
     }
