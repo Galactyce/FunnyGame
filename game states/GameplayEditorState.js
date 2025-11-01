@@ -125,8 +125,7 @@ GameplayEditorState.prototype.adjustScale = function(value) {
 }
 
 GameplayEditorState.prototype.handleInput = function (delta) {
-    powerupjs.GameObjectList.prototype.handleInput.call(this, delta)
-
+        powerupjs.GameObjectList.prototype.handleInput.call(this, delta)
     for (var i = 0; i < this.modeButtons.length; i++) {
         var button = this.modeButtons.at(i);
         if (button.pressed) {
@@ -137,15 +136,18 @@ GameplayEditorState.prototype.handleInput = function (delta) {
 
     if (this.scaleUpButton.pressed) {
         this.adjustScale(0.1);
+        return
     }
     if (this.scaleDownButton.pressed) {
         this.adjustScale(-0.1);
+        return
     }
 
     if (this.saveButton.pressed) {
         this.saveLevel();
         this.saveButton.text = "Saved!";
         // setTimeout(this.saveButton.resetText, 5000);
+        return
     }
     if (powerupjs.Keyboard.pressed(powerupjs.Keys.A)) {
         if (confirm("Clear all Tiles?")) this.editorLayers.at(this.currentEditorLayer).clear(); // clear current editor layer
@@ -162,6 +164,8 @@ GameplayEditorState.prototype.handleInput = function (delta) {
 
     if ((powerupjs.Mouse.left.pressed || (powerupjs.Mouse.left.down && powerupjs.Keyboard.down(powerupjs.Keys.C)))
         && this.editingTiles) { // check if left mouse button is pressed
+        console.log(this.mode)
+
         if (this.mode == "Drawing") {
             var field = this.editorLayers.at(this.currentEditorLayer) // get current editor layer
             field.addTileAt(field.getTileByMouse(powerupjs.Mouse.position), "#", WorldSettings.currentBlock); // add tile at mouse position
@@ -191,6 +195,7 @@ GameplayEditorState.prototype.handleInput = function (delta) {
 
     this.previousMousePosition = powerupjs.Mouse.screenPosition.copy(); // store current mouse position for next frame
     this.editingTiles = true;
+
 }
 
 

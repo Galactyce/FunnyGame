@@ -32,29 +32,25 @@ function TitleMenuState(layer) {
 
 TitleMenuState.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
+TitleMenuState.prototype.updateLevelValues = function() {
+    WorldSettings.currentLevel = WorldSettings.levels[this.levelSelectedIndex];
+    WorldSettings.currentLevelIndex = this.levelSelectedIndex;
+    WorldSettings.currentLevel.loadBackground()
+    if (localStorage.levels)
+    window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
+}
+
 TitleMenuState.prototype.handleInput = function (delta) {
     powerupjs.GameObjectList.prototype.handleInput.call(this, delta);
     if (this.editorButton.pressed) {
-        WorldSettings.currentLevel = WorldSettings.levels[this.levelSelectedIndex];
-        WorldSettings.currentLevelIndex = this.levelSelectedIndex;
-        WorldSettings.currentLevel.loadBackground()
-         if (localStorage.levels)
-            window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
+        this.updateLevelValues();
         powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers(); // load editor layers
-        // powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
-
         powerupjs.GameStateManager.switchTo(ID.game_state_editor); // switch to editor state
         WorldSettings.currentState = "editing"
         return;
     }
     if (this.playButton.pressed) {
-
-        WorldSettings.currentLevel = WorldSettings.levels[this.levelSelectedIndex];
-        WorldSettings.currentLevelIndex = this.levelSelectedIndex;
-        console.log()
-        WorldSettings.currentLevel.loadBackground()
-         if (localStorage.levels)
-            window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
+        this.updateLevelValues()
         powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
 
         console.log(WorldSettings.currentLevel)
@@ -89,7 +85,7 @@ TitleMenuState.prototype.handleInput = function (delta) {
         localStorage.levelData = JSON.stringify(window.LEVELDATA);
         localStorage.levels = JSON.stringify(window.LEVELS);
 
-        WorldSettings.loadLevels()
+        WorldSettings.loadLevels() // Update all level objects in WorldSettings.levels
     }
     if (WorldSettings.levels.length > 0) {
         this.levelName.text = WorldSettings.levels[this.levelSelectedIndex].name

@@ -75,7 +75,6 @@ MovingPlatform.prototype.handleInput = function(delta) {
     if (this.addingNode) {
         if (powerupjs.Mouse.left.pressed) {
             var lastMovementNode = this.movementNodes[this.movementNodes.length - 1];
-            console.log(lastMovementNode)
             var positionOffset = this.nodeCrosshair.position.copy().subtractFrom(lastMovementNode);
             if (Math.abs(positionOffset.x) > Math.abs(positionOffset.y)) {
                 this.movementNodes.push(new powerupjs.Vector2(this.nodeCrosshair.position.x, this.nodeCrosshair.position.y - positionOffset.y));
@@ -83,10 +82,13 @@ MovingPlatform.prototype.handleInput = function(delta) {
             else {
                 this.movementNodes.push(new powerupjs.Vector2(this.nodeCrosshair.position.x - positionOffset.x, this.nodeCrosshair.position.y));
             }
+            GameStateManager.get(ID.game_state_editing).mode = "editing"
         }
     }
 
     if (this.addButton.pressed) {
         this.addingNode = true;
+        console.log('asdf')
+        GameStateManager.get(ID.game_state_editing).mode = "editingObject"
     }
 }

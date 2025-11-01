@@ -67,5 +67,4 @@ PlayingState.prototype.draw = function() {
 PlayingState.prototype.update = function(delta) {
     this.currentLevel.update(delta);
     powerupjs.GameObjectList.prototype.update.call(this, delta);
-    console.log(this.player.velocity.x / WorldSettings.currentLevel.scale)
 }
