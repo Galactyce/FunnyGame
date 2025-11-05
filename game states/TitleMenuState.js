@@ -26,37 +26,20 @@ function TitleMenuState(layer) {
     this.playButton = new LabelledButton(sprites.button, "Play", "Arial", "20px", ID.layer_overlays); // play button
     this.playButton.position = new powerupjs.Vector2(powerupjs.Game.screenCenter.x, 400);
     this.add(this.playButton);
-
     this.levelSelectedIndex = 0;
 }
 
 TitleMenuState.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
-TitleMenuState.prototype.updateLevelValues = function() {
-    WorldSettings.currentLevel = WorldSettings.levels[this.levelSelectedIndex];
-    WorldSettings.currentLevelIndex = this.levelSelectedIndex;
-    WorldSettings.currentLevel.loadBackground()
-    if (localStorage.levels)
-    window.LEVELS = JSON.parse(localStorage.levels); // load from local storage
-}
-
 TitleMenuState.prototype.handleInput = function (delta) {
     powerupjs.GameObjectList.prototype.handleInput.call(this, delta);
     if (this.editorButton.pressed) {
-        this.updateLevelValues();
-        powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers(); // load editor layers
-        powerupjs.GameStateManager.switchTo(ID.game_state_editor); // switch to editor state
-        WorldSettings.currentState = "editing"
+        WorldSettings.editLevel(this.levelSelectedIndex);
         return;
     }
     if (this.playButton.pressed) {
-        this.updateLevelValues()
-        powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
-
-        console.log(WorldSettings.currentLevel)
-
-        powerupjs.GameStateManager.switchTo(ID.game_state_playing); // switch to playing state
-        WorldSettings.currentState = "playing"
+        console.log(WorldSettings)
+        WorldSettings.loadLevel(this.levelSelectedIndex);
         return;
     }
 
@@ -81,13 +64,12 @@ TitleMenuState.prototype.handleInput = function (delta) {
 
     if (this.levelName.boundingBox.contains(powerupjs.Mouse.position) && powerupjs.Mouse.left.pressed) {    // Edit level name
         window.LEVELS[this.levelSelectedIndex].name = prompt("Level name:");
-        window.LEVELDATA[this.levelSelectedIndex] = saveLevelToTxt(this.levelSelectedIndex)
         localStorage.levelData = JSON.stringify(window.LEVELDATA);
         localStorage.levels = JSON.stringify(window.LEVELS);
 
         WorldSettings.loadLevels() // Update all level objects in WorldSettings.levels
     }
-    if (WorldSettings.levels.length > 0) {
+    if (WorldSettings.numberOfLevels > 0) {
         this.levelName.text = WorldSettings.levels[this.levelSelectedIndex].name
         this.levelName.origin = this.levelName.center;
         this.leftArrow.position = new powerupjs.Vector2(this.levelName.position.x - this.leftArrow.width - this.levelName.width / 2, this.levelName.position.y);

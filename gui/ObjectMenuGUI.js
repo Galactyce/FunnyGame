@@ -73,7 +73,6 @@ ObjectMenuGUI.prototype.handleInput = function (delta) {
         var boundingBox = this.blockIcons.at(i).boundingBox; // get block bounding box
         if (this.visible && powerupjs.Mouse.containsMousePress(boundingBox)) { // if block is clicked
             WorldSettings.currentBlock = this.blocks.at(i).sprite; // set current block
-            WorldSettings.currentBlockIndex = i; // set current block index
             this.blockSelector.visible = true; // show block selector
             this.blockSelector.scale = (this.cellWidth + 10) / this.blockSelector.width
             console.log()

@@ -21,40 +21,38 @@ TileDataManager_Singleton.prototype.writeTiles = function (tiles) { // tiles is 
     return data; // return final data string
 }
 
-TileDataManager_Singleton.prototype.manageObjData = function(tile) {
-    if (tile.sprite.image.src == sprites.movingPlatform.image.src) {
+TileDataManager_Singleton.prototype.manageObjData = function(tile) { // decide how to write tile data based on type
+    if (tile.sprite.image.src == sprites.movingPlatform.image.src) { // moving platform tile
         return this.writeMovingPlatform(tile);
     }
     else {
-        return this.writeTile(tile);
+        return this.writeTile(tile); // basic tile
     }
 }
 
-TileDataManager_Singleton.prototype.handleObject = function(sprite) {
-    if (sprite.image.src == sprites.spring.image.src) {
+TileDataManager_Singleton.prototype.handleObject = function(sprite) { // create tile object based on sprite
+    if (sprite.image.src == sprites.spring.image.src) { // spring tile
         return new Spring(sprite);
     }
-    if (sprite.image.src == sprites.movingPlatform.image.src) {
+    if (sprite.image.src == sprites.movingPlatform.image.src) { // moving platform tile
         return new MovingPlatform(sprite);
     }
     else {
-        return new Tile(sprite);
+        return new Tile(sprite); // basic tile
     }
 }
 
-TileDataManager_Singleton.prototype.writeTile = function(tile) { 
-    return tile.key + "|" + tile.index.x + "|" + tile.index.y +
-        "|" + WorldSettings.indexOfSprite(tile.sprite) + "|" + tile.rotation + "|" + tile.scale + "|"; // create data string ==> (key|x|y|spriteIndex|rotation)
+TileDataManager_Singleton.prototype.writeTile = function(tile) {  // write basic tile data
+    return tile.key + "|" + tile.index.x + "|" + tile.index.y + "|" + WorldSettings.indexOfSprite(tile.sprite) + "|" + tile.rotation + "|" + tile.scale + "|"; // create data string ==> (key|x|y|spriteIndex|rotation|scale)
 }
 
-TileDataManager_Singleton.prototype.writeMovingPlatform = function(tile) {
-    var str = this.writeTile(tile)
-    for (var i = 0; i < tile.movementNodes.length; i++) {
-        str += tile.movementNodes[i].x + "|" + tile.movementNodes[i].y
-        if (i < tile.movementNodes.length - 1 ) str += "|"
+TileDataManager_Singleton.prototype.writeMovingPlatform = function(tile) { // write moving platform data
+    var str = this.writeTile(tile) // write basic tile data
+    for (var i = 0; i < tile.movementNodes.length; i++) { // for each movement node
+        str += tile.movementNodes[i].x + "|" + tile.movementNodes[i].y // add node position
+        if (i < tile.movementNodes.length - 1 ) str += "|" // add separator if not last
     }
-    console.log(str);
-    return str;
+    return str; // return data string
 }
 
 TileDataManager_Singleton.prototype.convertDataToTile = function(data) {
@@ -70,11 +68,11 @@ TileDataManager_Singleton.prototype.convertDataToTile = function(data) {
     return tile;
 }
 
-TileDataManager_Singleton.prototype.readSpecialTileData = function(tile, data) {
-    if (tile.sprite.image.src == sprites.movingPlatform.image.src) {
+TileDataManager_Singleton.prototype.readSpecialTileData = function(tile, data) { // read special tile data based on type
+    if (tile.sprite.image.src == sprites.movingPlatform.image.src) { // moving platform tile
         var tileData = data.split("|"); // split tile data into components
-        for (var i = this.globalDataValues; i < (tileData.length); i += 2) {
-            tile.movementNodes.push(new powerupjs.Vector2(parseFloat(tileData[i]), parseFloat(tileData[i + 1])));
+        for (var i = this.globalDataValues; i < (tileData.length); i += 2) { // for each movement node
+            tile.movementNodes.push(new powerupjs.Vector2(parseFloat(tileData[i]), parseFloat(tileData[i + 1]))); // add node position
         }
     }
 }

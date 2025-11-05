@@ -63,7 +63,6 @@ var powerupjs = (function (powerupjs) {
 
     Game_Singleton.prototype.loadAssets = function () {
     };
-
     Game_Singleton.prototype.assetLoadingLoop = function () {
         powerupjs.Canvas2D.clear(); // clear canvas
 
@@ -74,9 +73,9 @@ var powerupjs = (function (powerupjs) {
         if (powerupjs.Game._spritesStillLoading > 0) // check if sprites are still loading
             requestAnimationFrame(powerupjs.Game.assetLoadingLoop); // continue loading loop
         else { // all assets loaded
-            powerupjs.Game.initialize(); // initialize game
-            requestAnimationFrame(powerupjs.Game.mainLoop); // start main loop
-            window.setTimeout(powerupjs.Game.drawingLoop, 1000 / 60); // start drawing loop
+            window.setTimeout(powerupjs.Game.initialize, 500); // initialize game
+            window.setTimeout(powerupjs.Game.mainLoop, 1000); // start drawing loop
+            window.setTimeout(powerupjs.Game.drawingLoop, 1000); // start drawing loop
         }
     };
 

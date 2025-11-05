@@ -26,29 +26,31 @@ var powerupjs = (function (powerupjs) {
     });
 
     GameObjectGrid.prototype.add = function (gameobject) { // add game object to grid
-        var row = Math.floor(this._gameObjects.length / this._columns); // calculate row
-        var col = this._gameObjects.length % this._columns; // calculate column
+        var row = Math.floor(this.length / this._columns); // calculate row
+        var col = this.length % this._columns; // calculate column
         this._gameObjects.push(gameobject); // add to internal array
+        this.length++; // increment length
         gameobject.parent = this; // set parent to this grid
         gameobject.position = new powerupjs.Vector2(col * this.cellWidth, row * this.cellHeight); // set position based on grid cell
     };
 
     GameObjectGrid.prototype.addAt = function (gameobject, col, row) { // add game object at specific grid cell
         this._gameObjects[row * this._columns + col] = gameobject; // add to internal array at calculated index
+        this.length++; // increment length
         gameobject.parent = this; // set parent to this grid
         gameobject.position = new powerupjs.Vector2(col * this.cellWidth, row * this.cellHeight); // set position based on grid cell
     };
 
     GameObjectGrid.prototype.at = function (col, row) { // get game object at specific grid cell
         var index = row * this._columns + col; // calculate index
-        if (index < 0 || index >= this._gameObjects.length) // index out of bounds
+        if (index < 0 || index >= this.length) // index out of bounds
             return null; // return null
         else
             return this._gameObjects[index]; // return game object at index
     };
 
     GameObjectGrid.prototype.getAnchorPosition = function (gameobject) { // get position of game object in grid
-        var l = this._gameObjects.length; // length of internal array
+        var l = this.length; // length of internal array
         for (var i = 0; i < l; ++i) // iterate through internal array
             if (this._gameObjects[i] == gameobject) { // found game object
                 var row = Math.floor(i / this.columns); // calculate row

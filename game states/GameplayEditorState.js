@@ -63,7 +63,7 @@ GameplayEditorState.prototype.loadLayers = function () {
     else {
         this.playerStartPos.position = new powerupjs.Vector2(spawnData.x, spawnData.y)
     }
-    WorldSettings.currentLevel.cameraBounds = window.LEVELS[WorldSettings.currentLevelIndex].cameraBounds
+    WorldSettings.cameraBounds = window.LEVELS[WorldSettings.currentLevelIndex].cameraBounds
 
     for (var i = 0; i < this.editorLayers.length; i++) {
         this.editorLayers.at(i).clear();

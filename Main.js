@@ -38,10 +38,10 @@ powerupjs.Game.loadAssets = function () {
 };
 
 powerupjs.Game.initialize = function () {
+    
     // // play the music
     // sounds.music.volume = 0.3;
     // sounds.music.play();
-    powerupjs.Camera.initialize();
     // define the layers
     ID.layer_background = 1;
     ID.layer_background_1 = 2;
@@ -81,8 +81,10 @@ powerupjs.Game.initialize = function () {
         sprites.cyberForeground
     ]
 
-    WorldSettings.loadLevels(); // load levels from window.LEVELS
+    WorldSettings.loadLevels(); // load levels from local storage
 
     powerupjs.GameStateManager.get(ID.game_state_editor).objectMenu.loadBlocks(); // load blocks into object menu
     powerupjs.GameStateManager.get(ID.game_state_editor).editingMenu.loadButtons(); // load buttons into editing menu
+    powerupjs.Camera.initialize();
+
 };
