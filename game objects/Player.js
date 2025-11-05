@@ -267,8 +267,7 @@ Player.prototype.handleMoving = function(delta) {
     else {
         // airDrag : a boolean meant to manage air resistance. If set to false, the player will not stop midair
         // baseVelocity : if outside sources are adding velocity, carry momentum when dismounting
-        if ((this.grounded || this.timeAfterWallJump > this.neutralJumpTime || this.baseVelocity == 0 ) && 
-             this.airDrag && !this.dashing) // after 0.6 seconds, stop velocity
+        if ((this.grounded || this.timeAfterWallJump > this.neutralJumpTime) && Math.abs(this.baseVelocity < 1) && this.airDrag && !this.dashing) // after 0.6 seconds, stop velocity
             this.velocity.x = this.baseVelocity; // no horizontal input, stop horizontal movement
         else {
             if (!this.dashing)

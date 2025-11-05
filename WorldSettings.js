@@ -12,7 +12,7 @@ function WorldSettingsSingleton() {
     //  GLOBAL PROPERTIES   //
 
     this.gravity = 3;
-    this.wallSlideSpeed = 25;
+    this.wallSlideSpeed = 50;
     this.cameraSmoothingFactor = 5;
     this._terminalVelocity = 130; // max downward speed
 
