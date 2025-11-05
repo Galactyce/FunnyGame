@@ -12,7 +12,8 @@ function Level() {
 
 Level.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
-Level.prototype.loadBackground = function () {
+Level.prototype.loadBackground = function () {  // Loads backgrounds for the level from window.LEVELS
+    this.backgrounds.clear();
     for (var i = 0; i < window.LEVELS[WorldSettings.currentLevelIndex].backgrounds.length; i++) {
         var index = window.LEVELS[WorldSettings.currentLevelIndex].backgrounds[i];
         var camBounds = new powerupjs.Rectangle(

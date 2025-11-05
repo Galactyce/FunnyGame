@@ -104,14 +104,11 @@ GameplayEditorState.prototype.draw = function () {
 }
 
 GameplayEditorState.prototype.saveLevel = function () {
-    for (var i = 0; i < this.editorLayers.length; i++)
+    for (var i = 0; i < this.editorLayers.length; i++) { // for each editor layer
         this.editorLayers.at(i).saveTiles(); // save current editor layer tiles
-    window.LEVELS[WorldSettings.currentLevelIndex].playerSpawnPos = this.playerStartPos.position;
-    window.LEVELDATA[WorldSettings.currentLevelIndex] = saveLevelToTxt(WorldSettings.currentLevelIndex)
-    console.log(window.LEVELS[WorldSettings.currentLevelIndex]);
-    localStorage.levels = JSON.stringify(window.LEVELS); // save to local storage
-    localStorage.levelData = JSON.stringify(window.LEVELDATA);
-    console.log(localStorage.levelData)
+    }
+    window.LEVELS[WorldSettings.currentLevelIndex].playerSpawnPos = this.playerStartPos.position; // save player spawn position
+    WorldSettings.saveLevels(); // save levels to local storage
 }
 
 GameplayEditorState.prototype.adjustScale = function(value) {

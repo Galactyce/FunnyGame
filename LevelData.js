@@ -51,4 +51,3 @@ function DecryptRawLevelData(data, levelIndex) {
 
 
 window.LEVELS = [];
-window.LEVELDATA = [];

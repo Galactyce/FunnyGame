@@ -38,8 +38,7 @@ TitleMenuState.prototype.handleInput = function (delta) {
         return;
     }
     if (this.playButton.pressed) {
-        console.log(WorldSettings)
-        WorldSettings.loadLevel(this.levelSelectedIndex);
+        WorldSettings.playLevel(this.levelSelectedIndex);
         return;
     }
 
@@ -64,10 +63,8 @@ TitleMenuState.prototype.handleInput = function (delta) {
 
     if (this.levelName.boundingBox.contains(powerupjs.Mouse.position) && powerupjs.Mouse.left.pressed) {    // Edit level name
         window.LEVELS[this.levelSelectedIndex].name = prompt("Level name:");
-        localStorage.levelData = JSON.stringify(window.LEVELDATA);
-        localStorage.levels = JSON.stringify(window.LEVELS);
-
-        WorldSettings.loadLevels() // Update all level objects in WorldSettings.levels
+        WorldSettings.getLevel(this.levelSelectedIndex).name = window.LEVELS[this.levelSelectedIndex].name; // Update Level object name
+        WorldSettings.saveLevels(); // Save updated level name
     }
     if (WorldSettings.numberOfLevels > 0) {
         this.levelName.text = WorldSettings.levels[this.levelSelectedIndex].name

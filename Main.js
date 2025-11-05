@@ -81,6 +81,7 @@ powerupjs.Game.initialize = function () {
         sprites.cyberForeground
     ]
 
+    
     WorldSettings.loadLevels(); // load levels from local storage
 
     powerupjs.GameStateManager.get(ID.game_state_editor).objectMenu.loadBlocks(); // load blocks into object menu
