@@ -23,7 +23,7 @@ WorldSettingsSingleton.prototype.loadLevels = function () { // load levels from 
     this.levels = [];   // clear current levels
     window.LEVELS = []; // clear current LEVELS object
     if (localStorage.levels) {   // if level data exists in local storage
-        window.LEVELS = JSON.parse(localStorage.levels).filter(item => item !== null); // load level data from local storage
+        window.LEVELS = JSON.parse(localStorage.levels).filter(item => item !== null).map(this.normalizeLevelData.bind(this)); // load level data from local storage
     }
     else {
         this.createLevel(); // create default level if no level data exists
@@ -43,8 +43,20 @@ WorldSettingsSingleton.prototype.saveLevels = function () { // save levels to lo
         if (levelIndex === null) continue;
         window.LEVELS[levelIndex].tiles = level.tiles;
         window.LEVELS[levelIndex].scale = level.scale;
-        window.LEVELS[levelIndex].cameraBounds = level.cameraBounds;
+        window.LEVELS[levelIndex].cameraBounds = {
+            x: level.cameraBounds.x,
+            y: level.cameraBounds.y,
+            width: level.cameraBounds.width,
+            height: level.cameraBounds.height
+        };
         window.LEVELS[levelIndex].name = level.name;
+        window.LEVELS[levelIndex].playerSpawnPos = {
+            x: level.playerStartPos.x,
+            y: level.playerStartPos.y
+        };
+        if (!window.LEVELS[levelIndex].backgrounds) {
+            window.LEVELS[levelIndex].backgrounds = [];
+        }
     }
     localStorage.levels = JSON.stringify(window.LEVELS);
 }
@@ -63,8 +75,15 @@ WorldSettingsSingleton.prototype.manageLevelProperties = function(level) { // ma
     level.tiles = levelData.tiles; // load tile data
     level.scale = levelData.scale;  // load scale
     var bounds = levelData.cameraBounds; // load camera bounds
-    level.cameraBounds = new powerupjs.Rectangle(bounds.x, bounds.y, 
-        bounds.width, bounds.height); // set camera bounds
+    if (bounds) {
+        level.cameraBounds = new powerupjs.Rectangle(bounds.x, bounds.y, 
+            bounds.width, bounds.height); // set camera bounds
+    } else {
+        level.cameraBounds = new powerupjs.Rectangle(-500, -400, 3000, 1400);
+    }
+    if (levelData.playerSpawnPos) {
+        level.playerStartPos = new powerupjs.Vector2(levelData.playerSpawnPos.x, levelData.playerSpawnPos.y);
+    }
     level.name = levelData.name; // set level name
 }
 
@@ -82,20 +101,68 @@ WorldSettingsSingleton.prototype.createLevel = function(index) { // create new l
         name: "New",
         tiles: [],
         cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
-        playerSpawnPos: "400|400",
+        playerSpawnPos: { x: 400, y: 400 },
         backgrounds: [0, 1],
         scale: 1
     }
 
+    var level = new Level(); // create new Level object
+    this.levels.splice(index, 0, level); // add level to levels array at index
+    this.manageLevelProperties(level); // load level properties
+    this.currentLevelIndex = index; // set current level index to new level
     localStorage.levels = JSON.stringify(window.LEVELS);
     
-
-    var level = new Level(); // create new Level object
-    this.manageLevelProperties(level); // load level properties
-    this.levels.splice(index, 0, level); // add level to levels array at index
-    this.currentLevelIndex = index; // set current level index to new level
-    
 }
+
+WorldSettingsSingleton.prototype.normalizeLevelData = function(levelData) {
+    if (!levelData || typeof levelData !== 'object') {
+        return {
+            name: "New",
+            tiles: [],
+            cameraBounds: { x: -500, y: -400, width: 3000, height: 1400 },
+            playerSpawnPos: { x: 400, y: 400 },
+            backgrounds: [0, 1],
+            scale: 1
+        };
+    }
+
+    if (!Array.isArray(levelData.tiles)) {
+        levelData.tiles = [];
+    }
+
+    if (typeof levelData.cameraBounds === 'string') {
+        levelData.cameraBounds = { x: -500, y: -400, width: 3000, height: 1400 };
+    }
+    if (!levelData.cameraBounds || typeof levelData.cameraBounds.x !== 'number') {
+        levelData.cameraBounds = levelData.cameraBounds || { x: -500, y: -400, width: 3000, height: 1400 };
+    }
+
+    if (typeof levelData.playerSpawnPos === 'string') {
+        var parts = levelData.playerSpawnPos.split('|');
+        levelData.playerSpawnPos = {
+            x: parseFloat(parts[0]) || 400,
+            y: parseFloat(parts[1]) || 400
+        };
+    }
+    if (!levelData.playerSpawnPos || typeof levelData.playerSpawnPos.x !== 'number') {
+        levelData.playerSpawnPos = { x: 400, y: 400 };
+    }
+
+    if (!Array.isArray(levelData.backgrounds)) {
+        levelData.backgrounds = [0, 1];
+    }
+
+    if (typeof levelData.scale !== 'number') {
+        levelData.scale = parseFloat(levelData.scale) || 1;
+    }
+
+    if (typeof levelData.name !== 'string') {
+        levelData.name = 'New';
+    }
+
+    return levelData;
+}
+
 
 WorldSettingsSingleton.prototype.deleteLevel = function(levelIndex) { // delete level at index
     window.LEVELS.splice(levelIndex, 1); // remove level from LEVELS array

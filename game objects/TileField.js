@@ -38,7 +38,7 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
     tile.rotation = rotation;
     tile.playAnimation("normal");
     tile.origin = tile.center;
-    tile.scale = this.scale;
+    tile.scale = this.scale * tile.scale;
     tile.index = index;
     powerupjs.GameStateManager.get(ID.game_state_editor).editingMenu.selectedObj = tile;
     tile.parent = this;
@@ -85,7 +85,7 @@ TileField.prototype.loadTiles = function () {
         if (splitData[i] == "") continue; // skip empty data
 
         var tile = TileDataManager.convertDataToTile(splitData[i])
-        tile.scale = this.scale
+        tile.scale = this.scale * tile.scale;
         tile.position = new powerupjs.Vector2((tile.index.x * this.cellWidth * this.scale) + ((this.cellWidth * this.scale) / 2), 
             (tile.index.y * this.cellHeight * this.scale) + ((this.cellHeight * this.scale) / 2))
         this.add(tile)
