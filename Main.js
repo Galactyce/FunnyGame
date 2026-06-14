@@ -33,7 +33,8 @@ powerupjs.Game.loadAssets = function () {
     sprites.movingPlatform = loadSprite("MovingPlatform@8.png", true);
     sprites.arrowButtons = loadSprite("arrowButtons@4.png");
     sprites.cyberBackground = loadSprite("background.png");
-    sprites.cyberForeground = loadSprite("background1.png")
+    sprites.cyberForeground = loadSprite("background1.png");
+    sprites.greenTiles = loadSprite("BasicGreen@10x4.png");
 
 };
 
@@ -74,7 +75,8 @@ powerupjs.Game.initialize = function () {
         sprites.spike,
         sprites.saw,
         sprites.spring,
-        sprites.movingPlatform
+        sprites.movingPlatform,
+        sprites.greenTiles
     ]
     WorldSettings.backgrounds = [
         sprites.cyberBackground,

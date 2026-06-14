@@ -1,7 +1,7 @@
 
 function TileDataManager_Singleton() {
     this.dataStrings = [];
-    this.globalDataValues = 6; // Values saved in every tile (position, sprite, rotation, key, scale)
+    this.globalDataValues = 7; // Values saved in every tile (position, sprite, rotation, key, scale, sheetIndex)
 }
 
 TileDataManager_Singleton.prototype.writeTiles = function (tiles) { // tiles is an array of Tile objects
@@ -43,7 +43,11 @@ TileDataManager_Singleton.prototype.handleObject = function(sprite) { // create 
 }
 
 TileDataManager_Singleton.prototype.writeTile = function(tile) {  // write basic tile data
-    return tile.key + "|" + tile.index.x + "|" + tile.index.y + "|" + WorldSettings.indexOfSprite(tile.sprite) + "|" + tile.rotation + "|" + tile.scale + "|"; // create data string ==> (key|x|y|spriteIndex|rotation|scale)
+    var spriteIndex = WorldSettings.indexOfSprite(tile.sprite);
+    if (spriteIndex === null || typeof spriteIndex === 'undefined' || isNaN(spriteIndex)) {
+        spriteIndex = 0;
+    }
+    return tile.key + "|" + tile.index.x + "|" + tile.index.y + "|" + spriteIndex + "|" + tile.rotation + "|" + tile.scale + "|" + tile.sheetIndex + "|"; // create data string ==> (key|x|y|spriteIndex|rotation|scale|sheetIndex)
 }
 
 TileDataManager_Singleton.prototype.writeMovingPlatform = function(tile) { // write moving platform data
@@ -63,6 +67,7 @@ TileDataManager_Singleton.prototype.convertDataToTile = function(data) {
     tile.rotation = parseFloat(tileData[4]);
     tile.scale = parseFloat(tileData[5])
     tile.playAnimation("normal");
+    tile.sheetIndex = parseInt(tileData[6]) || 0;
     tile.origin = tile.center;
     this.readSpecialTileData(tile, data)
     return tile;

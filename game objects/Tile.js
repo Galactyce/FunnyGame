@@ -18,6 +18,12 @@ Tile.prototype.draw = function () {
     }
 }
 
+Tile.prototype.update = function (delta) {
+    if (this.sprite.isAnimated) {
+        powerupjs.AnimatedGameObject.prototype.update.call(this, delta);
+    }
+}
+
 Tile.prototype.showHitboxes = function () {
     if (this.hitboxType == "hurt") // draw hurt hitboxes in red
         this.hitbox.draw("red")

@@ -13,9 +13,24 @@ function TileField(layer, id) {
 
 TileField.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
-TileField.prototype.getTileByMouse = function () {
-    return new powerupjs.Vector2(Math.floor((powerupjs.Mouse.position.x - this.position.x) / (this.cellWidth * this.scale)), // calculate tile index based on mouse position
-        Math.floor((powerupjs.Mouse.position.y - this.position.y) / (this.cellHeight * this.scale)));
+TileField.prototype.getTileByMouse = function (position) {
+    var mousePosition = typeof position !== 'undefined' ? position : powerupjs.Mouse.position;
+    var fieldPosition = this.worldPosition; // use world position for nested game objects
+    return new powerupjs.Vector2(
+        Math.floor((mousePosition.x - fieldPosition.x) / (this.cellWidth * this.scale)), // calculate tile index based on mouse position
+        Math.floor((mousePosition.y - fieldPosition.y) / (this.cellHeight * this.scale))
+    );
+}
+
+TileField.prototype.getTileAtIndex = function (index) {
+    if (!index || isNaN(index.x) || isNaN(index.y)) return null;
+    for (var i = 0; i < this.length; i++) {
+        var tile = this.at(i);
+        if (tile.index && tile.index.equals(index)) {
+            return tile;
+        }
+    }
+    return null;
 }
 
 TileField.prototype.update = function (delta) {
@@ -23,52 +38,71 @@ TileField.prototype.update = function (delta) {
 }
 
 TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
-    var sprite = typeof sprite !== 'undefined' ? sprite : sprites.defaultTile; // default sprite if none provided
-    rotation = typeof rotation !== 'undefined' ? rotation : 0;
-    for (var i = 0; i < this.length; i++) {
-        if (this.at(i).position.equals(
-            new powerupjs.Vector2(index.x * this.cellWidth + (this.cellWidth / 2), index.y * this.cellHeight + (this.cellHeight / 2))
-        )) return;
+    var sheetIndex = 0;
+    var _sprite;
+    if (typeof sprite !== 'undefined' && sprite && typeof sprite.sprite !== 'undefined') {
+        sheetIndex = sprite.sheetIndex || 0;
+        _sprite = sprite.sprite;
     }
-    var tile = TileDataManager.handleObject(sprite);
+    _sprite = typeof sprite !== 'undefined' ? _sprite : sprites.defaultTile; // default sprite if none provided
+    rotation = typeof rotation !== 'undefined' ? rotation : 0;
+    var existingTile = this.getTileAtIndex(index);
+    if (existingTile) {
+        this.remove(existingTile);
+    }
+    var tile = TileDataManager.handleObject(_sprite);
     if (this.tileKey !== null) tile.key = this.tileKey; // use current tile key
     else tile.key = tileKey;
     tile.position = new powerupjs.Vector2(
-        (index.x * this.cellWidth * this.scale) + ((this.cellWidth * this.scale) / 2), (index.y * this.cellHeight * this.scale) + ((this.cellHeight * this.scale) / 2))
+        (index.x * this.cellWidth * this.scale) + ((this.cellWidth * this.scale) / 2),
+        (index.y * this.cellHeight * this.scale) + ((this.cellHeight * this.scale) / 2)
+    );
     tile.rotation = rotation;
     tile.playAnimation("normal");
+    tile.sheetIndex = sheetIndex;
     tile.origin = tile.center;
     tile.scale = this.scale * tile.scale;
-    tile.index = index;
+    tile.index = index.copy();
     powerupjs.GameStateManager.get(ID.game_state_editor).editingMenu.selectedObj = tile;
     tile.parent = this;
     this.add(tile);
-    tile.manageHitboxes(sprite); // set hitbox based on sprite
+    tile.manageHitboxes(_sprite); // set hitbox based on sprite
+}
 
+TileField.prototype.normalizeTiles = function () {
+    var positions = [];
+    for (var i = 0; i < this.length; i++) {
+        var tile = this.at(i);
+        for (var j = 0; j < positions.length; j++) {
+            if (tile.index.equals(positions[j])) {
+                this.remove(tile);
+                continue;
+            }
+        }
+        positions.push(tile.index);
+
+    }
+}
+
+TileField.prototype.hasTileAt = function (position) {
+    return this.getTileAt(position) !== null;
 }
 
 TileField.prototype.removeTileAt = function (position) {
-    for (var i = 0; i < this.length; i++) {
-        if (this.at(i).boundingBox.contains(position)) { // find tile at index
-            this.remove(this.at(i));
-            if (!powerupjs.Keyboard.down(powerupjs.Keys.C)) {
-                console.log("bruh")
-                break;
-            }
-        }
+    var index = this.getTileByMouse(position);
+    var tile = this.getTileAtIndex(index);
+    if (tile) {
+        this.remove(tile);
     }
 }
 
 TileField.prototype.getTileAt = function (position) {
-    for (var i = 0; i < this.length; i++) {
-        if (this.at(i).boundingBox.contains(position)) { // find tile at index
-            return this.at(i);
-        }
-    }
-    return null;
+    var index = this.getTileByMouse(position);
+    return this.getTileAtIndex(index);
 }
 
 TileField.prototype.saveTiles = function () {
+    this.normalizeTiles(); // remove duplicate tiles before saving
     this.data = TileDataManager.writeTiles(this._gameObjects); // serialize tiles
     console.log(this.data)
     if (window.LEVELS[WorldSettings.currentLevelIndex])

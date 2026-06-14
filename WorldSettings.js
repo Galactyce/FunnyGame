@@ -3,12 +3,11 @@ function WorldSettingsSingleton() {
     this.activeLayer = 0;
     this.levels = [];
     this.blockSprites = []; // list of block sprites
-    this.currentBlock; // current block sprite
+    this.currentBlock = undefined; // current block sprite
     this.currentBlockIndex = 0; // index of current block in blockSprites
     this.activePlayer;
     this.currentState;
     this.mapBottom;
-
     //  GLOBAL PROPERTIES   //
 
     this.gravity = 3;
@@ -23,10 +22,18 @@ WorldSettingsSingleton.prototype.loadLevels = function () { // load levels from 
     this.levels = [];   // clear current levels
     window.LEVELS = []; // clear current LEVELS object
     if (localStorage.levels) {   // if level data exists in local storage
-        window.LEVELS = JSON.parse(localStorage.levels).filter(item => item !== null).map(this.normalizeLevelData.bind(this)); // load level data from local storage
+        try {
+            var storedLevels = JSON.parse(localStorage.levels);
+            if (!Array.isArray(storedLevels)) storedLevels = [];
+            window.LEVELS = storedLevels.filter(item => item !== null).map(this.normalizeLevelData.bind(this)); // load level data from local storage
+        }
+        catch (e) {
+            window.LEVELS = [];
+        }
     }
-    else {
-        this.createLevel(); // create default level if no level data exists
+
+    if (!Array.isArray(window.LEVELS) || window.LEVELS.length === 0) {
+        this.createLevel(); // create default level if no valid level data exists
     }
 
     for (var i = 0; i < window.LEVELS.length; i++) {    // Create Level objects for each level;
@@ -41,7 +48,10 @@ WorldSettingsSingleton.prototype.saveLevels = function () { // save levels to lo
         var level = this.levels[i];
         var levelIndex = this.indexOfLevel(level);
         if (levelIndex === null) continue;
-        window.LEVELS[levelIndex].tiles = level.tiles;
+        if (!window.LEVELS[levelIndex] || typeof window.LEVELS[levelIndex] !== 'object') {
+            window.LEVELS[levelIndex] = {};
+        }
+        window.LEVELS[levelIndex].tiles = level.tiles || [];
         window.LEVELS[levelIndex].scale = level.scale;
         window.LEVELS[levelIndex].cameraBounds = {
             x: level.cameraBounds.x,
@@ -72,19 +82,26 @@ WorldSettingsSingleton.prototype.manageLevelProperties = function(level) { // ma
     var levelIndex = this.indexOfLevel(level);
     if (levelIndex === null) return;
     var levelData = window.LEVELS[levelIndex];
-    level.tiles = levelData.tiles; // load tile data
-    level.scale = levelData.scale;  // load scale
+    if (!levelData || typeof levelData !== 'object') {
+        levelData = this.normalizeLevelData(null);
+        window.LEVELS[levelIndex] = levelData;
+    }
+    level.tiles = Array.isArray(levelData.tiles) ? levelData.tiles : [];
+    level.scale = typeof levelData.scale === 'number' ? levelData.scale : 1;  // load scale
     var bounds = levelData.cameraBounds; // load camera bounds
-    if (bounds) {
+    if (bounds && typeof bounds.x === 'number') {
         level.cameraBounds = new powerupjs.Rectangle(bounds.x, bounds.y, 
             bounds.width, bounds.height); // set camera bounds
     } else {
         level.cameraBounds = new powerupjs.Rectangle(-500, -400, 3000, 1400);
     }
-    if (levelData.playerSpawnPos) {
+    if (levelData.playerSpawnPos && typeof levelData.playerSpawnPos.x === 'number') {
         level.playerStartPos = new powerupjs.Vector2(levelData.playerSpawnPos.x, levelData.playerSpawnPos.y);
     }
-    level.name = levelData.name; // set level name
+    else {
+        level.playerStartPos = new powerupjs.Vector2(400, 400);
+    }
+    level.name = typeof levelData.name === 'string' ? levelData.name : 'New'; // set level name
 }
 
 WorldSettingsSingleton.prototype.indexOfSprite = function (sprite) { // get index of sprite in blockSprites
@@ -183,10 +200,18 @@ Object.defineProperty(WorldSettingsSingleton.prototype, "currentLevel", { // get
 
 Object.defineProperty(WorldSettingsSingleton.prototype, "currentBlock", { // get/set current block sprite
     get: function() {
+        if (typeof this._currentBlock !== 'undefined' && this._currentBlock !== null) {
+            return this._currentBlock;
+        }
         return this.blockSprites[this.currentBlockIndex];
     },
     set: function(value) {
+        if (value && typeof value === 'object' && typeof value.sprite !== 'undefined') {
+            this._currentBlock = value;
+            return;
+        }
         this.currentBlockIndex = this.blockSprites.indexOf(value);
+        this._currentBlock = value;
     }
 });
 

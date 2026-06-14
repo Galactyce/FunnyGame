@@ -32,7 +32,7 @@ var powerupjs = (function (powerupjs) {
         var colRow = fileSplit[fileSplit.length - 1].split("x"); // split by 'x' to get columns and rows
         this._sheetColumns = parseInt(colRow[0]); // set sheet columns
         if (colRow.length === 2) // if rows specified
-            this._sheetRows = colRow[1]; // set sheet rows
+            this._sheetRows = parseInt(colRow[1]); // set sheet rows
     }
 
     Object.defineProperty(SpriteSheet.prototype, "image", // get the image

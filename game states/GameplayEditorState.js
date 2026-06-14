@@ -165,6 +165,9 @@ GameplayEditorState.prototype.handleInput = function (delta) {
 
         if (this.mode == "Drawing") {
             var field = this.editorLayers.at(this.currentEditorLayer) // get current editor layer
+            if (field.hasTileAt(powerupjs.Mouse.position)) {
+                field.removeTileAt(powerupjs.Mouse.position); // remove tile if one already exists at mouse position
+            }
             field.addTileAt(field.getTileByMouse(powerupjs.Mouse.position), "#", WorldSettings.currentBlock); // add tile at mouse position
         }
         else if (this.mode == "Erasing") {

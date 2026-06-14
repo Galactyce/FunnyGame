@@ -17,6 +17,9 @@ function ObjectMenuGUI(layer) {
     this.blockIcons = new powerupjs.GameObjectList(ID.layer_overlays_1);
     this.blockIcons.position = new powerupjs.Vector2(5, 5)
     this.add(this.blockIcons);
+
+    this.gridWidth = 9; // number of columns in block menu
+    this.gridHeight = 3; // number of rows in block menu
 }
 
 ObjectMenuGUI.prototype = Object.create(powerupjs.GameObjectList.prototype);
@@ -43,9 +46,12 @@ ObjectMenuGUI.prototype.loadBlocks = function () {
         }
     }
     for (var i = 0; i < this.blocks.length; i++) { // position blocks in a row
-        var piece = new powerupjs.SpriteGameObject(this.blocks.at(i).sprite);
+        var source = this.blocks.at(i);
+        var piece = new powerupjs.SpriteGameObject(source.sprite);
+        piece.sheetIndex = source.sheetIndex; // keep the correct sprite from the sheet
         piece.scale = this.cellWidth / piece.width;
-        piece.position = new powerupjs.Vector2(40 + (i * (this.cellWidth + this.cellPadding)), 40);
+        piece.position = new powerupjs.Vector2(40 + ((i % this.gridWidth) * (this.cellWidth + this.cellPadding)), 
+        40 + Math.floor(i / this.gridWidth) * (this.cellHeight + this.cellPadding));
         piece.origin = piece.center;
         piece.ui = true;
         this.blockIcons.add(piece);
@@ -72,10 +78,9 @@ ObjectMenuGUI.prototype.handleInput = function (delta) {
     for (var i = 0; i < this.blockIcons.length; i++) { // for each block
         var boundingBox = this.blockIcons.at(i).boundingBox; // get block bounding box
         if (this.visible && powerupjs.Mouse.containsMousePress(boundingBox)) { // if block is clicked
-            WorldSettings.currentBlock = this.blocks.at(i).sprite; // set current block
+            WorldSettings.currentBlock = this.blocks.at(i); // set current block selection object
             this.blockSelector.visible = true; // show block selector
             this.blockSelector.scale = (this.cellWidth + 10) / this.blockSelector.width
-            console.log()
             this.blockSelector.position = this.blockIcons.at(i).position.copy().addTo(this.blockIcons.position); // position selector over block
         }
     }
