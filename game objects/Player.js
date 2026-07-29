@@ -1,3 +1,4 @@
+// Creates the player object and initializes movement, dash, and collision state.
 function Player(layer, id) {
     powerupjs.AnimatedGameObject.call(this, layer, id);
     this.currentLevelIndex;
@@ -38,7 +39,135 @@ function Player(layer, id) {
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
 
+// Tracks buffered directional input for later dash selection.
+Player.prototype.updateDashBuffer = function() {
+    if (powerupjs.Keyboard.down(powerupjs.Keys.up)) {
+        this.verticalKeysDown = "up";
+        this.keyResetTime = 0;
+    }
+    else if (powerupjs.Keyboard.down(powerupjs.Keys.down)) {
+        this.verticalKeysDown = "down";
+        this.keyResetTime = 0;
+    }
+    else if (this.keyResetTime > this._keyBufferTime) {
+        this.resetDirectionKeys();
+    }
+
+    if (powerupjs.Keyboard.down(powerupjs.Keys.left)) {
+        this.horizonatalKeysDown = "left";
+        this.keyResetTime = 0;
+    }
+    else if (powerupjs.Keyboard.down(powerupjs.Keys.right)) {
+        this.horizonatalKeysDown = "right";
+        this.keyResetTime = 0;
+    }
+    else if (this.keyResetTime > this._keyBufferTime) {
+        this.resetDirectionKeys();
+    }
+}
+
+// Returns a shorter distance when the dash is diagonal.
+Player.prototype.getDashDistance = function() {
+    if (this.verticalKeysDown != "" && this.horizonatalKeysDown != "") return 70;
+    return this.maxDashDistance;
+}
+
+// Chooses the player's collision shape for the current tile.
+Player.prototype.getCollisionBounds = function(tile) {
+    if (tile.hitbox.radius != null) {
+        this.circleHitbox.draw();
+        return this.circleHitbox;
+    }
+
+    return new powerupjs.Rectangle(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height);
+}
+
+// Resolves the player response for a single tile collision.
+Player.prototype.resolveTileCollision = function(tile, tileBounds, boundingBox) {
+    var depth = boundingBox.calculateIntersectionDepth(tileBounds);
+
+    if (this.resolveHorizontalTileCollision(depth, tileBounds)) {
+        boundingBox = this.getCollisionBounds(tile);
+        boundingBox.height += 0.5;
+        depth = boundingBox.calculateIntersectionDepth(tileBounds);
+    }
+
+    this.resolveVerticalTileCollision(tile, tileBounds, boundingBox, depth);
+}
+
+// Applies the horizontal side of a collision before any vertical response.
+Player.prototype.resolveHorizontalTileCollision = function(depth, tileBounds) {
+    if (Math.abs(depth.x) >= Math.abs(depth.y)) return false;
+
+    this.position.x += depth.x;
+    this.adjustHitbox();
+
+    // Ensure we are fully separated from the wall tile after depth correction.
+    if (this.hitbox.intersects(tileBounds)) {
+        var horizontalNudge = depth.x > 0 ? 0.75 : -0.75;
+        for (var i = 0; i < 5 && this.hitbox.intersects(tileBounds); i++) {
+            this.position.x += horizontalNudge;
+            this.adjustHitbox();
+        }
+    }
+
+    this.tileLeft = (depth.x > 0);
+    this.tileRight = (depth.x < 0);
+    this.detaching = false;
+    this.stopDashing();
+    this.velocity.x = 0;
+    return true;
+}
+
+// Applies the vertical side of a collision after the horizontal adjustment is settled.
+Player.prototype.resolveVerticalTileCollision = function(tile, tileBounds, boundingBox, depth) {
+    if (!boundingBox.intersects(tileBounds)) return;
+
+    // if (!this.stableBox.intersects(tileBounds)) return;
+
+    var landedOnTile = depth.y < 0 && this.velocity.y >= 0;
+    var hitTileFromBelow = depth.y > 0 && this.velocity.y < 0;
+    if (landedOnTile) {
+        this.ableToDash = true;
+        this.velocity.y = 0;
+        this.baseVelocity = tile.velocity.x;
+        this.position.y += (depth.y * 1.1);
+        this.adjustHitbox();
+        this.detachFromWall();
+        return true;
+
+    }
+    else if (hitTileFromBelow) { // Hit the bottom of a tile while moving up
+        if (this.velocity.y < 0) this.velocity.y *= -0.1;
+        this.capMoveSpeed(1.5);
+        this.jumpAvailable = false;
+        this.stopDashing();
+    }
+
+    this.position.y += (depth.y * 1.1);
+    this.adjustHitbox();
+    this.detachFromWall();
+    return false;
+}
+
+// Checks whether the player's feet are supported by a solid tile.
+Player.prototype.isStandingOnTile = function(tileBounds) {
+    var footSensor = new powerupjs.Rectangle(
+        this.hitbox.x,
+        this.hitbox.bottom - 2,
+        this.hitbox.width,
+        4
+    );
+
+    return this.velocity.y >= 0 &&
+        tileBounds.intersects(footSensor) &&
+        this.hitbox.bottom <= tileBounds.bottom + 4;
+}
+
+// Cancels dash state and softens the player's momentum.
 Player.prototype.stopDashing = function() {
+    if (!this.dashing) return;
+
     this.dashing = false; // stop dashing
     this.velocity.x = 0; // reset horizontal velocity
     this.velocity.y = this.velocity.y / 4; // reduce vertical velocity
@@ -46,6 +175,7 @@ Player.prototype.stopDashing = function() {
     if (this.velocity.y < -WorldSettings.terminalVelocity * 10) this.velocity.y = -WorldSettings.terminalVelocity * 1; // cap upward velocity
 }
 
+// Advances movement, collisions, and camera state each frame.
 Player.prototype.update = function (delta) {
     powerupjs.AnimatedGameObject.prototype.update.call(this, delta);
     this.origin = this.center; // set origin to center for mirroring
@@ -64,24 +194,25 @@ Player.prototype.update = function (delta) {
 
     if (this.dashing && (Math.abs(this.preDashPos.x - this.worldPosition.x) > this.dashDistance ||
         Math.abs(this.preDashPos.y - this.worldPosition.y) > this.dashDistance)) { // stop dashing after reaching dash distance
-            console.log("Stopping dash");
         this.stopDashing();
     }
 
-    // if (this.velocity.x < this.dashSpeed && this.velocity.x > -this.dashSpeed && this.dashing) {
-    //     this.stopDashing(); // stop dashing if horizontal velocity drops too low
-    // }
-
-    if (this.detaching) {
-        this.detachTime -= delta;
-        if (this.detachTime <= 0) {
-            this.tileLeft = false;
-            this.tileRight = false;
-            this.detaching = false;
-        }
-    }
+    this.updateDetachState(delta);
 }
 
+// Clears wall-detach protection after the buffer expires.
+Player.prototype.updateDetachState = function(delta) {
+    if (!this.detaching) return;
+
+    this.detachTime -= delta;
+    if (this.detachTime > 0) return;
+
+    this.tileLeft = false;
+    this.tileRight = false;
+    this.detaching = false;
+}
+
+// Smoothly follows the player with the camera.
 Player.prototype.handleCameraPos = function(delta) {
     var V = this.centerOfCamera.subtract(powerupjs.Camera.position); // vector from camera to player
     if (Math.abs(V.y) < 3 && Math.abs(V.x) < 3 && this.velocity.x == 0 && this.velocity.y == 0) { 
@@ -97,6 +228,7 @@ Player.prototype.handleCameraPos = function(delta) {
     powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.cameraBounds); // keep camera within level bounds
 }
 
+// Rebuilds the player's collision shapes from the current position.
 Player.prototype.adjustHitbox = function () {
 
     this.hitbox = new powerupjs.Rectangle( // set hitbox smaller than bounding box
@@ -113,8 +245,9 @@ Player.prototype.adjustHitbox = function () {
     this.stableBox = new powerupjs.Rectangle(this.hitbox.x + 0.5, this.hitbox.y, this.hitbox.width - 1, this.hitbox.height + 1); // set stable box for collision detection
 }
 
+// Applies gravity or wall-slide behavior to vertical velocity.
 Player.prototype.simulateGravity = function () {
-    if ((this.tileLeft || this.tileRight) && this.velocity.y > 0 && !this.grounded) { // wall sliding
+    if ((this.tileLeft || this.tileRight) && this.velocity.y > 10 && !this.grounded) { // wall sliding only while falling down
         this.velocity.y = WorldSettings.wallSlideSpeed * this.scale; // set downward speed to wall slide speed
     }
     else {
@@ -124,76 +257,108 @@ Player.prototype.simulateGravity = function () {
     if (this.velocity.y > WorldSettings.terminalVelocity * this.scale) this.velocity.y = WorldSettings.terminalVelocity * this.scale; // cap downward velocity
 }
 
+// Processes tile collisions and updates grounded state.
 Player.prototype.handleCollisions = function () {
+    this.clearPhysicsDebugHighlights();
+    this.debugCollisionTiles = [];
+    this.grounded = false;
 
-    for (var i = 0; i < WorldSettings.currentLevel.tileFields.length; i++) {  // for each tile field
-        var field = WorldSettings.currentLevel.tileFields[i]; // get tile field
-        for (var l = 0; l < field.length; l++) { // for each tile in field
-            var tile = field.at(l); // get tile
-            if (tile == null || tile.hitboxType == "none") // empty tile or non-collidable tile
-                continue; // skip to next tile
+    for (var i = 0; i < WorldSettings.currentLevel.tileFields.length; i++) {
+        var field = WorldSettings.currentLevel.tileFields[i];
 
-            var tileBounds = tile.hitbox; // get tile hitbox
-            if (tile.hitbox.radius != null) { // circular hitbox
-                var boundingBox = this.circleHitbox; // copy of player hitbox
-                this.circleHitbox.draw(); // draw circle hitbox
-            }
-            else var boundingBox = new powerupjs.Rectangle(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height); // copy of player hitbox
-            boundingBox.height += 0.5; // extend hitbox downwards slightly to prevent getting stuck on corners
+        for (var l = 0; l < field.length; l++) {
+            var tile = field.at(l);
+            if (tile == null || tile.hitboxType == "none") continue;
 
-            if (!tileBounds.intersects(boundingBox) || tile.hitboxType == "void") {// no collision
+            var tileBounds = tile.hitbox;
+            var boundingBox = this.getCollisionBounds(tile);
+            boundingBox.height += 0.5;
+
+            if (!tileBounds.intersects(boundingBox) || tile.hitboxType == "void") {
                 this.collidingTiles.remove(tile);
-                continue; // skip to next tile
+                continue;
             }
-            this.collidingTiles.add(tile); // add tile to colliding tiles
 
-            if (tile.hitboxType == "hurt") { // hurtful tile
-                if (this.dashing) continue; // skip if dashing
-                this.die(); // player dies
-                continue; // skip to next tile
+            tile.physicsHighlighted = WorldSettings.debugMode;
+            this.collidingTiles.add(tile);
+            this.debugCollisionTiles.push(tile);
+
+            if (tile.hitboxType == "hurt") {
+                if (this.dashing) continue;
+                this.die();
+                continue;
             }
-            else {
-                var depth = boundingBox.calculateIntersectionDepth(tileBounds); // get intersection depth
-                if (Math.abs(depth.x) < Math.abs(depth.y)) { // horizontal collision
-                    this.position.x += (depth.x * 1.1); // nudge out of collision
-                    this.tileLeft = (depth.x > 0); // set tile left/right flags
-                    this.tileRight = (depth.x < 0); // set tile left/right flags
-                    this.detaching = false; // reset detaching flag
-                    this.stopDashing(); // stop dashing if colliding horizontally
-                    this.velocity.x = 0; // stop horizontal movement
-                    continue; // skip to next tile
-                }
 
-                if (this.previousYPosition <= tileBounds.top) { // if landing on top of tile
-                    if (!this.stableBox.intersects(tileBounds)) continue; // skip if not intersecting stable box
-                    if (this.velocity.y > 0) this.grounded = true; // set grounded if moving downward
-                    this.ableToDash = true; // allow dashing
-                    this.velocity.y = 0; // stop downward velocity
-                    this.baseVelocity = tile.velocity.x; // set base velocity to tile's velocity
-                    
-                }
-                else if (boundingBox.top <= tileBounds.bottom) { // if hitting head on bottom of tile
-                    if (this.velocity.y < 0) this.velocity.y *= -0.1; // reverse and reduce upward velocity
-                    this.capMoveSpeed(1.5); // cap movement speed
-                    this.jumpAvailable = false; // disable jumping
-                    this.stopDashing(); // stop dashing
-                }
-                if (boundingBox.intersects(tileBounds)) {
-                    if (!this.stableBox.intersects(tileBounds)) continue; // prevent stupid clipping to corners in walls
-                    this.position.y += depth.y; // nudge out of collision
-                    this.detachFromWall(); // detach from wall if necessary
-                }
-            }
-            this.adjustHitbox();
-
+            this.resolveTileCollision(tile, tileBounds, boundingBox);
         }
-        if (this.velocity.y != 0) // if moving vertically, not grounded
-            this.grounded = false;
-
     }
+    this.refreshGroundedState();
     this.previousYPosition = this.position.y; // store previous Y position for next frame
+    this.updatePhysicsDebugArea();
 }
 
+// Recomputes grounded from the tiles directly beneath the player.
+Player.prototype.refreshGroundedState = function() {
+    for (var i = 0; i < WorldSettings.currentLevel.tileFields.length; i++) {
+        var field = WorldSettings.currentLevel.tileFields[i];
+        for (var l = 0; l < field.length; l++) {
+            var tile = field.at(l);
+            if (tile == null || tile.hitboxType != "solid") continue;
+            if (this.isStandingOnTile(tile.hitbox)) {
+                this.grounded = true;
+                this.velocity.y = 0;
+                this.baseVelocity = tile.velocity.x;
+                return;
+            }
+        }
+    }
+}
+
+// Clears the per-frame physics debug state from all tiles.
+Player.prototype.clearPhysicsDebugHighlights = function() {
+    for (var i = 0; i < WorldSettings.currentLevel.tileFields.length; i++) {
+        var field = WorldSettings.currentLevel.tileFields[i];
+        for (var l = 0; l < field.length; l++) {
+            var tile = field.at(l);
+            if (tile == null) continue;
+            tile.physicsHighlighted = false;
+        }
+    }
+}
+
+// Writes the current collision set into the on-page debug area.
+Player.prototype.updatePhysicsDebugArea = function() {
+    var debugArea = document.getElementById("debugArea");
+    if (!debugArea) return;
+
+    if (!WorldSettings.debugMode) {
+        debugArea.style.display = "none";
+        debugArea.textContent = "";
+        return;
+    }
+
+    debugArea.style.display = "block";
+
+    var lines = [];
+    lines.push("Physics debug");
+    lines.push("Collision tiles: " + this.debugCollisionTiles.length);
+    lines.push("Grounded: " + this.grounded);
+    lines.push("Dashing: " + this.dashing);
+    lines.push("Tile left/right: " + this.tileLeft + " / " + this.tileRight);
+    lines.push("Velocity: " + this.velocity.x.toFixed(2) + ", " + this.velocity.y.toFixed(2));
+    lines.push("Wallslide: " + ((this.tileLeft || this.tileRight) && !this.grounded));
+
+    for (var i = 0; i < this.debugCollisionTiles.length; i++) {
+        var tile = this.debugCollisionTiles[i];
+        var tileLabel = tile.key || tile.hitboxType || "tile";
+        var tileIndex = tile.index ? "(" + tile.index.x + ", " + tile.index.y + ")" : "(unknown)";
+        lines.push(tileLabel + " " + tileIndex);
+    }
+
+    debugArea.textContent = lines.join("\n");
+}
+
+// Starts the short buffer that prevents instant reattachment to a wall.
 Player.prototype.detachFromWall = function () {
     if (this.detaching) return; // prevent multiple detachments
     this.detaching = true; // set detaching to true
@@ -202,12 +367,14 @@ Player.prototype.detachFromWall = function () {
 
 
 
+// Respawns the player at the spawn point and resets motion.
 Player.prototype.die = function () {
     this.position = this.spawnPosition.copy(); // respawn player
     this.velocity = new powerupjs.Vector2(0, 0); // reset velocity
     powerupjs.Camera.position = this.centerOfCamera; // reset camera position
 }
 
+// Computes the camera position needed to center the player on screen.
 Object.defineProperty(Player.prototype, "centerOfCamera", {
     get: function () {
         return new powerupjs.Vector2(this.position.x - powerupjs.Game.size.x / 2, // center camera on player
@@ -216,72 +383,61 @@ Object.defineProperty(Player.prototype, "centerOfCamera", {
     }
 })
 
-Player.prototype.resetDirectionKeys = function () { // reset direction keys if no input
+// Clears buffered direction inputs when the keys are released.
+Player.prototype.resetDirectionKeys = function () {
     if (!powerupjs.Keyboard.down(powerupjs.Keys.down) && !powerupjs.Keyboard.down(powerupjs.Keys.up)) {
-        this.verticalKeysDown = ""; // reset vertical keys
+        this.verticalKeysDown = "";
     } 
     if (!powerupjs.Keyboard.down(powerupjs.Keys.right) && !powerupjs.Keyboard.down(powerupjs.Keys.left)) {
-        this.horizonatalKeysDown = ""; // reset horizontal keys
+        this.horizonatalKeysDown = "";
     }
 }
 
+// Clamps horizontal speed relative to carried momentum.
 Player.prototype.capMoveSpeed = function(modifier) {
     var modifier = typeof modifier != 'undefined' ? modifier : 1;   // Adjust speed cap in certain scenarios
     if (this.velocity.x < (this.baseVelocity - this.moveSpeed) * modifier) this.velocity.x = (this.baseVelocity - this.moveSpeed) * modifier;
     if (this.velocity.x > (this.baseVelocity + this.moveSpeed) * modifier) this.velocity.x = (this.baseVelocity + this.moveSpeed) * modifier;
 }
 
+// Applies horizontal movement, air drag, and facing updates.
 Player.prototype.handleMoving = function(delta) {
-  if (powerupjs.Keyboard.down(powerupjs.Keys.left) && !this.dashing) { // moving left
-        var speed = this.moveSpeed; // set speed for moving left
-        this.directionFacing = "left"; // set direction facing to left
-        if (this.previousWallJumpDir == "right") {
-            speed /= 2; // Make it harder to move back to wall
-        }
-        if (this.velocity.x > 0 && (this.grounded)) // if changing direction on ground, stop first
-            this.velocity.x = 0; // stop horizontal movement
-        if (this.velocity.x > -speed) // if below max speed, accelerate
-            this.velocity.x -= speed * (delta * this.accelerationMultiplier); // accelerate left
+    if (powerupjs.Keyboard.down(powerupjs.Keys.left) && !this.dashing) {
+        var speed = this.moveSpeed;
+        this.directionFacing = "left";
+        if (this.previousWallJumpDir == "right") speed /= 2;
+        if (this.velocity.x > 0 && (this.grounded)) this.velocity.x = 0;
+        if (this.velocity.x > -speed) this.velocity.x -= speed * (delta * this.accelerationMultiplier);
 
-        this.mirror = true; // set mirror to true when moving left
-        this.detachFromWall(); // detach from wall if necessary
-
-
+        this.mirror = true;
+        this.detachFromWall();
     }
-    else if (powerupjs.Keyboard.down(powerupjs.Keys.right) && !this.dashing) { // moving right
-        var speed = this.moveSpeed; // set speed for moving right
-        this.directionFacing = "right"; // set direction facing to right
-        if (this.previousWallJumpDir == "left") {
-            speed /= 2; // Make it harder to move back to wall
-        }
-        if (this.velocity.x < 0 && (this.grounded)) // if changing direction on ground, stop first
-            this.velocity.x = 0; // stop horizontal movement
-        if (this.velocity.x < speed)   // if below max speed, accelerate
-            this.velocity.x += speed * (delta * this.accelerationMultiplier);  // accelerate right
+    else if (powerupjs.Keyboard.down(powerupjs.Keys.right) && !this.dashing) {
+        var speed = this.moveSpeed;
+        this.directionFacing = "right";
+        if (this.previousWallJumpDir == "left") speed /= 2;
+        if (this.velocity.x < 0 && (this.grounded)) this.velocity.x = 0;
+        if (this.velocity.x < speed) this.velocity.x += speed * (delta * this.accelerationMultiplier);
 
-        this.mirror = false; // set mirror to false when moving right
-        this.detachFromWall(); // detach from wall if necessary
-
-
+        this.mirror = false;
+        this.detachFromWall();
     }
     else {
-        // airDrag : a boolean meant to manage air resistance. If set to false, the player will not stop midair
-        // baseVelocity : if outside sources are adding velocity, carry momentum when dismounting
-        if ((this.grounded || this.timeAfterWallJump > this.neutralJumpTime) && Math.abs(this.baseVelocity < 1) && this.airDrag && !this.dashing) // after 0.6 seconds, stop velocity
-            this.velocity.x = this.baseVelocity; // no horizontal input, stop horizontal movement
-        else {
-            if (!this.dashing)
-                this.velocity.x *= this.airResistance; // apply air drag
-        }
-        this.detachFromWall(); // detach from wall if necessary
+        if ((this.grounded || this.timeAfterWallJump > this.neutralJumpTime) && Math.abs(this.baseVelocity < 1) && this.airDrag && !this.dashing)
+            this.velocity.x = this.baseVelocity;
+        else if (!this.dashing)
+            this.velocity.x *= this.airResistance;
+
+        this.detachFromWall();
     }
 
     if (this.grounded) {
-        this.airDrag = true; // enable air drag when grounded
-        this.previousWallJumpDir = ""; // reset previous wall jump direction
+        this.airDrag = true;
+        this.previousWallJumpDir = "";
     }
 }
 
+// Handles ground jumps, wall jumps, and jump release cuts.
 Player.prototype.handleJumps = function() { // jump handling
     if (powerupjs.Keyboard.down(this.jumpKey)) { // jump key pressed
         if (this.grounded && this.jumpAvailable) { // jump from ground
@@ -312,6 +468,7 @@ Player.prototype.handleJumps = function() { // jump handling
     }
 }
 
+// Performs a jump and arms the jump-cut buffer.
 Player.prototype.jump = function() {
     this.velocity.y = this.jumpForce; // jump
     this.jumpAvailable = false; // prevent double jump
@@ -319,94 +476,66 @@ Player.prototype.jump = function() {
     this.resetJumpVelo = true; // allow jump cut
 }
 
-Player.prototype.handleDashes = function() { // dash handling
-    if (powerupjs.Keyboard.down(powerupjs.Keys.up)) {
-        this.verticalKeysDown = "up"; // up key pressed
-        this.keyResetTime = 0; // reset key reset timer
-    }
-    else if (powerupjs.Keyboard.down(powerupjs.Keys.down)) {
-        this.verticalKeysDown = "down"; // down key pressed
-        this.keyResetTime = 0; // reset key reset timer
-    }
-    else {
-        if (this.keyResetTime > this._keyBufferTime) { // reset if no key pressed for key buffer time (for input buffering)
-            this.resetDirectionKeys(); // reset vertical keys
-        }
-    }
-    if (powerupjs.Keyboard.down(powerupjs.Keys.left)) {
-        this.horizonatalKeysDown = "left"; // left key pressed
-        this.keyResetTime = 0; // reset key reset timer
-    }
-    else if (powerupjs.Keyboard.down(powerupjs.Keys.right)) {
-        this.horizonatalKeysDown = "right"; // right key pressed
-        this.keyResetTime = 0; // reset key reset timer
-    }
-    else {
-        if (this.keyResetTime > this._keyBufferTime) { // reset if no key pressed for 0.25 seconds (for input buffering)
-            this.resetDirectionKeys(); // reset horizontal keys
-        }
-    }
+// Updates dash input state and triggers dash actions.
+Player.prototype.handleDashes = function() {
+    this.updateDashBuffer();
 
-
-    if (powerupjs.Keyboard.pressed(this.dashKey) && this.ableToDash) { // dash key pressed and able to dash
-        this.dash(); // perform dash
-        // this.keyResetTime = 0; // reset key reset timer
+    if (powerupjs.Keyboard.pressed(this.dashKey) && this.ableToDash) {
+        this.dash();
     }
 }
 
+// Starts a dash if the cooldown has elapsed.
 Player.prototype.dash = function() {
-    if (this.dashCooldownTimer > this.dashCooldown) { // check dash cooldown
-        this.dashCooldownTimer = 0; // reset dash timer
-        this.ableToDash = false; // prevent multiple dashes
-        this.preDashPos = this.worldPosition.copy(); // store position before dash
-        this.velocity = powerupjs.Vector2.zero; // reset velocity
-        this.dashing = true; // start dashing
-        this.worldPosition.y -= 10; // adjust position
-        this.resetJumpVelo = false; // prevent jump cut during dash
+    if (this.dashCooldownTimer <= this.dashCooldown) return;
 
-        if (this.horizonatalKeysDown == "left") { // dash left
-            this.velocity.x = -this.dashSpeed; // set dash velocity
-            this.dashDistance = this.maxDashDistance; // set dash distance
-            if (this.verticalKeysDown != "" && this.horizonatalKeysDown != "") this.dashDistance = 70; // shorter dash if diagonal
-        } else if (this.horizonatalKeysDown == "right") { // dash right
-            this.velocity.x = this.dashSpeed; // set dash velocity
-            this.dashDistance = this.maxDashDistance; // set dash distance
-            if (this.verticalKeysDown != "" && this.horizonatalKeysDown != "") this.dashDistance = 70; // shorter dash if diagonal
-        }
-        if (this.verticalKeysDown == "down") { // dash down
-            this.velocity.y = this.dashSpeed; // set dash velocity
-            this.dashDistance = this.maxDashDistance; // set dash distance
-            if (this.verticalKeysDown != "" && this.horizonatalKeysDown != "") this.dashDistance = 70; // shorter dash if diagonal
-        } else if (this.verticalKeysDown == "up") { // dash up
-            this.velocity.y = -this.dashSpeed; // set dash velocity
-            this.dashDistance = this.maxDashDistance; // set dash distance
-            if (this.verticalKeysDown != "" && this.horizonatalKeysDown != "") this.dashDistance = 70; // shorter dash if diagonal
-        }
+    this.dashCooldownTimer = 0;
+    this.ableToDash = false;
+    this.preDashPos = this.worldPosition.copy();
+    this.velocity = powerupjs.Vector2.zero;
+    this.dashing = true;
+    this.worldPosition.y -= 10;
+    this.resetJumpVelo = false;
 
-        if (this.verticalKeysDown == "" && this.horizonatalKeysDown == "") {
+    this.dashDistance = this.getDashDistance();
 
-            if (this.directionFacing == "left") this.velocity.x = -this.dashSpeed; // set dash velocity
-            else if (this.directionFacing == "right") this.velocity.x = this.dashSpeed; // set dash velocity
-        }
+    if (this.horizonatalKeysDown == "left") this.velocity.x = -this.dashSpeed;
+    else if (this.horizonatalKeysDown == "right") this.velocity.x = this.dashSpeed;
+
+    if (this.verticalKeysDown == "down") this.velocity.y = this.dashSpeed;
+    else if (this.verticalKeysDown == "up") this.velocity.y = -this.dashSpeed;
+
+    if (this.verticalKeysDown == "" && this.horizonatalKeysDown == "") {
+        if (this.directionFacing == "left") this.velocity.x = -this.dashSpeed;
+        else if (this.directionFacing == "right") this.velocity.x = this.dashSpeed;
     }
 }
 
+// Advances timers and dispatches movement actions from input.
 Player.prototype.handleInput = function (delta) {
     powerupjs.AnimatedGameObject.prototype.handleInput.call(this, delta);
     this.timeAfterWallJump += delta; // wall jump timer
     this.dashCooldownTimer += delta; // dash cooldown timer
     this.keyResetTime += delta; // key reset timer
 
-    // CAP SPEED ON GROUND
+    if (powerupjs.Keyboard.pressed(powerupjs.Keys.P)) {
+        WorldSettings.debugMode = !WorldSettings.debugMode;
+        if (!WorldSettings.debugMode) {
+            this.clearPhysicsDebugHighlights();
+            this.debugCollisionTiles = [];
+            this.updatePhysicsDebugArea();
+        }
+    }
+
     if (!this.dashing && this.grounded) this.capMoveSpeed(); // cap speed on ground
 
     this.handleMoving(delta); // handle movement
     this.handleJumps(); // handle jumps
     this.handleDashes(); // handle dashes
 
-   
 }
 
+// Draws the player and optional debug hitboxes.
 Player.prototype.draw = function () {
     powerupjs.AnimatedGameObject.prototype.draw.call(this);
     if (powerupjs.Keyboard.down(powerupjs.Keys.P)) { // draw hitboxes for debugging
@@ -416,3 +545,4 @@ Player.prototype.draw = function () {
     }
 
 }
+ 

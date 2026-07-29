@@ -70,17 +70,17 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
 }
 
 TileField.prototype.normalizeTiles = function () {
-    var positions = [];
-    for (var i = 0; i < this.length; i++) {
+    var seen = {};
+    for (var i = this.length - 1; i >= 0; i--) {
         var tile = this.at(i);
-        for (var j = 0; j < positions.length; j++) {
-            if (tile.index.equals(positions[j])) {
-                this.remove(tile);
-                continue;
-            }
+        if (!tile.index) continue;
+        var key = tile.index.x + ":" + tile.index.y;
+        if (seen[key]) {
+            this.remove(tile);
         }
-        positions.push(tile.index);
-
+        else {
+            seen[key] = true;
+        }
     }
 }
 

@@ -92,7 +92,6 @@ var powerupjs = (function (powerupjs) {
         powerupjs.GameStateManager.handleInput(delta); // handle input
         powerupjs.GameStateManager.update(delta); // update game state
         
-
         powerupjs.Keyboard.reset(); // reset keyboard state
         powerupjs.Mouse.reset(); // reset mouse state
         powerupjs.Touch.reset(); // reset touch state

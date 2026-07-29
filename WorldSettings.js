@@ -8,10 +8,11 @@ function WorldSettingsSingleton() {
     this.activePlayer;
     this.currentState;
     this.mapBottom;
+    this.debugMode = false;
     //  GLOBAL PROPERTIES   //
 
     this.gravity = 3;
-    this.wallSlideSpeed = 50;
+    this.wallSlideSpeed = 30;
     this.cameraSmoothingFactor = 5;
     this._terminalVelocity = 130; // max downward speed
 

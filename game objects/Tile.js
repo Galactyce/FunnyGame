@@ -4,6 +4,7 @@ function Tile(sprite) {
     this.key;
     this.hitboxType;
     this.index;
+    this.physicsHighlighted = false;
     this.loadAnimation(sprite, "normal", true, 0.2);
 }
 
@@ -13,8 +14,9 @@ Tile.prototype.draw = function () {
     powerupjs.SpriteGameObject.prototype.draw.call(this);
     if (this.hitbox == undefined) return;
     
-    if (powerupjs.Keyboard.down(powerupjs.Keys.P)) {
+    if (WorldSettings.debugMode) {
         this.showHitboxes(); // show hitboxes for debugging
+        if (this.physicsHighlighted) this.hitbox.draw("yellow");
     }
 }
 
