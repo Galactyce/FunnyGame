@@ -10,14 +10,21 @@ function GameplayEditorState(layer) {
     this.add(this.modeButtons);
 
     this.currentRoomDisplay = new powerupjs.Label("Arial", "20px", ID.layer_overlays, 0, powerupjs.Color.white);
-    this.currentRoomDisplay.position = new powerupjs.Vector2(600, 15);
+    this.currentRoomDisplay.position = new powerupjs.Vector2(600, 35);
     this.currentRoomDisplay.ui = true;
     this.add(this.currentRoomDisplay);
 
     this.nextRoomButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays);
-    this.nextRoomButton.position = new powerupjs.Vector2(650, 15);
+    this.nextRoomButton.position = new powerupjs.Vector2(700, 15);
+    this.nextRoomButton.sheetIndex = 1;
     this.nextRoomButton.ui = true;
     this.add(this.nextRoomButton);
+
+    this.previousRoomButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays);
+    this.previousRoomButton.position = new powerupjs.Vector2(550, 15);
+    this.previousRoomButton.sheetIndex = 0;
+    this.previousRoomButton.ui = true;
+    this.add(this.previousRoomButton);
 
     this.editingTiles = true;
 
@@ -28,7 +35,7 @@ function GameplayEditorState(layer) {
     this.add(this.editorLayers);
 
     this.addRoomButton = new LabelledButton(sprites.button_default, "Add Room", "Arial", "20px", ID.layer_overlays); // button to add a new room
-    this.addRoomButton.position = new powerupjs.Vector2(600, 60);
+    this.addRoomButton.position = new powerupjs.Vector2(900, 60);
     this.addRoomButton.ui = true;
     this.add(this.addRoomButton);
 
@@ -210,6 +217,16 @@ GameplayEditorState.prototype.handleInput = function (delta) {
         var currentRoomIndex = WorldSettings.currentLevel.currentRoomIndex;
         var nextRoomIndex = (currentRoomIndex + 1) % WorldSettings.currentLevel.rooms.length;
         WorldSettings.currentLevel.currentRoomIndex = nextRoomIndex;
+        this.getActiveRoomData();
+        WorldSettings.currentLevel.room.loadBackground();
+        this.loadLayers();
+        return;
+    }
+
+    if (this.previousRoomButton.pressed) {
+        var currentRoomIndex = WorldSettings.currentLevel.currentRoomIndex;
+        var previousRoomIndex = (currentRoomIndex - 1 + WorldSettings.currentLevel.rooms.length) % WorldSettings.currentLevel.rooms.length;
+        WorldSettings.currentLevel.currentRoomIndex = previousRoomIndex;
         this.getActiveRoomData();
         WorldSettings.currentLevel.room.loadBackground();
         this.loadLayers();
