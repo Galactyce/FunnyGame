@@ -1,33 +1,14 @@
 Player.prototype.initialize = function() {
-    this.dashSpeed = 400 * this.scale;   // Speed of dashes
-    this.dashDistance = 130 * this.scale;    // Max distance dashes can reach
     this.detachBufferTime = 0.2;    // Time in takes to fall off wall after letting go 
     this.jumpKey = powerupjs.Keys.C;
-    this.dashKey = powerupjs.Keys.X;
     this.moveSpeed = 65 * this.scale;
     this.jumpForce = -160;
     this.accelerationMultiplier = 3;
     this.neutralJumpTime = 0.4;
-    this.dashCooldown = 0.7;
-    this.maxDashDistance = 130 * this.scale;
     this.airResistance = 0.95;
     this._keyBufferTime = 0.25;
 }
 
-Object.defineProperty(Player.prototype, "ableToDash", { // check if player can dash
-    get: function() {
-        return !this.dashing && (this.dashCooldownTimer >= this.dashCooldown);
-    }
-});
-
-Object.defineProperty(Player.prototype, "dashingDistance", { // check if player can move
-    get: function() {
-        return this.maxDashDistance;
-    },
-    set: function(value) {
-        this.maxDashDistance = value * this.scale;
-    }
-});
 
 Object.defineProperty(Player.prototype, "moveSpeed", { // get/set move speed
     get: function() {
@@ -65,14 +46,6 @@ Object.defineProperty(Player.prototype, "airResistance", { // get/set air drag
     }
 });
 
-Object.defineProperty(Player.prototype, "dashCooldown", { // get/set dash cooldown
-    get: function() {
-        return this._dashCooldown;
-    },
-    set: function(value) {
-        this._dashCooldown = value;
-    }
-});
 
 Object.defineProperty(Player.prototype, "grounded", { // get/set grounded state
     get: function() {
