@@ -21,7 +21,12 @@ powerupjs.Game.loadAssets = function () {
     sprites.plusButton = loadSprite("plusButton.png")
     sprites.minusButton = loadSprite("minusButton.png")
     sprites.crosshair = loadSprite("crosshair.png")
-    sprites.player_idle = loadSprite("Idle@11.png", true)
+    sprites.player = {
+        "idle" : loadSprite("MainCharacterSprites/Idle@11.png", true),
+        "run" : loadSprite("MainCharacterSprites/Run@12.png", true),
+        "jump" : loadSprite("MainCharacterSprites/Jump.png", true),
+        "fall" : loadSprite("MainCharacterSprites/Fall.png", true)
+    };
     sprites.frame = loadSprite("frame.jpeg")
     sprites.woodenFrame = loadSprite("wooden_frame5x2.png")
     sprites.editorBlockSelector = loadSprite("editorBlockSelectFrame.png")

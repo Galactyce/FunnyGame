@@ -14,6 +14,7 @@ function Room() {
     this.add(this.tileFields)
     // Scratch/original bounds used by scaling workflows in the editor.
     this.originalBounds;
+    this.connections = []; // array to hold room connections
 }
 
 Room.prototype = Object.create(powerupjs.GameObjectList.prototype);

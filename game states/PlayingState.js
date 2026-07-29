@@ -1,8 +1,6 @@
 function PlayingState(layer) {
     powerupjs.GameObjectList.call(this, layer);
     this.player = new Player();
-    this.player.loadAnimation(sprites.player_idle, "idle", true);
-    this.player.playAnimation("idle");
     this.tileFields = new powerupjs.GameObjectList(); // list to hold tile fields
     this.nextRoomButton = new LabelledButton(sprites.button_default, "Next Room", "Arial", "20px", ID.layer_overlays); // button to go to next room
     this.nextRoomButton.position = new powerupjs.Vector2(600, 15);

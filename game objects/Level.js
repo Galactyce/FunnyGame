@@ -26,6 +26,14 @@ Level.prototype.indexOfRoom = function(room) {
     return -1;
 }
 
+Level.prototype.switchToRoom = function(roomIndex) {
+    if (roomIndex < 0 || roomIndex >= this.rooms.length) return;
+    this.currentRoomIndex = roomIndex;
+    var currentRoom = this.room;
+    currentRoom.loadBackground();
+    currentRoom.loadTiles();
+}
+
 Level.prototype.removeRoom = function(room) {
     if (!room) return;
     this.rooms.remove(room);

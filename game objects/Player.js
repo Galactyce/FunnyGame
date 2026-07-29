@@ -25,6 +25,12 @@ function Player(layer, id) {
     this.initialize();
     this.baseVelocity = 0;
     this.collidingTiles = new powerupjs.GameObjectList();
+
+    this.loadAnimation(sprites.player["idle"], "idle", true, 0.05);
+    this.loadAnimation(sprites.player["run"], "run", true, 0.05);
+    this.loadAnimation(sprites.player["jump"], "jump", true, 0.2);
+    this.loadAnimation(sprites.player["fall"], "fall", true, 0.2);
+    this.playAnimation("idle");
 }
 
 Player.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
@@ -359,7 +365,29 @@ Player.prototype.handleMoving = function(delta) {
     if (this.grounded) {
         this.airDrag = true;
         this.previousWallJumpDir = "";
+
+        if (this.velocity.x > 0) {
+            this.directionFacing = "right";
+            this.playAnimation("run");
+        }
+        else if (this.velocity.x < 0) {
+            this.directionFacing = "left";
+            this.playAnimation("run");
+        }
+        else {
+            this.playAnimation("idle");
+        }
     }
+    else {
+        if (this.velocity.y < -0.1) {
+            this.playAnimation("jump");
+        }
+        else if (this.velocity.y > 0.1) {
+            this.playAnimation("fall");
+        }
+    }
+
+
 }
 
 // Handles ground jumps, wall jumps, and jump release cuts.
