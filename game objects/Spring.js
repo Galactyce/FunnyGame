@@ -40,8 +40,6 @@ Spring.prototype.update = function(delta) {
     if (!WorldSettings.activePlayer) return;
     var player = WorldSettings.activePlayer;
     if (player.hitbox.intersects(this.bounceHitbox)) {
-        player.dashing = false;
-        player.ableToDash = true;
         player.velocity.y = -Math.cos(this.rotation) * this.bounceForce - 30;
         player.velocity.x = Math.sin(this.rotation) * this.bounceForce / 1.5;
         if (Math.floor(Math.sin(this.rotation))) {

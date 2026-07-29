@@ -11,10 +11,10 @@ function WorldSettingsSingleton() {
     this.debugMode = false;
     //  GLOBAL PROPERTIES   //
 
-    this.gravity = 3;
+    this.gravity = 25;
     this.wallSlideSpeed = 30;
     this.cameraSmoothingFactor = 5;
-    this._terminalVelocity = 130; // max downward speed
+    this._terminalVelocity = 530; // max downward speed
 
     // MANAGING PLAYER PROPERTIES CAN BE DONE IN "PlayerProperties.js"
 }
@@ -109,7 +109,8 @@ WorldSettingsSingleton.prototype.indexOfSprite = function (sprite) { // get inde
     for (var i = 0; i < this.blockSprites.length; i++) { // for each block sprite
         if (this.blockSprites[i] == sprite) return i; // return index if found
     }
-    console.log("Cannot save sprite: " + sprite.image.src); // log error if not found
+    var spriteName = (sprite && sprite.image && sprite.image.src) ? sprite.image.src : "(missing sprite)";
+    console.warn("Cannot save sprite: " + spriteName); // warn if sprite is missing from blockSprites
     return null; // return null if not found
 }
 

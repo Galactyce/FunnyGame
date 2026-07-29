@@ -22,6 +22,7 @@ TileDataManager_Singleton.prototype.writeTiles = function (tiles) { // tiles is 
 }
 
 TileDataManager_Singleton.prototype.manageObjData = function(tile) { // decide how to write tile data based on type
+    if (!tile || !tile.sprite || !tile.sprite.image) return "";
     if (tile.sprite.image.src == sprites.movingPlatform.image.src) { // moving platform tile
         return this.writeMovingPlatform(tile);
     }
@@ -31,6 +32,11 @@ TileDataManager_Singleton.prototype.manageObjData = function(tile) { // decide h
 }
 
 TileDataManager_Singleton.prototype.handleObject = function(sprite) { // create tile object based on sprite
+    if (!sprite || !sprite.image) {
+        sprite = WorldSettings.blockSprites && WorldSettings.blockSprites.length > 0 ? WorldSettings.blockSprites[0] : null;
+        if (!sprite || !sprite.image) return null;
+    }
+
     if (sprite.image.src == sprites.spring.image.src) { // spring tile
         return new Spring(sprite);
     }
@@ -47,7 +53,8 @@ TileDataManager_Singleton.prototype.writeTile = function(tile) {  // write basic
     if (spriteIndex === null || typeof spriteIndex === 'undefined' || isNaN(spriteIndex)) {
         spriteIndex = 0;
     }
-    return tile.key + "|" + tile.index.x + "|" + tile.index.y + "|" + spriteIndex + "|" + tile.rotation + "|" + tile.scale + "|" + tile.sheetIndex + "|"; // create data string ==> (key|x|y|spriteIndex|rotation|scale|sheetIndex)
+    var tileScale = (typeof tile.baseScale !== 'undefined' && !isNaN(tile.baseScale)) ? tile.baseScale : tile.scale;
+    return tile.key + "|" + tile.index.x + "|" + tile.index.y + "|" + spriteIndex + "|" + tile.rotation + "|" + tileScale + "|" + tile.sheetIndex + "|"; // create data string ==> (key|x|y|spriteIndex|rotation|scale|sheetIndex)
 }
 
 TileDataManager_Singleton.prototype.writeMovingPlatform = function(tile) { // write moving platform data
@@ -61,11 +68,16 @@ TileDataManager_Singleton.prototype.writeMovingPlatform = function(tile) { // wr
 
 TileDataManager_Singleton.prototype.convertDataToTile = function(data) {
     var tileData = data.split("|"); // split tile data into components
-    var tile = this.handleObject(WorldSettings.blockSprites[parseInt(tileData[3])]);    // Choose which object to create based on the sprite
+    var spriteIndex = parseInt(tileData[3]);
+    if (isNaN(spriteIndex) || !WorldSettings.blockSprites[spriteIndex]) spriteIndex = 0;
+    var tile = this.handleObject(WorldSettings.blockSprites[spriteIndex]);    // Choose which object to create based on the sprite
+    if (!tile) return null;
     tile.key = tileData[0]
     tile.index = new powerupjs.Vector2(parseFloat(tileData[1]), parseFloat(tileData[2])); // set tile position based on index
     tile.rotation = parseFloat(tileData[4]);
-    tile.scale = parseFloat(tileData[5])
+    // Keep each tile type at its authored default size; avoids inheriting corrupted saved scales.
+    tile.baseScale = tile.scale;
+    tile.scale = tile.baseScale;
     tile.playAnimation("normal");
     tile.sheetIndex = parseInt(tileData[6]) || 0;
     tile.origin = tile.center;
@@ -74,6 +86,7 @@ TileDataManager_Singleton.prototype.convertDataToTile = function(data) {
 }
 
 TileDataManager_Singleton.prototype.readSpecialTileData = function(tile, data) { // read special tile data based on type
+    if (!tile || !tile.sprite || !tile.sprite.image) return;
     if (tile.sprite.image.src == sprites.movingPlatform.image.src) { // moving platform tile
         var tileData = data.split("|"); // split tile data into components
         for (var i = this.globalDataValues; i < (tileData.length); i += 2) { // for each movement node

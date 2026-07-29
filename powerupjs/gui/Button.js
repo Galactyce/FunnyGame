@@ -20,6 +20,19 @@ var powerupjs = (function (powerupjs) {
             powerupjs.Mouse.containsMouseDown(boundingBox)); // check for down
     };
 
+   
+
+    Object.defineProperty(Button.prototype, "sprite", {
+        get: function () {
+            return this._sprite;
+        },
+        set: function (value) {
+            this._sprite = value;
+        }
+    });
+
+  
+
     powerupjs.Button = Button;
     return powerupjs;
 

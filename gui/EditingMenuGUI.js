@@ -25,7 +25,6 @@ EditingMenuGUI.prototype.loadButtons = function () {
             this.buttons.add(button);
         }
     }
-    console.log(this.buttons.length + " buttons loaded into Editing Menu");
 };
 
 EditingMenuGUI.prototype.handleInput = function (delta) {
@@ -39,43 +38,42 @@ EditingMenuGUI.prototype.handleInput = function (delta) {
 
     if (this.frame.boundingBox.contains(powerupjs.Mouse.screenPosition)) {
         this.parent.editingTiles = false;
-        console.log("Asdf")
     }
 }
 
 EditingMenuGUI.prototype.handleButtonFunction = function (buttonIndex) {
-
-    console.log(this.selectedObj)
-    console.log("Editing Menu Button " + buttonIndex + " pressed.");
     if (this.selectedObj != null) {
+        var nudgeStep = 5;
+        if (this.selectedObj.parent && typeof this.selectedObj.parent.scale === 'number') {
+            nudgeStep *= this.selectedObj.parent.scale;
+        }
+
         switch (buttonIndex) {
             case 0: // move left
-                this.selectedObj.position.x -= 5;
+                this.selectedObj.position.x -= nudgeStep;
                 break;
             case 1: // move right
-                this.selectedObj.position.x += 5;
+                this.selectedObj.position.x += nudgeStep;
                 break;
             case 2: // move up
-                this.selectedObj.position.y -= 5;
+                this.selectedObj.position.y -= nudgeStep;
                 break;
             case 3: // move down
-            console.log('up')
-                this.selectedObj.position.y += 5;
+                this.selectedObj.position.y += nudgeStep;
                 break;
             case 4: // rotate clockwise
                 this.selectedObj.rotation += Math.PI / 2;
-                this.selectedObj.manageHitboxes();
                 if (this.selectedObj.rotation > (3 * Math.PI) / 2) this.selectedObj.rotation = 0;
                 break;
             case 5: // rotate counter-clockwise
                 this.selectedObj.rotation -= Math.PI / 2;
-                this.selectedObj.manageHitboxes();
                 if (this.selectedObj.rotation < 0) this.selectedObj.rotation = (3 * Math.PI) / 2;
                 break;
             default:
-                console.log("No function assigned to this button.");
-
-            this.selectedObj.manageHitboxes();
+                return;
         }
+
+        // Keep tile index and hitbox in sync so saves preserve small edit-menu nudges.
+        this.selectedObj.manageHitboxes();
     }
 }

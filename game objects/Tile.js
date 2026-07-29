@@ -79,3 +79,30 @@ Tile.prototype.manageHitboxes = function (sprite) {
         
 
 }
+
+Object.defineProperties(Tile.prototype, {
+    "hitbox": {
+        get: function () {
+            return this._hitbox;
+        },
+        set: function (value) {
+            this._hitbox = value;
+        }
+    },
+    "hitboxType": {
+        get: function () {
+            return this._hitboxType;
+        },
+        set: function (value) {
+            this._hitboxType = value;
+        }
+    },
+    "index": {
+        get: function () {
+            return this._index;
+        },
+        set: function (value) {
+            this._index = value;
+        }
+    }
+});

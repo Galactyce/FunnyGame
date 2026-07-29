@@ -3,7 +3,6 @@
 var powerupjs = (function (powerupjs) {
 
     function SpriteSheet(imageName, isAnimated) { // creates a new sprite sheet from an image
-        console.log("Loading sprite: " + imageName); // log sprite loading
         powerupjs.Game._spritesStillLoading += 1; // increment sprites still loading
         powerupjs.Game._totalSprites += 1; // increment total sprites
         this.colorShift = 0;
@@ -17,7 +16,6 @@ var powerupjs = (function (powerupjs) {
         var sprite = this; // reference to this sprite sheet
         this.isAnimated = isAnimated;
         this._image.onload = function () { // when image loads
-            console.log("Sprite loaded: " + imageName); // log sprite loaded
             powerupjs.Game._spritesStillLoading -= 1; // decrement sprites still loading
         };
 
@@ -104,7 +102,6 @@ var powerupjs = (function (powerupjs) {
             };
             shiftedImage.src = imageDataUrl;
 
-            console.log(shiftedImage.src)
             this._image = shiftedImage
         });
     }

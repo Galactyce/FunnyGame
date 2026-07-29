@@ -5,6 +5,7 @@ function GameplayEditorState(layer) {
     this.selectedBlock;
     this.previousMousePosition = powerupjs.Vector2.zero;
     this.modes = ["Drawing", "Erasing", "Editing"];
+    this.mode = this.modes[0];
     this.modeButtons = new powerupjs.GameObjectList();
     this.add(this.modeButtons);
 
@@ -20,6 +21,18 @@ function GameplayEditorState(layer) {
     this.objectMenu = new ObjectMenuGUI(ID.layer_overlays) // object selection menu
     this.objectMenu.position = new powerupjs.Vector2(400, 600);
     this.add(this.objectMenu);
+
+    this.movePageLeftButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays); // button to move to previous page of blocks
+    this.movePageLeftButton.position = new powerupjs.Vector2(350, 685);
+    this.movePageLeftButton.sheetIndex = 0;
+    this.add(this.movePageLeftButton);
+
+
+    this.movePageRightButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays); // button to move to previous page of blocks
+    this.movePageRightButton.position = new powerupjs.Vector2(1000, 685);
+    this.movePageRightButton.sheetIndex = 1;
+    this.add(this.movePageRightButton);
+
 
     this.editingMenu = new EditingMenuGUI(); // editing menu
     this.editingMenu.position = new powerupjs.Vector2(400, 600);
@@ -39,15 +52,7 @@ function GameplayEditorState(layer) {
     this.saveButton.ui = true;
     this.add(this.saveButton);
 
-    this.scaleUpButton = new powerupjs.Button(sprites.plusButton);
-    this.scaleUpButton.ui = true;
-    this.scaleUpButton.position = new powerupjs.Vector2(1020, 650);
-    this.add(this.scaleUpButton)
 
-    this.scaleDownButton = new powerupjs.Button(sprites.minusButton);
-    this.scaleDownButton.ui = true;
-    this.scaleDownButton.position = new powerupjs.Vector2(1020, 720);
-    this.add(this.scaleDownButton)
 
     this.loadModeButtons(); // load mode buttons
 }
@@ -131,14 +136,7 @@ GameplayEditorState.prototype.handleInput = function (delta) {
         }
     }
 
-    if (this.scaleUpButton.pressed) {
-        this.adjustScale(0.1);
-        return
-    }
-    if (this.scaleDownButton.pressed) {
-        this.adjustScale(-0.1);
-        return
-    }
+  
 
     if (this.saveButton.pressed) {
         this.saveLevel();
@@ -159,9 +157,17 @@ GameplayEditorState.prototype.handleInput = function (delta) {
         return
     }
 
-    if ((powerupjs.Mouse.left.pressed || (powerupjs.Mouse.left.down && powerupjs.Keyboard.down(powerupjs.Keys.C)))
-        && this.editingTiles) { // check if left mouse button is pressed
-        console.log(this.mode)
+    if (this.movePageLeftButton.pressed) {
+        this.objectMenu.pageNumber = this.objectMenu.pageNumber - 1;
+        return;
+    }
+
+    if (this.movePageRightButton.pressed) {
+        this.objectMenu.pageNumber = this.objectMenu.pageNumber + 1;
+        return;
+    }
+
+    if (powerupjs.Mouse.left.pressed && this.editingTiles) { // place/edit once per click
 
         if (this.mode == "Drawing") {
             var field = this.editorLayers.at(this.currentEditorLayer) // get current editor layer
@@ -178,7 +184,6 @@ GameplayEditorState.prototype.handleInput = function (delta) {
             var field = this.editorLayers.at(this.currentEditorLayer) // get current editor layer
             var tile = field.getTileAt(powerupjs.Mouse.position); // get tile at mouse position
             if (tile != null) {
-                console.log("Editing tile at " + tile.position);
                 this.editingMenu.selectedObj = tile; // set selected object in editing menu
             }
         }

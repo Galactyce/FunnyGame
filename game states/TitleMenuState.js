@@ -2,7 +2,6 @@ function TitleMenuState(layer) {
     powerupjs.GameObjectList.call(this, layer);
 
     this.levelName = new powerupjs.Label("Arial", "40px")
-    console.log(this.levelName.origin)
     this.levelName.position = new powerupjs.Vector2(powerupjs.Game.screenCenter.x, 250);
     this.add(this.levelName);
 

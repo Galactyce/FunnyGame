@@ -24,7 +24,6 @@ function saveLevelToTxt(levelIndex) {
 }
  
 function DecryptRawLevelData(data, levelIndex) {
-    console.log(data)
     var dataSplit = data.split("!");    // 0: name, 1: tiles, 2: camera bounds, 3: player spawn pos, 4: backgrounds
     window.LEVELS[levelIndex].name = dataSplit[0];
     var fieldSplit = dataSplit[1].split("?");
@@ -41,9 +40,7 @@ function DecryptRawLevelData(data, levelIndex) {
     var backgroundSplit = dataSplit[4].split("|");
 
     window.LEVELS[levelIndex].backgrounds = []
-    console.log(backgroundSplit)
     for (var i = 0; i < backgroundSplit.length; i++) {
-        console.log(backgroundSplit[i])
         window.LEVELS[levelIndex].backgrounds.push(parseInt(backgroundSplit[i]))
     }
 

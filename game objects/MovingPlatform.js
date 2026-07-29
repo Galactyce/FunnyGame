@@ -88,7 +88,6 @@ MovingPlatform.prototype.handleInput = function(delta) {
 
     if (this.addButton.pressed) {
         this.addingNode = true;
-        console.log('asdf')
         GameStateManager.get(ID.game_state_editing).mode = "editingObject"
     }
 }

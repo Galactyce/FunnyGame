@@ -108,26 +108,5 @@ function cohenSutherlandClip(x1, y1, x2, y2)
             }
         }
     }
-    if (accept) {
-        console.log("Line accepted from", x1, ",", y1, "to", x2, ",", y2);
-        // Here the user can add code to display the rectangle
-        // along with the accepted (portion of) lines
-    }
-    else
-        console.log("Line rejected");
+    return accept;
 }
-
-// Driver code
-// First Line segment
-// P11 = (5, 5), P12 = (7, 7)
-cohenSutherlandClip(5, 5, 7, 7);
-
-// Second Line segment
-// P21 = (7, 9), P22 = (11, 4)
-cohenSutherlandClip(7, 9, 11, 4);
-
-// Third Line segment
-// P31 = (1, 5), P32 = (4, 1)
-cohenSutherlandClip(1, 5, 4, 1);
-
-// The code is contributed by Nidhi goel

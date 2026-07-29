@@ -97,7 +97,7 @@ var powerupjs = (function (powerupjs) {
         powerupjs.Touch.reset(); // reset touch state
         // console.log(Date.now() - (powerupjs.Game.savedDate + delta))
         // powerupjs.Game.savedDate = Date.now()
-        window.setTimeout(powerupjs.Game.mainLoop, delta); // schedule next frame
+        window.setTimeout(powerupjs.Game.mainLoop, delta * 1000); // schedule next frame in ms
     };
 
     powerupjs.Game = new Game_Singleton();

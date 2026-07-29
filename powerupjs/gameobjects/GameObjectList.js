@@ -14,21 +14,21 @@ var powerupjs = (function (powerupjs) {
  
 
     GameObjectList.prototype.add = function (gameobject) { // add game object to list
-        this.length++; // increment length
         this._gameObjects.push(gameobject); // add to internal array
         gameobject.parent = this; // set parent to this list
+        this.length = this._gameObjects.length; // keep length in sync with backing array
         this._gameObjects.sort(function (a, b) { // sort by layer
             return a.layer - b.layer; // ascending order
         });
     };
 
     GameObjectList.prototype.remove = function (gameobject) { // remove game object from list
-        this.length--; // decrement length
-        for (var i = 0, l = this.length; i < l; ++i) { // iterate through internal array
+        for (var i = 0, l = this._gameObjects.length; i < l; ++i) { // iterate through backing array
             if (gameobject !== this._gameObjects[i]) // not the one to remove
                 continue; // skip
             this._gameObjects.splice(i, 1); // remove from internal array
             gameobject.parent = null; // clear parent reference
+            this.length = this._gameObjects.length; // keep length in sync after removal
             return; // exit after removal
         }
     };

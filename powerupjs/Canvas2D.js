@@ -123,7 +123,7 @@ var powerupjs = (function (powerupjs) {
         position = typeof position !== 'undefined' ? position : powerupjs.Vector2.zero;
         origin = typeof origin !== 'undefined' ? origin : powerupjs.Vector2.zero;
         color = typeof color !== 'undefined' ? color : powerupjs.Color.black;
-        textAlign = typeof textAlign !== 'undefined' ? textAlign : "top";
+        textAlign = typeof textAlign !== 'undefined' ? textAlign : "left";
         fontname = typeof fontname !== 'undefined' ? fontname : "Courier New";
         fontsize = typeof fontsize !== 'undefined' ? fontsize : "20px";
 

@@ -58,7 +58,6 @@
                     .script('game states/TitleMenuState.js').wait()
                     .script('game states/GameplayEditorState.js').wait()
                     .script('Main.js').wait(function() {
-                        console.log("Starting game");
                         powerupjs.Game.start('gameArea', 'mycanvas', 1440, 825);
                     });
 
