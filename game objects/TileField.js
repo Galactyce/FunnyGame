@@ -135,14 +135,26 @@ TileField.prototype.getTileAt = function (position) {
 TileField.prototype.saveTiles = function () {
     this.normalizeTiles(); // remove duplicate tiles before saving
     this.data = TileDataManager.writeTiles(this._gameObjects); // serialize tiles
-    if (window.LEVELS[WorldSettings.currentLevelIndex])
-        window.LEVELS[WorldSettings.currentLevelIndex].tiles[this.editorLayer] = this.data; // save to LEVELS
+    if (window.LEVELS[WorldSettings.currentLevelIndex]) {
+        if (!window.LEVELS[WorldSettings.currentLevelIndex].room || typeof window.LEVELS[WorldSettings.currentLevelIndex].room !== 'object') {
+            window.LEVELS[WorldSettings.currentLevelIndex] = WorldSettings.normalizeLevelData(window.LEVELS[WorldSettings.currentLevelIndex]);
+        }
+        // Room refactor: tile layer strings now live under LEVELS[].room.tiles.
+        // Keep this write path centralized so both editor and play states stay consistent.
+        var roomData = window.LEVELS[WorldSettings.currentLevelIndex].room;
+        if (!Array.isArray(roomData.tiles)) roomData.tiles = [];
+        roomData.tiles[this.editorLayer] = this.data; // save to LEVELS
+    }
 }
 
 TileField.prototype.loadTiles = function () {
     if (!window.LEVELS[WorldSettings.currentLevelIndex]) WorldSettings.createLevel();
-    this.scale = WorldSettings.currentLevel.scale
-    this.data = window.LEVELS[WorldSettings.currentLevelIndex].tiles[this.editorLayer]; // get tile data
+    if (!window.LEVELS[WorldSettings.currentLevelIndex].room || typeof window.LEVELS[WorldSettings.currentLevelIndex].room !== 'object') {
+        window.LEVELS[WorldSettings.currentLevelIndex] = WorldSettings.normalizeLevelData(window.LEVELS[WorldSettings.currentLevelIndex]);
+    }
+    this.scale = WorldSettings.currentLevel.room.scale
+    // Room refactor: read serialized tile layer data from nested room payload.
+    this.data = window.LEVELS[WorldSettings.currentLevelIndex].room.tiles[this.editorLayer]; // get tile data
     if (!this.data) return; // no tile data
     var splitData = this.data.split("/"); // split into individual tile data
     for (var i = 0; i < splitData.length; i++) { // for each tile
@@ -163,7 +175,7 @@ TileField.prototype.loadTiles = function () {
 
     }
     this.normalizeTiles();
-    WorldSettings.levels[WorldSettings.currentLevelIndex].tileFields[this.editorLayer] = this; // update world settings
+    WorldSettings.levels[WorldSettings.currentLevelIndex].room.tileFields[this.editorLayer] = this; // update room tile-field reference
 }
 
 Object.defineProperties(TileField.prototype, {

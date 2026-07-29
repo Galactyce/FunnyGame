@@ -17,10 +17,10 @@ var powerupjs = (function (powerupjs) {
         return size;
     }
 
-    function Label(fontname, fontsize, layer, id) {
+    function Label(fontname, fontsize, layer, id, color) {
         powerupjs.GameObject.call(this, layer, id);
 
-        this.color = powerupjs.Color.black;
+        this.color = typeof color !== 'undefined' ? color : powerupjs.Color.black;
         this.origin = powerupjs.Vector2.zero;
         this._fontname = typeof fontname !== 'undefined' ? fontname : "Courier New";
         this._fontsize = typeof fontsize !== 'undefined' ? fontsize : "20px";

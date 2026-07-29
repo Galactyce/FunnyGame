@@ -19,13 +19,38 @@ function WorldSettingsSingleton() {
     // MANAGING PLAYER PROPERTIES CAN BE DONE IN "PlayerProperties.js"
 }
 
+WorldSettingsSingleton.prototype.createDefaultRoomData = function() {
+    return {
+        tiles: [],
+        cameraBounds: { x: -500, y: -400, width: 3000, height: 1400 },
+        playerSpawnPos: { x: 400, y: 400 },
+        backgrounds: [0, 1],
+        scale: 1
+    };
+}
+
+WorldSettingsSingleton.prototype.syncRoomAlias = function(levelData) {
+    if (!levelData || !Array.isArray(levelData.rooms) || levelData.rooms.length === 0) {
+        return levelData;
+    }
+
+    var roomIndex = typeof levelData.activeRoomIndex === 'number' ? levelData.activeRoomIndex : 0;
+    if (roomIndex < 0 || roomIndex >= levelData.rooms.length) roomIndex = 0;
+    levelData.activeRoomIndex = roomIndex;
+    // Keep legacy alias for existing code paths while canonical data lives in rooms[].
+    levelData.room = levelData.rooms[roomIndex];
+    return levelData;
+}
+
 WorldSettingsSingleton.prototype.loadLevels = function () { // load levels from window.LEVELS 
     this.levels = [];   // clear current levels
-    window.LEVELS = []; // clear current LEVELS object
     if (localStorage.levels) {   // if level data exists in local storage
         try {
             var storedLevels = JSON.parse(localStorage.levels);
             if (!Array.isArray(storedLevels)) storedLevels = [];
+            // Normalize every saved record into the new canonical structure:
+            // { name, rooms: [room], activeRoomIndex, room(alias) }
+            // This allows older flat level saves to continue loading.
             window.LEVELS = storedLevels.filter(item => item !== null).map(this.normalizeLevelData.bind(this)); // load level data from local storage
         }
         catch (e) {
@@ -47,29 +72,62 @@ WorldSettingsSingleton.prototype.loadLevels = function () { // load levels from 
 WorldSettingsSingleton.prototype.saveLevels = function () { // save levels to local storage
     for (var i = 0; i < this.levels.length; i++) {
         var level = this.levels[i];
-        var levelIndex = this.indexOfLevel(level);
+        var levelIndex = this.indexOfLevel(level); // get index of level in levels array
         if (levelIndex === null) continue;
+        // Ensure destination record exists even if previous save data was malformed.
         if (!window.LEVELS[levelIndex] || typeof window.LEVELS[levelIndex] !== 'object') {
-            window.LEVELS[levelIndex] = {};
+            window.LEVELS[levelIndex] = this.normalizeLevelData(null);
         }
-        window.LEVELS[levelIndex].tiles = level.tiles || [];
-        window.LEVELS[levelIndex].scale = level.scale;
-        window.LEVELS[levelIndex].cameraBounds = {
-            x: level.cameraBounds.x,
-            y: level.cameraBounds.y,
-            width: level.cameraBounds.width,
-            height: level.cameraBounds.height
-        };
-        window.LEVELS[levelIndex].name = level.name;
-        window.LEVELS[levelIndex].playerSpawnPos = {
-            x: level.playerStartPos.x,
-            y: level.playerStartPos.y
-        };
-        if (!window.LEVELS[levelIndex].backgrounds) {
-            window.LEVELS[levelIndex].backgrounds = [];
+
+        var levelData = window.LEVELS[levelIndex];
+        // Ensure nested rooms list exists before writing room-owned fields.
+        if (!Array.isArray(levelData.rooms) || levelData.rooms.length === 0) {
+            levelData = this.normalizeLevelData(levelData);
+            window.LEVELS[levelIndex] = levelData;
         }
+        this.syncRoomAlias(levelData);
+
+        var existingRooms = Array.isArray(levelData.rooms) ? levelData.rooms.slice() : [];
+
+        // Name remains level-scoped metadata.
+        levelData.name = level.name;
+
+        // Persist every runtime room into LEVELS[level].rooms.
+        levelData.rooms = [];
+        for (var r = 0; r < level.rooms.length; r++) {
+            var runtimeRoom = level.rooms.at(r);
+            if (!runtimeRoom) continue;
+
+            var existingRoomData = existingRooms[r] || null;
+            var savedBackgrounds = existingRoomData && Array.isArray(existingRoomData.backgrounds)
+                ? existingRoomData.backgrounds
+                : [0, 1];
+
+            levelData.rooms.push({
+                tiles: runtimeRoom.tiles || [],
+                scale: runtimeRoom.scale,
+                cameraBounds: {
+                    x: runtimeRoom.cameraBounds.x,
+                    y: runtimeRoom.cameraBounds.y,
+                    width: runtimeRoom.cameraBounds.width,
+                    height: runtimeRoom.cameraBounds.height
+                },
+                playerSpawnPos: {
+                    x: runtimeRoom.playerStartPos.x,
+                    y: runtimeRoom.playerStartPos.y
+                },
+                backgrounds: savedBackgrounds
+            });
+        }
+
+        if (levelData.rooms.length === 0) {
+            levelData.rooms.push(this.createDefaultRoomData());
+        }
+
+        levelData.activeRoomIndex = typeof level.currentRoomIndex === 'number' ? level.currentRoomIndex : 0;
+        this.syncRoomAlias(levelData);
     }
-    localStorage.levels = JSON.stringify(window.LEVELS);
+    localStorage.levels = JSON.stringify(window.LEVELS); // save levels to local storage
 }
 
 WorldSettingsSingleton.prototype.indexOfLevel = function (level) { // get index of level in levels array
@@ -87,21 +145,39 @@ WorldSettingsSingleton.prototype.manageLevelProperties = function(level) { // ma
         levelData = this.normalizeLevelData(null);
         window.LEVELS[levelIndex] = levelData;
     }
-    level.tiles = Array.isArray(levelData.tiles) ? levelData.tiles : [];
-    level.scale = typeof levelData.scale === 'number' ? levelData.scale : 1;  // load scale
-    var bounds = levelData.cameraBounds; // load camera bounds
-    if (bounds && typeof bounds.x === 'number') {
-        level.cameraBounds = new powerupjs.Rectangle(bounds.x, bounds.y, 
-            bounds.width, bounds.height); // set camera bounds
-    } else {
-        level.cameraBounds = new powerupjs.Rectangle(-500, -400, 3000, 1400);
+    else if (!Array.isArray(levelData.rooms) || levelData.rooms.length === 0) {
+        levelData = this.normalizeLevelData(levelData);
+        window.LEVELS[levelIndex] = levelData;
     }
-    if (levelData.playerSpawnPos && typeof levelData.playerSpawnPos.x === 'number') {
-        level.playerStartPos = new powerupjs.Vector2(levelData.playerSpawnPos.x, levelData.playerSpawnPos.y);
+    // Runtime level object hydrates from persistent nested rooms data.
+    level.rooms.clear();
+    for (var r = 0; r < levelData.rooms.length; r++) {
+        var roomData = levelData.rooms[r];
+        var runtimeRoom = new Room();
+
+        runtimeRoom.tiles = Array.isArray(roomData.tiles) ? roomData.tiles : [];
+        runtimeRoom.scale = typeof roomData.scale === 'number' ? roomData.scale : 1;
+
+        var bounds = roomData.cameraBounds;
+        if (bounds && typeof bounds.x === 'number') {
+            runtimeRoom.cameraBounds = new powerupjs.Rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
+        }
+        else {
+            runtimeRoom.cameraBounds = new powerupjs.Rectangle(-500, -400, 3000, 1400);
+        }
+
+        if (roomData.playerSpawnPos && typeof roomData.playerSpawnPos.x === 'number') {
+            runtimeRoom.playerStartPos = new powerupjs.Vector2(roomData.playerSpawnPos.x, roomData.playerSpawnPos.y);
+        }
+        else {
+            runtimeRoom.playerStartPos = new powerupjs.Vector2(400, 400);
+        }
+
+        level.rooms.add(runtimeRoom);
     }
-    else {
-        level.playerStartPos = new powerupjs.Vector2(400, 400);
-    }
+
+    level.currentRoomIndex = typeof levelData.activeRoomIndex === 'number' ? levelData.activeRoomIndex : 0;
+    if (level.currentRoomIndex < 0 || level.currentRoomIndex >= level.rooms.length) level.currentRoomIndex = 0;
     level.name = typeof levelData.name === 'string' ? levelData.name : 'New'; // set level name
 }
 
@@ -116,14 +192,13 @@ WorldSettingsSingleton.prototype.indexOfSprite = function (sprite) { // get inde
 
 WorldSettingsSingleton.prototype.createLevel = function(index) { // create new level
     index = typeof index === 'undefined' ? window.LEVELS.length : index; // default index to end of LEVELS array
+    // New-level template in canonical nested rooms format.
     window.LEVELS[index] = {    // Create new level
         name: "New",
-        tiles: [],
-        cameraBounds: new powerupjs.Rectangle(-500, -400, 3000, 1400),
-        playerSpawnPos: { x: 400, y: 400 },
-        backgrounds: [0, 1],
-        scale: 1
+        rooms: [this.createDefaultRoomData()],
+        activeRoomIndex: 0
     }
+    this.syncRoomAlias(window.LEVELS[index]);
 
     var level = new Level(); // create new Level object
     this.levels.splice(index, 0, level); // add level to levels array at index
@@ -134,52 +209,94 @@ WorldSettingsSingleton.prototype.createLevel = function(index) { // create new l
 }
 
 WorldSettingsSingleton.prototype.normalizeLevelData = function(levelData) {
+    // If data is missing/invalid, return a complete safe default object.
     if (!levelData || typeof levelData !== 'object') {
-        return {
+        return this.syncRoomAlias({
             name: "New",
-            tiles: [],
-            cameraBounds: { x: -500, y: -400, width: 3000, height: 1400 },
-            playerSpawnPos: { x: 400, y: 400 },
-            backgrounds: [0, 1],
-            scale: 1
-        };
+            rooms: [this.createDefaultRoomData()],
+            activeRoomIndex: 0
+        });
     }
 
-    if (!Array.isArray(levelData.tiles)) {
-        levelData.tiles = [];
+    // Backward compatibility:
+    // - New format stores data in levelData.rooms[]
+    // - Previous format stored data in levelData.room
+    // - Legacy format stored room fields at root level object
+    var roomSources = [];
+    if (Array.isArray(levelData.rooms) && levelData.rooms.length > 0) {
+        roomSources = levelData.rooms;
+    }
+    else if (levelData.room && typeof levelData.room === 'object') {
+        roomSources = [levelData.room];
+    }
+    else {
+        roomSources = [levelData];
     }
 
-    if (typeof levelData.cameraBounds === 'string') {
-        levelData.cameraBounds = { x: -500, y: -400, width: 3000, height: 1400 };
-    }
-    if (!levelData.cameraBounds || typeof levelData.cameraBounds.x !== 'number') {
-        levelData.cameraBounds = levelData.cameraBounds || { x: -500, y: -400, width: 3000, height: 1400 };
+    // Build a fresh normalized object so downstream code always sees the same schema.
+    var normalized = {
+        name: typeof levelData.name === 'string' ? levelData.name : 'New',
+        rooms: [],
+        activeRoomIndex: typeof levelData.activeRoomIndex === 'number' ? levelData.activeRoomIndex : 0
+    };
+
+    for (var i = 0; i < roomSources.length; i++) {
+        var roomSource = roomSources[i];
+        var normalizedRoom = this.createDefaultRoomData();
+
+        if (Array.isArray(roomSource.tiles)) {
+            normalizedRoom.tiles = roomSource.tiles;
+        }
+
+        if (typeof roomSource.cameraBounds === 'string') {
+            roomSource.cameraBounds = { x: -500, y: -400, width: 3000, height: 1400 };
+        }
+        if (roomSource.cameraBounds && typeof roomSource.cameraBounds.x === 'number') {
+            normalizedRoom.cameraBounds = {
+                x: roomSource.cameraBounds.x,
+                y: roomSource.cameraBounds.y,
+                width: roomSource.cameraBounds.width,
+                height: roomSource.cameraBounds.height
+            };
+        }
+
+        if (typeof roomSource.playerSpawnPos === 'string') {
+            var parts = roomSource.playerSpawnPos.split('|');
+            roomSource.playerSpawnPos = {
+                x: parseFloat(parts[0]) || 400,
+                y: parseFloat(parts[1]) || 400
+            };
+        }
+        if (roomSource.playerSpawnPos && typeof roomSource.playerSpawnPos.x === 'number') {
+            normalizedRoom.playerSpawnPos = {
+                x: roomSource.playerSpawnPos.x,
+                y: roomSource.playerSpawnPos.y
+            };
+        }
+
+        if (Array.isArray(roomSource.backgrounds)) {
+            normalizedRoom.backgrounds = roomSource.backgrounds;
+        }
+
+        if (typeof roomSource.scale === 'number') {
+            normalizedRoom.scale = roomSource.scale;
+        }
+        else if (typeof roomSource.scale !== 'undefined') {
+            normalizedRoom.scale = parseFloat(roomSource.scale) || 1;
+        }
+
+        normalized.rooms.push(normalizedRoom);
     }
 
-    if (typeof levelData.playerSpawnPos === 'string') {
-        var parts = levelData.playerSpawnPos.split('|');
-        levelData.playerSpawnPos = {
-            x: parseFloat(parts[0]) || 400,
-            y: parseFloat(parts[1]) || 400
-        };
-    }
-    if (!levelData.playerSpawnPos || typeof levelData.playerSpawnPos.x !== 'number') {
-        levelData.playerSpawnPos = { x: 400, y: 400 };
+    if (normalized.rooms.length === 0) {
+        normalized.rooms.push(this.createDefaultRoomData());
     }
 
-    if (!Array.isArray(levelData.backgrounds)) {
-        levelData.backgrounds = [0, 1];
+    if (normalized.activeRoomIndex < 0 || normalized.activeRoomIndex >= normalized.rooms.length) {
+        normalized.activeRoomIndex = 0;
     }
 
-    if (typeof levelData.scale !== 'number') {
-        levelData.scale = parseFloat(levelData.scale) || 1;
-    }
-
-    if (typeof levelData.name !== 'string') {
-        levelData.name = 'New';
-    }
-
-    return levelData;
+    return this.syncRoomAlias(normalized);
 }
 
 
@@ -221,7 +338,7 @@ Object.defineProperty(WorldSettingsSingleton.prototype, "mapBottom", { // get bo
     get: function() {
         var level = this.currentLevel;
         if (level == null) return 0;
-        return level.cameraBounds.y + level.cameraBounds.height + 200;
+        return level.room.cameraBounds.y + level.room.cameraBounds.height + 200;
     }
 });
 
@@ -245,10 +362,10 @@ Object.defineProperty(WorldSettingsSingleton.prototype, "terminalVelocity", { //
 
 Object.defineProperty(WorldSettingsSingleton.prototype, "tiles", { // get/set current game state
     get: function() {
-        return this.currentLevel.tiles;
+        return this.currentLevel.room.tiles;
     },
     set: function(value) {
-        this.currentLevel.tiles = value;
+        this.currentLevel.room.tiles = value;
     }
 });
 
@@ -260,10 +377,10 @@ Object.defineProperty(WorldSettingsSingleton.prototype, "numberOfLevels", { // g
 
 Object.defineProperty(WorldSettingsSingleton.prototype, "cameraBounds", { // get camera bounds of current level
     get: function() {
-        return this.currentLevel.cameraBounds;
+        return this.currentLevel.room.cameraBounds;
     },
     set: function(value) {
-        this.currentLevel.cameraBounds = value;
+        this.currentLevel.room.cameraBounds = value;
     }
 });
 
@@ -273,7 +390,9 @@ WorldSettingsSingleton.prototype.getLevel = function(levelIndex) { // get level 
 
 WorldSettingsSingleton.prototype.playLevel = function(levelIndex) { // load current level
     this.currentLevelIndex = levelIndex; // set current level index
-    this.currentLevel.loadBackground(); // load background
+    // Guard against invalid index or failed load state.
+    if (!this.currentLevel) return;
+    this.currentLevel.room.loadBackground(); // load background
     powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
     powerupjs.GameStateManager.switchTo(ID.game_state_playing); // switch to playing state
     this.currentState = "playing"; // set current state to playing
@@ -281,24 +400,46 @@ WorldSettingsSingleton.prototype.playLevel = function(levelIndex) { // load curr
 
 WorldSettingsSingleton.prototype.editLevel = function(levelIndex) { // edit current level
     this.currentLevelIndex = levelIndex; // set current level index
-    this.currentLevel.loadBackground(); // load background
+    // Guard against invalid index or failed load state.
+    if (!this.currentLevel) return;
+    this.currentLevel.room.loadBackground(); // load background
     powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers(); // load editor layers
     powerupjs.GameStateManager.switchTo(ID.game_state_editor); // switch to editor state
     this.currentState = "editing"; // set current state to editing
 }
 
 WorldSettingsSingleton.prototype.addBackground = function(background, levelIndex) { // set backgrounds for level
-    window.LEVELS[levelIndex].backgrounds.push(background); // set backgrounds
-    this.getLevel(levelIndex).loadBackground(); // load backgrounds
+    // If target level data does not exist, skip safely.
+    if (!window.LEVELS[levelIndex]) return;
+    // Backfill nested room object for legacy level records.
+    if (!window.LEVELS[levelIndex].room || typeof window.LEVELS[levelIndex].room !== 'object') {
+        window.LEVELS[levelIndex] = this.normalizeLevelData(window.LEVELS[levelIndex]);
+    }
+    window.LEVELS[levelIndex].room.backgrounds.push(background); // set backgrounds
+    var level = this.getLevel(levelIndex);
+    // Runtime level object can be absent in edge cases; guard before method call.
+    if (level) level.room.loadBackground(); // load backgrounds
 }
 
 WorldSettingsSingleton.prototype.removeBackground = function(backgroundIndex, levelIndex) { // remove background from level
-    window.LEVELS[levelIndex].backgrounds.splice(backgroundIndex, 1); // remove background
-    this.getLevel(levelIndex).loadBackground(); // load backgrounds
+    // If target level data does not exist, skip safely.
+    if (!window.LEVELS[levelIndex]) return;
+    // Backfill nested room object for legacy level records.
+    if (!window.LEVELS[levelIndex].room || typeof window.LEVELS[levelIndex].room !== 'object') {
+        window.LEVELS[levelIndex] = this.normalizeLevelData(window.LEVELS[levelIndex]);
+    }
+    window.LEVELS[levelIndex].room.backgrounds.splice(backgroundIndex, 1); // remove background
+    var level = this.getLevel(levelIndex);
+    // Runtime level object can be absent in edge cases; guard before method call.
+    if (level) level.room.loadBackground(); // load backgrounds
 }
 
 WorldSettingsSingleton.prototype.setPlayerSpawn = function(position, levelIndex) { // set player spawn position for level
-    window.LEVELS[levelIndex].playerSpawnPos = {x: position.x, y: position.y}; // set player spawn position
+    // Backfill nested room object for legacy level records.
+    if (!window.LEVELS[levelIndex].room || typeof window.LEVELS[levelIndex].room !== 'object') {
+        window.LEVELS[levelIndex] = this.normalizeLevelData(window.LEVELS[levelIndex]);
+    }
+    window.LEVELS[levelIndex].room.playerSpawnPos = {x: position.x, y: position.y}; // set player spawn position
 }
 
 var WorldSettings = new WorldSettingsSingleton();

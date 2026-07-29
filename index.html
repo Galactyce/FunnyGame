@@ -50,6 +50,8 @@
                     .script('game objects/Spring.js').wait()
                     .script('game objects/MovingPlatform.js').wait()
                     .script('game objects/DraggableObject.js').wait()
+                    // Room must load before Level because Level constructor creates a Room.
+                    .script('game objects/Room.js').wait()
                     .script('game objects/Level.js').wait()
                     .script('game objects/TileField.js').wait()
                     .script('game objects/Player.js').wait()

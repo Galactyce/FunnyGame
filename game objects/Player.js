@@ -162,7 +162,7 @@ Player.prototype.handleCameraPos = function(delta) {
     if (powerupjs.Camera.velocity.x < -this.moveSpeed) powerupjs.Camera.velocity.x = -this.moveSpeed; // cap camera velocity
     // if (V.y > 60) powerupjs.Camera.velocity.y = this.velocity.y;
     powerupjs.Camera.update(delta); // update camera position   
-    powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.cameraBounds); // keep camera within level bounds
+    powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.room.cameraBounds); // keep camera within level bounds
 }
 
 // Rebuilds the player's collision shapes from the current position.
@@ -200,8 +200,8 @@ Player.prototype.handleCollisions = function () {
     this.debugCollisionTiles = [];
     this.grounded = false;
 
-    for (var i = 0; i < WorldSettings.currentLevel.tileFields.length; i++) {
-        var field = WorldSettings.currentLevel.tileFields[i];
+    for (var i = 0; i < WorldSettings.currentLevel.room.tileFields.length; i++) {
+        var field = WorldSettings.currentLevel.room.tileFields[i];
 
         for (var l = 0; l < field.length; l++) {
             var tile = field.at(l);
@@ -235,8 +235,8 @@ Player.prototype.handleCollisions = function () {
 
 // Recomputes grounded from the tiles directly beneath the player.
 Player.prototype.refreshGroundedState = function() {
-    for (var i = 0; i < WorldSettings.currentLevel.tileFields.length; i++) {
-        var field = WorldSettings.currentLevel.tileFields[i];
+    for (var i = 0; i < WorldSettings.currentLevel.room.tileFields.length; i++) {
+        var field = WorldSettings.currentLevel.room.tileFields[i];
         for (var l = 0; l < field.length; l++) {
             var tile = field.at(l);
             if (tile == null || tile.hitboxType != "solid") continue;
@@ -252,8 +252,8 @@ Player.prototype.refreshGroundedState = function() {
 
 // Clears the per-frame physics debug state from all tiles.
 Player.prototype.clearPhysicsDebugHighlights = function() {
-    for (var i = 0; i < WorldSettings.currentLevel.tileFields.length; i++) {
-        var field = WorldSettings.currentLevel.tileFields[i];
+    for (var i = 0; i < WorldSettings.currentLevel.room.tileFields.length; i++) {
+        var field = WorldSettings.currentLevel.room.tileFields[i];
         for (var l = 0; l < field.length; l++) {
             var tile = field.at(l);
             if (tile == null) continue;

@@ -23,10 +23,10 @@ var powerupjs = (function (powerupjs) {
 
     Camera.prototype.manageBoundaries = function(bounds) {
         var camBounds = new powerupjs.Rectangle(
-            bounds.x * WorldSettings.currentLevel.scale,
-            bounds.y * WorldSettings.currentLevel.scale,
-            bounds.width * WorldSettings.currentLevel.scale,
-            bounds.height * WorldSettings.currentLevel.scale,
+            bounds.x * WorldSettings.currentLevel.room.scale,
+            bounds.y * WorldSettings.currentLevel.room.scale,
+            bounds.width * WorldSettings.currentLevel.room.scale,
+            bounds.height * WorldSettings.currentLevel.room.scale,
 
         )
         if (this.position.x < camBounds.x) this.position.x = camBounds.x;

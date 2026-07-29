@@ -9,6 +9,15 @@ function GameplayEditorState(layer) {
     this.modeButtons = new powerupjs.GameObjectList();
     this.add(this.modeButtons);
 
+    this.currentRoomDisplay = new powerupjs.Label("Arial", "20px", ID.layer_overlays, 0, powerupjs.Color.white);
+    this.currentRoomDisplay.position = new powerupjs.Vector2(600, 15);
+    this.currentRoomDisplay.ui = true;
+    this.add(this.currentRoomDisplay);
+
+    this.nextRoomButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays);
+    this.nextRoomButton.position = new powerupjs.Vector2(650, 15);
+    this.nextRoomButton.ui = true;
+    this.add(this.nextRoomButton);
 
     this.editingTiles = true;
 
@@ -17,6 +26,11 @@ function GameplayEditorState(layer) {
     field.editorLayer = 0; // set layer index
     this.editorLayers.add(field); // add tile field to editor layers
     this.add(this.editorLayers);
+
+    this.addRoomButton = new LabelledButton(sprites.button_default, "Add Room", "Arial", "20px", ID.layer_overlays); // button to add a new room
+    this.addRoomButton.position = new powerupjs.Vector2(600, 60);
+    this.addRoomButton.ui = true;
+    this.add(this.addRoomButton);
 
     this.objectMenu = new ObjectMenuGUI(ID.layer_overlays) // object selection menu
     this.objectMenu.position = new powerupjs.Vector2(400, 600);
@@ -59,16 +73,45 @@ function GameplayEditorState(layer) {
 
 GameplayEditorState.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
+GameplayEditorState.prototype.getActiveRoomData = function () {
+    var levelIndex = WorldSettings.currentLevelIndex;
+    var levelData = window.LEVELS[levelIndex];
+    if (!levelData || typeof levelData !== 'object') {
+        WorldSettings.createLevel(levelIndex);
+        levelData = window.LEVELS[levelIndex];
+    }
+
+    levelData = WorldSettings.normalizeLevelData(levelData);
+    window.LEVELS[levelIndex] = levelData;
+
+    var runtimeLevel = WorldSettings.currentLevel;
+    var roomIndex = runtimeLevel && typeof runtimeLevel.currentRoomIndex === 'number'
+        ? runtimeLevel.currentRoomIndex
+        : 0;
+
+    while (levelData.rooms.length <= roomIndex) {
+        levelData.rooms.push(WorldSettings.createDefaultRoomData());
+    }
+
+    levelData.activeRoomIndex = roomIndex;
+    WorldSettings.syncRoomAlias(levelData);
+    return levelData.room;
+}
+
 GameplayEditorState.prototype.loadLayers = function () {
-    var level = window.LEVELS[WorldSettings.currentLevelIndex];
-    var spawnData = level.playerSpawnPos;
+    var roomData = this.getActiveRoomData();
+    // Ensure active room backgrounds are rebuilt whenever editor loads/switches rooms.
+    WorldSettings.currentLevel.room.loadBackground();
+    // Room refactor: editor spawn marker reads from room-owned spawn data.
+    var spawnData = roomData.playerSpawnPos;
     if (spawnData.x == null) {
         this.playerStartPos.position = new powerupjs.Vector2(400, 400);
     }
     else {
         this.playerStartPos.position = new powerupjs.Vector2(spawnData.x, spawnData.y)
     }
-    WorldSettings.cameraBounds = window.LEVELS[WorldSettings.currentLevelIndex].cameraBounds
+    // Room refactor: camera bounds are room-owned and mirrored onto WorldSettings helper.
+    WorldSettings.cameraBounds = roomData.cameraBounds
 
     for (var i = 0; i < this.editorLayers.length; i++) {
         this.editorLayers.at(i).clear();
@@ -90,6 +133,11 @@ GameplayEditorState.prototype.loadModeButtons = function () {
 }
 
 GameplayEditorState.prototype.update = function (delta) {
+    // In editor mode, only the active room should be visible and editable.
+    for (var i = 0; i < WorldSettings.currentLevel.rooms.length; i++) {
+        var room = WorldSettings.currentLevel.rooms.at(i);
+        if (room) room.visible = (i === WorldSettings.currentLevel.currentRoomIndex);
+    }
     WorldSettings.currentLevel.update(delta);
     powerupjs.GameObjectList.prototype.update.call(this, delta);
     if (this.mode == "Drawing") {
@@ -100,6 +148,8 @@ GameplayEditorState.prototype.update = function (delta) {
         this.editingMenu.visible = true;
         this.objectMenu.visible = false;
     }
+
+    this.currentRoomDisplay.text = "Room: " + (WorldSettings.currentLevel.currentRoomIndex + 1) + "/" + WorldSettings.currentLevel.rooms.length;
 }
 
 GameplayEditorState.prototype.draw = function () {
@@ -112,15 +162,23 @@ GameplayEditorState.prototype.saveLevel = function () {
     for (var i = 0; i < this.editorLayers.length; i++) { // for each editor layer
         this.editorLayers.at(i).saveTiles(); // save current editor layer tiles
     }
-    window.LEVELS[WorldSettings.currentLevelIndex].playerSpawnPos = this.playerStartPos.position; // save player spawn position
+    var activeRoom = WorldSettings.currentLevel.room;
+    var spawnPosition = this.playerStartPos.position.copy();
+    // Keep runtime room state in sync so saveLevels does not overwrite spawn with stale values.
+    activeRoom.playerStartPos = spawnPosition.copy();
+    var roomData = this.getActiveRoomData();
+    // Room refactor: persist spawn marker back to room payload.
+    roomData.playerSpawnPos = { x: spawnPosition.x, y: spawnPosition.y }; // save player spawn position
     WorldSettings.saveLevels(); // save levels to local storage
 }
 
 GameplayEditorState.prototype.adjustScale = function(value) {
-    WorldSettings.currentLevel.scale += value
-    window.LEVELS[WorldSettings.currentLevelIndex].scale = WorldSettings.currentLevel.scale;    // Adjust scale
-    WorldSettings.currentLevel.scaleCameraBounds();
-    WorldSettings.currentLevel.loadBackground() // Reload everything
+    WorldSettings.currentLevel.room.scale += value
+    var roomData = this.getActiveRoomData();
+    // Room refactor: persist scale at room scope.
+    roomData.scale = WorldSettings.currentLevel.room.scale;    // Adjust scale
+    WorldSettings.currentLevel.room.scaleCameraBounds();
+    WorldSettings.currentLevel.room.loadBackground() // Reload everything
     this.saveLevel();   // Save level data
     powerupjs.GameStateManager.get(ID.game_state_editor).loadLayers(); // load editor layers
     powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
@@ -136,7 +194,27 @@ GameplayEditorState.prototype.handleInput = function (delta) {
         }
     }
 
-  
+    if (this.addRoomButton.pressed) {
+        WorldSettings.currentLevel.addRoom();
+        WorldSettings.currentLevel.currentRoomIndex = WorldSettings.currentLevel.rooms.length - 1;
+        var roomData = this.getActiveRoomData();
+        if (!Array.isArray(roomData.backgrounds) || roomData.backgrounds.length === 0) {
+            roomData.backgrounds = [0, 1];
+        }
+        WorldSettings.currentLevel.room.loadBackground();
+        this.loadLayers();
+        return;
+    }
+
+    if (this.nextRoomButton.pressed) {
+        var currentRoomIndex = WorldSettings.currentLevel.currentRoomIndex;
+        var nextRoomIndex = (currentRoomIndex + 1) % WorldSettings.currentLevel.rooms.length;
+        WorldSettings.currentLevel.currentRoomIndex = nextRoomIndex;
+        this.getActiveRoomData();
+        WorldSettings.currentLevel.room.loadBackground();
+        this.loadLayers();
+        return;
+    }
 
     if (this.saveButton.pressed) {
         this.saveLevel();
@@ -193,7 +271,7 @@ GameplayEditorState.prototype.handleInput = function (delta) {
         powerupjs.Camera.position.addTo(
             powerupjs.Mouse.screenPosition.subtractFrom(this.previousMousePosition).multiplyWith(-1) // move camera opposite to mouse movement
         );
-        powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.cameraBounds);
+        powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.room.cameraBounds);
     }
 
 
