@@ -9,6 +9,7 @@
         <script>
 
             var powerupjsdir = 'powerupjs/';
+                $LAB.setOptions({ UseLocalXHR: false });
 
             $LAB
                     .script(powerupjsdir + 'Math.js').wait()
@@ -47,10 +48,12 @@
                     .script('gui/EditingMenuGUI.js').wait()
                     .script('gui/ArrowButton.js').wait()
                     .script('game objects/Tile.js').wait()
+                    .script('game objects/CameraBoundTile.js').wait()
                     .script('game objects/Spring.js').wait()
                     .script('game objects/MovingPlatform.js').wait()
                     .script('game objects/DraggableObject.js').wait()
                     // Room must load before Level because Level constructor creates a Room.
+                    .script('game objects/TravelPoint.js').wait()
                     .script('game objects/Room.js').wait()
                     .script('game objects/Level.js').wait()
                     .script('game objects/TileField.js').wait()

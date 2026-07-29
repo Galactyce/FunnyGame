@@ -158,14 +158,17 @@ Player.prototype.updateDetachState = function(delta) {
 // Smoothly follows the player with the camera.
 Player.prototype.handleCameraPos = function(delta) {
     var V = this.centerOfCamera.subtract(powerupjs.Camera.position); // vector from camera to player
-    if (Math.abs(V.y) < 3 && Math.abs(V.x) < 3 && this.velocity.x == 0 && this.velocity.y == 0) { 
+    if (Math.abs(V.y) < 4 && Math.abs(V.x) < 4) { 
         powerupjs.Camera.position = this.centerOfCamera ; // snap camera to player if close enough
         return;
     }
-    V = V.multiply(1 / powerupjs.Camera.smoothingFactor); // scale by smoothing factor
+    // Pull harder toward the player for a stricter camera follow feel.
+    var strictSmoothing = Math.max(1, powerupjs.Camera.smoothingFactor * 0.6);
+    V = V.multiply(1 / strictSmoothing); // scale by smoothing factor
     powerupjs.Camera.velocity = V; // set camera velocity
-    if (powerupjs.Camera.velocity.x > this.moveSpeed) powerupjs.Camera.velocity.x = this.moveSpeed; // cap camera velocity
-    if (powerupjs.Camera.velocity.x < -this.moveSpeed) powerupjs.Camera.velocity.x = -this.moveSpeed; // cap camera velocity
+    var cameraSpeedCap = this.moveSpeed * 2;
+    if (powerupjs.Camera.velocity.x > cameraSpeedCap) powerupjs.Camera.velocity.x = cameraSpeedCap; // cap camera velocity
+    if (powerupjs.Camera.velocity.x < -cameraSpeedCap) powerupjs.Camera.velocity.x = -cameraSpeedCap; // cap camera velocity
     // if (V.y > 60) powerupjs.Camera.velocity.y = this.velocity.y;
     powerupjs.Camera.update(delta); // update camera position   
     powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.room.cameraBounds); // keep camera within level bounds

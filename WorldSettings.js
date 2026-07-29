@@ -13,7 +13,7 @@ function WorldSettingsSingleton() {
 
     this.gravity = 25;
     this.wallSlideSpeed = 30;
-    this.cameraSmoothingFactor = 5;
+    this.cameraSmoothingFactor = 1.5;
     this._terminalVelocity = 530; // max downward speed
 
     // MANAGING PLAYER PROPERTIES CAN BE DONE IN "PlayerProperties.js"
@@ -25,7 +25,8 @@ WorldSettingsSingleton.prototype.createDefaultRoomData = function() {
         cameraBounds: { x: -500, y: -400, width: 3000, height: 1400 },
         playerSpawnPos: { x: 400, y: 400 },
         backgrounds: [0, 1],
-        scale: 1
+        scale: 1,
+        travelPoints: []
     };
 }
 
@@ -116,7 +117,22 @@ WorldSettingsSingleton.prototype.saveLevels = function () { // save levels to lo
                     x: runtimeRoom.playerStartPos.x,
                     y: runtimeRoom.playerStartPos.y
                 },
-                backgrounds: savedBackgrounds
+                backgrounds: savedBackgrounds,
+                travelPoints: (runtimeRoom.travelPoints || []).map(function(point) {
+                    if (!point || !point.position || !point.targetPosition) return null;
+
+                    return {
+                        position: {
+                            x: point.position.x,
+                            y: point.position.y
+                        },
+                        targetRoomIndex: point.targetRoomIndex,
+                        targetPosition: {
+                            x: point.targetPosition.x,
+                            y: point.targetPosition.y
+                        }
+                    };
+                }).filter(function(point) { return point !== null; })
             });
         }
 
@@ -171,6 +187,24 @@ WorldSettingsSingleton.prototype.manageLevelProperties = function(level) { // ma
         }
         else {
             runtimeRoom.playerStartPos = new powerupjs.Vector2(400, 400);
+        }
+
+        var savedTravelPoints = Array.isArray(roomData.travelPoints) ? roomData.travelPoints : [];
+        for (var t = 0; t < savedTravelPoints.length; t++) {
+            var pointData = savedTravelPoints[t];
+            if (!pointData || !pointData.position || !pointData.targetPosition) continue;
+            if (typeof pointData.position.x !== 'number' || typeof pointData.position.y !== 'number') continue;
+            if (typeof pointData.targetPosition.x !== 'number' || typeof pointData.targetPosition.y !== 'number') continue;
+
+            var targetRoomIndex = typeof pointData.targetRoomIndex === 'number' ? pointData.targetRoomIndex : 0;
+            var travelPoint = new TravelPoint(
+                new powerupjs.Vector2(pointData.position.x, pointData.position.y),
+                targetRoomIndex,
+                new powerupjs.Vector2(pointData.targetPosition.x, pointData.targetPosition.y)
+            );
+            travelPoint.currentRoomIndex = r;
+            runtimeRoom.travelPoints.push(travelPoint);
+            runtimeRoom.add(travelPoint);
         }
 
         level.rooms.add(runtimeRoom);
@@ -276,6 +310,29 @@ WorldSettingsSingleton.prototype.normalizeLevelData = function(levelData) {
 
         if (Array.isArray(roomSource.backgrounds)) {
             normalizedRoom.backgrounds = roomSource.backgrounds;
+        }
+
+        if (Array.isArray(roomSource.travelPoints)) {
+            normalizedRoom.travelPoints = roomSource.travelPoints
+                .filter(function(point) {
+                    return point && point.position && point.targetPosition;
+                })
+                .map(function(point) {
+                    var targetRoomIndex = typeof point.targetRoomIndex === 'number' ? point.targetRoomIndex : 0;
+                    var posX = parseFloat(point.position.x);
+                    var posY = parseFloat(point.position.y);
+                    var targetX = parseFloat(point.targetPosition.x);
+                    var targetY = parseFloat(point.targetPosition.y);
+
+                    if (isNaN(posX) || isNaN(posY) || isNaN(targetX) || isNaN(targetY)) return null;
+
+                    return {
+                        position: { x: posX, y: posY },
+                        targetRoomIndex: targetRoomIndex,
+                        targetPosition: { x: targetX, y: targetY }
+                    };
+                })
+                .filter(function(point) { return point !== null; });
         }
 
         if (typeof roomSource.scale === 'number') {

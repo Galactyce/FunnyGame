@@ -34,6 +34,26 @@ TileField.prototype.getTileByMouse = function (position) {
     );
 }
 
+TileField.prototype.snapPositionToSubTile = function(position) {
+    if (!position) return null;
+
+    var stepX = (this.cellWidth * this.scale) / 16;
+    var stepY = (this.cellHeight * this.scale) / 16;
+    if (!stepX || !stepY) return position.copy ? position.copy() : new powerupjs.Vector2(position.x, position.y);
+
+    return new powerupjs.Vector2(
+        Math.round(position.x / stepX) * stepX,
+        Math.round(position.y / stepY) * stepY
+    );
+}
+
+TileField.prototype.snapTileToSubTile = function(tile) {
+    if (!tile || !tile.position) return;
+    var snapped = this.snapPositionToSubTile(tile.position);
+    if (!snapped) return;
+    tile.position = snapped;
+}
+
 TileField.prototype.getTileAtIndex = function (index) {
     var targetKey = this.getIndexKey(index);
     if (targetKey === null) return null;
@@ -85,6 +105,7 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
         (index.x * this.cellWidth * this.scale) + ((this.cellWidth * this.scale) / 2),
         (index.y * this.cellHeight * this.scale) + ((this.cellHeight * this.scale) / 2)
     );
+    this.snapTileToSubTile(tile);
     tile.rotation = rotation;
     tile.playAnimation("normal");
     tile.sheetIndex = sheetIndex;
@@ -170,6 +191,7 @@ TileField.prototype.loadTiles = function () {
         tile.scale = this.scale * tile.baseScale;
         tile.position = new powerupjs.Vector2((tile.index.x * this.cellWidth * this.scale) + ((this.cellWidth * this.scale) / 2), 
             (tile.index.y * this.cellHeight * this.scale) + ((this.cellHeight * this.scale) / 2))
+        this.snapTileToSubTile(tile);
         this.add(tile)
         tile.manageHitboxes(tile.sprite); // set hitbox based on sprite
 
@@ -193,6 +215,7 @@ Object.defineProperties(TileField.prototype, {
                 tile.scale = value * tile.baseScale;
                 tile.position = new powerupjs.Vector2((tile.index.x * this.cellWidth * value) + ((this.cellWidth * value) / 2), 
                     (tile.index.y * this.cellHeight * value) + ((this.cellHeight * value) / 2))
+                this.snapTileToSubTile(tile);
             }
         }
     },

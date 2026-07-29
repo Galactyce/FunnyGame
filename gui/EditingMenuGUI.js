@@ -73,6 +73,10 @@ EditingMenuGUI.prototype.handleButtonFunction = function (buttonIndex) {
                 return;
         }
 
+        if (this.selectedObj.parent && typeof this.selectedObj.parent.snapTileToSubTile === 'function') {
+            this.selectedObj.parent.snapTileToSubTile(this.selectedObj);
+        }
+
         // Keep tile index and hitbox in sync so saves preserve small edit-menu nudges.
         this.selectedObj.manageHitboxes();
     }

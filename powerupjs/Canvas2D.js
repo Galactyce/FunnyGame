@@ -82,9 +82,10 @@ var powerupjs = (function (powerupjs) {
         powerupjs.Canvas2D._canvasOffset = offset; // store canvas offset
     };
 
-    Canvas2D_Singleton.prototype.drawImage = function (sprite, position, rotation, scale, origin, sourceRect, mirror) {
+    Canvas2D_Singleton.prototype.drawImage = function (sprite, position, rotation, scale, origin, sourceRect, mirror, pixelSnap) {
         var canvasScale = this.scale; // get canvas scale factors
         mirror = typeof mirror !== 'undefined' ? mirror : false;
+        pixelSnap = typeof pixelSnap !== 'undefined' ? pixelSnap : false;
 
         position = typeof position !== 'undefined' ? position : powerupjs.Vector2.zero;
         rotation = typeof rotation !== 'undefined' ? rotation : 0;
@@ -95,7 +96,13 @@ var powerupjs = (function (powerupjs) {
         this._canvasContext.save(); // save current context state
         if (mirror) { // mirrored drawing
             this._canvasContext.scale(scale * canvasScale.x * -1, scale * canvasScale.y); // flip horizontally
-            this._canvasContext.translate((-position.x / scale - sourceRect.width), position.y / scale); // adjust position
+            var mirrorTranslateX = (-position.x / scale - sourceRect.width);
+            var mirrorTranslateY = (position.y / scale);
+            if (pixelSnap) {
+                mirrorTranslateX = Math.round(mirrorTranslateX);
+                mirrorTranslateY = Math.round(mirrorTranslateY);
+            }
+            this._canvasContext.translate(mirrorTranslateX, mirrorTranslateY); // adjust position
             this._canvasContext.rotate(rotation); // apply rotation
             this._canvasContext.imageSmoothingEnabled = false;
             this._canvasContext.drawImage(sprite, sourceRect.x, sourceRect.y, // draw image
@@ -106,7 +113,13 @@ var powerupjs = (function (powerupjs) {
         else {
             
             this._canvasContext.scale(scale * canvasScale.x, scale * canvasScale.y); // normal scaling
-            this._canvasContext.translate(position.x / scale, position.y / scale); // translate to position
+            var translateX = position.x / scale;
+            var translateY = position.y / scale;
+            if (pixelSnap) {
+                translateX = Math.round(translateX);
+                translateY = Math.round(translateY);
+            }
+            this._canvasContext.translate(translateX, translateY); // translate to position
             this._canvasContext.rotate(rotation); // apply rotation
             this._canvasContext.imageSmoothingEnabled = false;
             this._canvasContext.drawImage(sprite, sourceRect.x, sourceRect.y, // draw image

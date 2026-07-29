@@ -50,7 +50,7 @@ PlayingState.prototype.handleInput = function (delta) {
 }
 
 
-PlayingState.prototype.loadLevel = function () {
+PlayingState.prototype.loadLevel = function (spawnOverride) {
    
     
     var spawn = powerupjs.GameStateManager.get(ID.game_state_editor).find(ID.player_spawn);
@@ -67,7 +67,12 @@ PlayingState.prototype.loadLevel = function () {
    
     spawn.position = new powerupjs.Vector2(spawnData.x, spawnData.y)
     }
-    this.player.position = spawn.position.copy(); // set player position to spawn point
+    var playerStartPosition = spawn.position.copy();
+    if (spawnOverride && typeof spawnOverride.x === 'number' && typeof spawnOverride.y === 'number') {
+        playerStartPosition = spawnOverride.copy ? spawnOverride.copy() : new powerupjs.Vector2(spawnOverride.x, spawnOverride.y);
+    }
+
+    this.player.position = playerStartPosition; // set player position to spawn point or override
     this.player.spawnPosition = this.player.position.copy(); // set spawn position
     this.player.adjustHitbox(); // adjust hitbox to match sprite
     this.player.scale = WorldSettings.currentLevel.room.scale
@@ -79,13 +84,13 @@ PlayingState.prototype.loadLevel = function () {
     this.syncRoomVisibility();
 }
 
-PlayingState.prototype.switchRoom = function (newRoomIndex) {
+PlayingState.prototype.switchRoom = function (newRoomIndex, spawnOverride) {
     var newRoom = this.currentLevel.rooms.at(newRoomIndex);
     if (!newRoom) return;
     this.currentLevel.currentRoomIndex = newRoomIndex;
     this.currentLevel.room.loadBackground();
     this.currentLevel.room.loadTiles();
-    this.loadLevel();
+    this.loadLevel(spawnOverride);
     this.syncRoomVisibility();
     powerupjs.Camera.position = powerupjs.Vector2.zero;
 }

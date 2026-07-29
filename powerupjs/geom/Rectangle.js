@@ -58,6 +58,7 @@ var powerupjs = (function (powerupjs) {
     };
 
     Rectangle.prototype.intersects = function (rect) { // check if rectangles intersect
+        if (!rect) return false; // guard against null/undefined callers
         return (this.left <= rect.right && this.right >= rect.left && // check x overlap
             this.top <= rect.bottom && this.bottom >= rect.top); // check y overlap
     };

@@ -37,6 +37,15 @@ TileDataManager_Singleton.prototype.handleObject = function(sprite) { // create 
         if (!sprite || !sprite.image) return null;
     }
 
+    if (sprite.image.src == sprites.boundary.image.src) {
+        return new CameraBoundTile(sprite);
+    }
+
+    // Backward compatibility for existing maps that used crosshair as camera barrier.
+    if (sprite.image.src == sprites.crosshair.image.src) {
+        return new CameraBoundTile(sprite);
+    }
+
     if (sprite.image.src == sprites.spring.image.src) { // spring tile
         return new Spring(sprite);
     }

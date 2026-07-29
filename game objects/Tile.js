@@ -4,6 +4,7 @@ function Tile(sprite) {
     this.key;
     this.hitboxType;
     this.index;
+    this.renderOverlap = 0.06;
     this.physicsHighlighted = false;
     this.loadAnimation(sprite, "normal", true, 0.2);
 }
@@ -11,7 +12,16 @@ function Tile(sprite) {
 Tile.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
 
 Tile.prototype.draw = function () {
-    powerupjs.SpriteGameObject.prototype.draw.call(this);
+    if (this._visible) {
+        // Snap against one shared camera anchor to keep adjacent tiles locked together.
+        var snappedCameraPos = new powerupjs.Vector2(
+            Math.round(powerupjs.Camera.position.x),
+            Math.round(powerupjs.Camera.position.y)
+        );
+        var drawPos = this.worldPosition.subtractFrom(snappedCameraPos);
+        // Slightly overdraw neighboring edges to hide subpixel seam lines.
+        this.sprite.draw(drawPos, this.origin, this.scale + this.renderOverlap, this.rotation, this.sheetIndex, this.mirror, true);
+    }
     if (this.hitbox == undefined) return;
     
     if (WorldSettings.debugMode) {

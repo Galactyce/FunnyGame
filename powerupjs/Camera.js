@@ -33,6 +33,47 @@ var powerupjs = (function (powerupjs) {
         if (this.position.y < camBounds.y) this.position.y = camBounds.y;
         if (this.position.x + this.viewWidth > camBounds.x + camBounds.width) this.position.x = camBounds.x + camBounds.width - this.viewWidth;
         if (this.position.y + this.viewHeight > camBounds.y + camBounds.height) this.position.y = camBounds.y + camBounds.height - this.viewHeight;
+
+        this.applyBarrierTiles();
+
+        // Re-clamp after barrier resolution.
+        if (this.position.x < camBounds.x) this.position.x = camBounds.x;
+        if (this.position.y < camBounds.y) this.position.y = camBounds.y;
+        if (this.position.x + this.viewWidth > camBounds.x + camBounds.width) this.position.x = camBounds.x + camBounds.width - this.viewWidth;
+        if (this.position.y + this.viewHeight > camBounds.y + camBounds.height) this.position.y = camBounds.y + camBounds.height - this.viewHeight;
+    }
+
+    Camera.prototype.applyBarrierTiles = function() {
+        if (WorldSettings.currentState !== "playing") return;
+        if (!WorldSettings.currentLevel || !WorldSettings.currentLevel.room) return;
+
+        var room = WorldSettings.currentLevel.room;
+        if (!room.tileFields || room.tileFields.length === 0) return;
+
+        var cameraRect = new powerupjs.Rectangle(this.position.x, this.position.y, this.viewWidth, this.viewHeight);
+
+        for (var i = 0; i < room.tileFields.length; i++) {
+            var field = room.tileFields.at(i);
+            if (!field) continue;
+
+            for (var t = 0; t < field.length; t++) {
+                var tile = field.at(t);
+                if (!tile || !tile.cameraBarrier || !tile.hitbox) continue;
+                if (typeof tile.hitbox.width !== "number" || typeof tile.hitbox.height !== "number") continue;
+                if (!cameraRect.intersects(tile.hitbox)) continue;
+
+                var depth = cameraRect.calculateIntersectionDepth(tile.hitbox);
+                if (Math.abs(depth.x) < Math.abs(depth.y)) {
+                    this.position.x += depth.x;
+                }
+                else {
+                    this.position.y += depth.y;
+                }
+
+                cameraRect.x = this.position.x;
+                cameraRect.y = this.position.y;
+            }
+        }
     }
 
 

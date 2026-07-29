@@ -5,7 +5,7 @@ var powerupjs = (function (powerupjs) {
     function SpriteGameObject(sprite, layer, id) { // sprite game object constructor
         powerupjs.GameObject.call(this, layer, id); // call GameObject constructor
 
-        this.sprite = sprite; // assign sprite
+        this.sprite = sprite || sprites.blank; // default sprite if none provided
 
         this.origin = powerupjs.Vector2.zero; // default origin at top-left
         this.mirror = false; // not mirrored by default

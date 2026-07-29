@@ -5,19 +5,27 @@ function Room() {
     this.tiles = []; // array to hold serialized tile data for each layer
     this.playerStartPos = powerupjs.Vector2.zero; // default player start position
     // Runtime camera bounds for this room; persisted under LEVELS[].room.cameraBounds.
-    this.cameraBounds;
+    this.cameraBounds = new powerupjs.Rectangle(-500, -400, 3000, 1400);
     this.name;
     // Background sprites are hosted by the room so parallax can be room-scoped.
     this.backgrounds = new powerupjs.GameObjectList(1);
     // Room-specific visual/gameplay scale. Level proxies this to maintain old API calls.
-    this.scale = 1.5;
+    this.scale = 1;
     this.add(this.tileFields)
     // Scratch/original bounds used by scaling workflows in the editor.
     this.originalBounds;
-    this.connections = []; // array to hold room connections
+    this.travelPoints = []; // array to hold room connections
 }
 
 Room.prototype = Object.create(powerupjs.GameObjectList.prototype);
+
+Room.prototype.addTravelPoint = function(travelPoint) {
+    if (travelPoint instanceof TravelPoint) {
+        travelPoint.currentRoomIndex = WorldSettings.currentLevel.currentRoomIndex;
+        this.travelPoints.push(travelPoint);
+        this.add(travelPoint);
+    }
+}
 
 Room.prototype.getRoomData = function () {
     // Resolve the active level JSON record.
@@ -133,4 +141,8 @@ Room.prototype.update = function(delta) {
     // Preserve previous behavior: only show tile layers in playing state.
     if (WorldSettings.currentState == "playing") this.tileFields.visible = true;
     else this.tileFields.visible = false;
+}
+
+Room.prototype.handleInput = function(delta) {
+    powerupjs.GameObjectList.prototype.handleInput.call(this, delta);
 }

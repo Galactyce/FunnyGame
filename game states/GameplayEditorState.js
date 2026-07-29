@@ -26,6 +26,11 @@ function GameplayEditorState(layer) {
     this.previousRoomButton.ui = true;
     this.add(this.previousRoomButton);
 
+    this.addTravelPointButton = new LabelledButton(sprites.button_default, "Add Travel Point", "Arial", "20px", ID.layer_overlays);
+    this.addTravelPointButton.position = new powerupjs.Vector2(900, 105);
+    this.addTravelPointButton.ui = true;
+    this.add(this.addTravelPointButton);
+
     this.editingTiles = true;
 
     this.editorLayers = new powerupjs.GameObjectList(ID.layer_objects); // list of tile fields for editing
@@ -41,16 +46,19 @@ function GameplayEditorState(layer) {
 
     this.objectMenu = new ObjectMenuGUI(ID.layer_overlays) // object selection menu
     this.objectMenu.position = new powerupjs.Vector2(400, 600);
+    this.objectMenu.ui = true;
     this.add(this.objectMenu);
 
     this.movePageLeftButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays); // button to move to previous page of blocks
     this.movePageLeftButton.position = new powerupjs.Vector2(350, 685);
+    this.movePageLeftButton.ui = true;
     this.movePageLeftButton.sheetIndex = 0;
     this.add(this.movePageLeftButton);
 
 
     this.movePageRightButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays); // button to move to previous page of blocks
     this.movePageRightButton.position = new powerupjs.Vector2(1000, 685);
+    this.movePageRightButton.ui = true;
     this.movePageRightButton.sheetIndex = 1;
     this.add(this.movePageRightButton);
 
@@ -139,6 +147,32 @@ GameplayEditorState.prototype.loadModeButtons = function () {
 
 }
 
+GameplayEditorState.prototype.getNewTravelPointPosition = function() {
+    var spawnPos = this.playerStartPos.position.copy();
+    var travelPoints = WorldSettings.currentLevel.room.travelPoints || [];
+    var offsetStep = 80;
+
+    for (var i = 1; i <= 10; i++) { // check 10 positions to the right of the spawn position
+        var candidate = new powerupjs.Vector2(spawnPos.x + offsetStep * i, spawnPos.y); // candidate position to the right of spawn
+        var occupied = false;
+
+        for (var t = 0; t < travelPoints.length; t++) {
+            var existing = travelPoints[t];
+            if (!existing || !existing.position) continue;
+
+            if (existing.position.x === candidate.x && existing.position.y === candidate.y) {
+                occupied = true;
+                break;
+            }
+        }
+
+        if (!occupied) return candidate;
+    }
+
+    // Fallback if all nearby slots are occupied.
+    return new powerupjs.Vector2(spawnPos.x, spawnPos.y + offsetStep);
+}
+
 GameplayEditorState.prototype.update = function (delta) {
     // In editor mode, only the active room should be visible and editable.
     for (var i = 0; i < WorldSettings.currentLevel.rooms.length; i++) {
@@ -192,13 +226,23 @@ GameplayEditorState.prototype.adjustScale = function(value) {
 }
 
 GameplayEditorState.prototype.handleInput = function (delta) {
-        powerupjs.GameObjectList.prototype.handleInput.call(this, delta)
+        powerupjs.GameObjectList.prototype.handleInput.call(this, delta);
+        WorldSettings.currentLevel.handleInput(delta);
     for (var i = 0; i < this.modeButtons.length; i++) {
         var button = this.modeButtons.at(i);
         if (button.pressed) {
             this.mode = this.modes[i];
             return;
         }
+    }
+
+    if (this.addTravelPointButton.pressed) {
+        var travelPointPos = this.getNewTravelPointPosition();
+        var travelPoint = new TravelPoint(travelPointPos.copy(), 2, this.playerStartPos.position.copy());
+        travelPoint.position = travelPointPos;
+        WorldSettings.currentLevel.room.addTravelPoint(travelPoint);
+        this.saveLevel();
+        return;
     }
 
     if (this.addRoomButton.pressed) {

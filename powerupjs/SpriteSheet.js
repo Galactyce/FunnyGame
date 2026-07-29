@@ -123,16 +123,17 @@ var powerupjs = (function (powerupjs) {
             return this._collisionMask[arrayIndex]; // return alpha value
     };
 
-    SpriteSheet.prototype.draw = function (position, origin, scale, rotation, sheetIndex, mirror) { // draw a specific sprite from the sheet
+    SpriteSheet.prototype.draw = function (position, origin, scale, rotation, sheetIndex, mirror, pixelSnap) { // draw a specific sprite from the sheet
         sheetIndex = typeof sheetIndex !== 'undefined' ? sheetIndex : 0;
         var columnIndex = sheetIndex % this._sheetColumns; // calculate column index
         var rowIndex = Math.floor(sheetIndex / this._sheetColumns) % this._sheetRows; // calculate row index
         origin = typeof origin !== 'undefined' ? origin : powerupjs.Vector2.zero; // default origin
         mirror = typeof mirror !== 'undefined' ? mirror : false; // default mirror
+        pixelSnap = typeof pixelSnap !== 'undefined' ? pixelSnap : false;
         var imagePart = new powerupjs.Rectangle(columnIndex * this.width, rowIndex * this.height,
             this.width, this.height); // define source rectangle
         
-        powerupjs.Canvas2D.drawImage(this._image, position, rotation, scale, origin, imagePart, mirror); // draw the image
+        powerupjs.Canvas2D.drawImage(this._image, position, rotation, scale, origin, imagePart, mirror, pixelSnap); // draw the image
         
 
     };
