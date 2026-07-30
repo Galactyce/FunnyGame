@@ -110,8 +110,9 @@ ObjectMenuGUI.prototype.handleInput = function (delta) {
         this.parent.editingTiles = false;
     }
 
-    if (WorldSettings.currentBlock === undefined)  // no block selected
-        this.blockSelector.visible = false; // hide selector
+    var selectedBlock = WorldSettings.currentBlock;
+    var hasSelectedBlock = !!(selectedBlock && selectedBlock.sprite && typeof selectedBlock.sheetIndex !== 'undefined');
+    if (!hasSelectedBlock) this.blockSelector.visible = false; // hide selector when no valid block selection exists
     for (var i = 0; i < this.blockIcons.length; i++) { // for each block
         var boundingBox = this.blockIcons.at(i).boundingBox; // get block bounding box
         if (this.visible && powerupjs.Mouse.containsMousePress(boundingBox)) { // if block is clicked
