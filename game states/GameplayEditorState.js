@@ -101,7 +101,7 @@ function GameplayEditorState(layer) {
     this.saveButton.ui = true;
     this.add(this.saveButton);
 
-    this.swipeCheckBox = new CheckBox(sprites.button_default, ID.layer_overlays);
+    this.swipeCheckBox = new CheckBox("Swipe", ID.layer_overlays);
     this.swipeCheckBox.position = new powerupjs.Vector2(120, 150);
     this.swipeCheckBox.ui = true;
     this.add(this.swipeCheckBox);
