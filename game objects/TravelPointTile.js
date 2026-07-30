@@ -1,5 +1,5 @@
 function TravelPointTile(sprite) {
-    Tile.call(this, sprite || sprites.portal);
+    Tile.call(this, sprite || sprites.warp);
     this.isTravelPointTile = true;
     this.travelPointID = 0;
     this.targetID = 0;

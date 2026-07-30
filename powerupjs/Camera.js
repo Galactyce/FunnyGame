@@ -2,6 +2,7 @@
 
 var powerupjs = (function (powerupjs) {
 
+    // Camera object responsible for tracking the visible area of the current room.
     function Camera() {
         this.position = new powerupjs.Vector2(0, 0);
         this.velocity = new powerupjs.Vector2(0, 0);
@@ -9,6 +10,7 @@ var powerupjs = (function (powerupjs) {
         this.viewHeight = 0;
     }
 
+    // Initialize the camera dimensions and smoothing settings for the current game size.
     Camera.prototype.initialize = function () {
         this.viewWidth = powerupjs.Game.size.x;
         this.viewHeight = powerupjs.Game.size.y;
@@ -17,10 +19,14 @@ var powerupjs = (function (powerupjs) {
 
     }
 
+    // Move the camera by its velocity and snap it to whole pixels to reduce rendering seams.
     Camera.prototype.update = function (delta) {
         this.position = this.position.add(this.velocity.multiply(delta)); // update camera position based on velocity
+        this.position.x = Math.round(this.position.x);
+        this.position.y = Math.round(this.position.y);
     }
 
+    // Clamp the camera to the current room bounds and resolve barrier-tile collisions.
     Camera.prototype.manageBoundaries = function(bounds) {
         var camBounds = new powerupjs.Rectangle(
             bounds.x * WorldSettings.currentLevel.room.scale,
@@ -41,8 +47,11 @@ var powerupjs = (function (powerupjs) {
         if (this.position.y < camBounds.y) this.position.y = camBounds.y;
         if (this.position.x + this.viewWidth > camBounds.x + camBounds.width) this.position.x = camBounds.x + camBounds.width - this.viewWidth;
         if (this.position.y + this.viewHeight > camBounds.y + camBounds.height) this.position.y = camBounds.y + camBounds.height - this.viewHeight;
+        this.position.x = Math.round(this.position.x);
+        this.position.y = Math.round(this.position.y);
     }
 
+    // Push the camera back when it intersects a barrier tile that blocks movement.
     Camera.prototype.applyBarrierTiles = function() {
         if (WorldSettings.currentState !== "playing") return;
         if (!WorldSettings.currentLevel || !WorldSettings.currentLevel.room) return;

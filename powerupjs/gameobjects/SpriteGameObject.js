@@ -2,6 +2,7 @@
 
 var powerupjs = (function (powerupjs) {
 
+    // Base object for anything that renders a sprite in the world or UI.
     function SpriteGameObject(sprite, layer, id) { // sprite game object constructor
         powerupjs.GameObject.call(this, layer, id); // call GameObject constructor
 
@@ -87,14 +88,16 @@ var powerupjs = (function (powerupjs) {
             }
         });
 
+    // Draw the sprite at either world-space or screen-space coordinates depending on UI state.
     SpriteGameObject.prototype.draw = function () {
         if (this._visible) {
-            if (this.ui) { // if UI element, draw at world position
-                this.sprite.draw(this.worldPosition, this.origin, this.scale, this.rotation, this._sheetIndex, this.mirror); // draw sprite at world position
-                return; // exit after drawing UI element
+            var drawPosition = this.ui ? this.worldPosition.copy() : this.screenPosition.copy();
+            if (!this.ui) {
+                drawPosition.x = Math.round(drawPosition.x);
+                drawPosition.y = Math.round(drawPosition.y);
             }
-            
-            this.sprite.draw(this.screenPosition, this.origin, this.scale, this.rotation, this._sheetIndex, this.mirror); // draw sprite at screen position
+
+            this.sprite.draw(drawPosition, this.origin, this.scale, this.rotation, this._sheetIndex, this.mirror, true); // draw sprite at snapped screen position
         }
     };
 

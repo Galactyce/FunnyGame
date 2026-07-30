@@ -24,11 +24,6 @@ function GameplayEditorState(layer) {
     this.previousRoomButton.ui = true;
     this.add(this.previousRoomButton);
 
-    this.addTravelPointButton = new LabelledButton(sprites.button_default, "Travel Tile", "Arial", "20px", ID.layer_overlays);
-    this.addTravelPointButton.position = new powerupjs.Vector2(900, 105);
-    this.addTravelPointButton.ui = true;
-    this.add(this.addTravelPointButton);
-
     this.extendCamBoundsRight = new DraggableObject(sprites.arrowButtons, ID.layer_overlays, "cam_bounds_right_handle");
     this.extendCamBoundsRight.sheetIndex = 1;
     this.extendCamBoundsRight.origin = this.extendCamBoundsRight.center;
@@ -345,7 +340,6 @@ GameplayEditorState.prototype.isMouseOverEditorButton = function() {
     var directButtons = [
         this.nextRoomButton,
         this.previousRoomButton,
-        this.addTravelPointButton,
         this.addRoomButton,
         this.playButton,
         this.saveButton,
@@ -412,15 +406,6 @@ GameplayEditorState.prototype.handleInput = function (delta) {
             this.mode = this.modes[i];
             return;
         }
-    }
-
-    if (this.addTravelPointButton.pressed) {
-        this.mode = "Drawing";
-        this.objectMenu.visible = true;
-        this.editingMenu.visible = false;
-        WorldSettings.currentBlock = { sprite: sprites.portal, sheetIndex: 0 };
-        this.objectMenu.blockSelector.visible = false;
-        return;
     }
 
     var draggingBoundsHandle = this.isDraggingCameraBoundsHandle();

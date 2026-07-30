@@ -41,8 +41,9 @@ TileDataManager_Singleton.prototype.handleObject = function(sprite) { // create 
         return new CameraBoundTile(sprite);
     }
 
-    if (sprite.image.src == sprites.portal.image.src) {
-        return new TravelPointTile(sprite);
+    var isTravelPointSprite = sprite.image.src == sprites.portal.image.src || sprite.image.src == sprites.warp.image.src;
+    if (isTravelPointSprite) {
+        return new TravelPointTile(sprites.warp);
     }
 
     // Backward compatibility for existing maps that used crosshair as camera barrier.
@@ -62,7 +63,13 @@ TileDataManager_Singleton.prototype.handleObject = function(sprite) { // create 
 }
 
 TileDataManager_Singleton.prototype.writeTile = function(tile) {  // write basic tile data
-    var spriteIndex = WorldSettings.indexOfSprite(tile.sprite);
+    var spriteIndex = 0;
+    if (tile && tile.isTravelPointTile) {
+        spriteIndex = WorldSettings.indexOfSprite(sprites.portal);
+    }
+    else {
+        spriteIndex = WorldSettings.indexOfSprite(tile.sprite);
+    }
     if (spriteIndex === null || typeof spriteIndex === 'undefined' || isNaN(spriteIndex)) {
         spriteIndex = 0;
     }

@@ -34,6 +34,7 @@ powerupjs.Game.loadAssets = function () {
     sprites.editorBlockSelector = loadSprite("editorBlockSelectFrame.png")
     sprites.checkBox = loadSprite("checkBox@2.png")
     sprites.portal = loadSprite("portal.png")
+    sprites.warp = loadSprite("warp.png")
     sprites.editingButtons = loadSprite("editorButtons@6.png")
     sprites.saw = loadSprite("SawOn@8.png", true);
     sprites.spring = loadSprite("springIdle.png");
