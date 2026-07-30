@@ -67,6 +67,53 @@ TileField.prototype.getTileAtIndex = function (index) {
     return null;
 }
 
+TileField.prototype.getRoomTravelPointId = function() {
+    var level = WorldSettings.currentLevel;
+    if (!level || typeof level.currentRoomIndex !== 'number') return 1;
+    return level.currentRoomIndex + 1;
+}
+
+TileField.prototype.mergeAdjacentTravelTileCluster = function(seedTile) {
+    if (!seedTile || !seedTile.isTravelPointTile || !seedTile.index) return;
+
+    var queue = [seedTile];
+    var visited = {};
+    var clusterTiles = [];
+    var clusterTravelPointId = this.getRoomTravelPointId();
+    var clusterTargetId = 0;
+
+    while (queue.length > 0) {
+        var current = queue.shift();
+        if (!current || !current.isTravelPointTile || !current.index) continue;
+
+        var key = this.getIndexKey(current.index);
+        if (!key || visited[key]) continue;
+        visited[key] = true;
+        clusterTiles.push(current);
+
+        if (!clusterTargetId && current.targetID > 0) {
+            clusterTargetId = current.targetID;
+        }
+
+        var neighbors = [
+            new powerupjs.Vector2(current.index.x - 1, current.index.y),
+            new powerupjs.Vector2(current.index.x + 1, current.index.y),
+            new powerupjs.Vector2(current.index.x, current.index.y - 1),
+            new powerupjs.Vector2(current.index.x, current.index.y + 1)
+        ];
+
+        for (var i = 0; i < neighbors.length; i++) {
+            var neighbor = this.getTileAtIndex(neighbors[i]);
+            if (neighbor && neighbor.isTravelPointTile) queue.push(neighbor);
+        }
+    }
+
+    for (var t = 0; t < clusterTiles.length; t++) {
+        clusterTiles[t].travelPointID = clusterTravelPointId;
+        clusterTiles[t].targetID = clusterTargetId;
+    }
+}
+
 TileField.prototype.removeTilesAtIndex = function(index) {
     var targetKey = this.getIndexKey(index);
     if (targetKey === null) return;
@@ -117,6 +164,10 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
     tile.parent = this;
     this.add(tile);
     tile.manageHitboxes(_sprite); // set hitbox based on sprite
+    if (tile.isTravelPointTile) {
+        tile.travelPointID = this.getRoomTravelPointId();
+        this.mergeAdjacentTravelTileCluster(tile);
+    }
 }
 
 TileField.prototype.normalizeTiles = function () {
@@ -194,7 +245,16 @@ TileField.prototype.loadTiles = function () {
         this.snapTileToSubTile(tile);
         this.add(tile)
         tile.manageHitboxes(tile.sprite); // set hitbox based on sprite
+        if (tile.isTravelPointTile) {
+            tile.travelPointID = this.getRoomTravelPointId();
+        }
 
+    }
+    for (var t = 0; t < this.length; t++) {
+        var travelTile = this.at(t);
+        if (travelTile && travelTile.isTravelPointTile) {
+            this.mergeAdjacentTravelTileCluster(travelTile);
+        }
     }
     this.normalizeTiles();
     WorldSettings.levels[WorldSettings.currentLevelIndex].room.tileFields[this.editorLayer] = this; // update room tile-field reference

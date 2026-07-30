@@ -84,7 +84,8 @@ powerupjs.Game.initialize = function () {
         sprites.boundary,
         sprites.spring,
         sprites.movingPlatform,
-        sprites.greenTiles
+        sprites.greenTiles,
+        sprites.portal
     ]
     WorldSettings.backgrounds = [
         sprites.cyberBackground,

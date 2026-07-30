@@ -44,7 +44,16 @@ Tile.prototype.showHitboxes = function () {
 
 Tile.prototype.manageHitboxes = function (sprite) {
     sprite = typeof sprite !== 'undefined' ? sprite : this.sprite
+    if (!sprite || !sprite.image) return;
+
     var field = this.parent;
+    if (!field || typeof field.cellWidth !== 'number' || typeof field.cellHeight !== 'number' || typeof field.scale !== 'number') {
+        // Tile can be temporarily detached during editor operations; keep hitbox valid without grid index math.
+        this.hitbox = this.boundingBox;
+        if (this.hitboxType !== "hurt") this.hitboxType = "solid";
+        return;
+    }
+
     this.index = new powerupjs.Vector2(((this.position.x-((field.cellWidth * field.scale) / 2)) / field.cellWidth / field.scale), 
             ((this.position.y-((field.cellHeight * field.scale) / 2)) / field.cellHeight / field.scale))
     if (sprite.image.src == sprites.spike.image.src) {

@@ -14,16 +14,24 @@ function Room() {
     this.add(this.tileFields)
     // Scratch/original bounds used by scaling workflows in the editor.
     this.originalBounds;
-    this.travelPoints = []; // array to hold room connections
+    this.travelPoints = []; // room travel connections
 }
 
 Room.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
 Room.prototype.addTravelPoint = function(travelPoint) {
     if (travelPoint instanceof TravelPoint) {
+        if (!Array.isArray(this.travelPoints)) this.travelPoints = [];
+        var level = WorldSettings.currentLevel;
+        if (typeof travelPoint.id !== 'number' && level && typeof level.getNextTravelPointId === 'function') {
+            travelPoint.id = level.getNextTravelPointId();
+        }
         travelPoint.currentRoomIndex = WorldSettings.currentLevel.currentRoomIndex;
         this.travelPoints.push(travelPoint);
         this.add(travelPoint);
+        if (level && typeof level.linkTravelPoints === 'function') {
+            level.linkTravelPoints();
+        }
     }
 }
 
@@ -59,6 +67,10 @@ Room.prototype.loadBackground = function () {  // Loads backgrounds for the leve
     // Missing data should not crash gameplay/editor transitions.
     if (!roomData) return;
 
+    if (!Array.isArray(roomData.backgrounds) || roomData.backgrounds.length === 0) {
+        roomData.backgrounds = [0, 1];
+    }
+
     // Rebuild backgrounds from data every load so edits and scale changes are reflected.
     this.backgrounds.clear();
     for (var i = 0; i < roomData.backgrounds.length; i++) {
@@ -73,10 +85,11 @@ Room.prototype.loadBackground = function () {  // Loads backgrounds for the leve
         )
         
         var background = new powerupjs.SpriteGameObject(WorldSettings.backgrounds[index]);
-        // Anchor each background to the room floor and match room height.
-        background.position = new powerupjs.Vector2(camBounds.x,
-            camBounds.height + camBounds.y - background.height);
+        // Scale to room height, then anchor from the camera-bounds bottom edge.
         background.scale = ((camBounds.height) / (background.height));
+        var scaledBackgroundHeight = background.height * background.scale;
+        background.position = new powerupjs.Vector2(camBounds.x,
+            (camBounds.y + camBounds.height) - scaledBackgroundHeight);
         this.backgrounds.add(background);
        
     }
@@ -135,8 +148,12 @@ Room.prototype.update = function(delta) {
         background.position.x = powerupjs.Camera.position.x - (((background.width * background.scale) 
             - powerupjs.Camera.viewWidth) * amount.x) / (i+1)
         
-        background.position.y = powerupjs.Camera.position.y - (((background.height * background.scale) 
-            - powerupjs.Camera.viewHeight) * amount.y) / (i + 1)
+        var scaledBackgroundHeight = background.height * background.scale;
+        var maxVerticalTravel = Math.max(0, scaledBackgroundHeight - powerupjs.Camera.viewHeight);
+        var roomBottom = camBounds.y + camBounds.height;
+        var backgroundBottomAnchoredY = roomBottom - scaledBackgroundHeight;
+        // Start from room-bottom alignment, then add layered parallax travel.
+        background.position.y = backgroundBottomAnchoredY + (maxVerticalTravel * amount.y) / (i + 1);
     }
     // Preserve previous behavior: only show tile layers in playing state.
     if (WorldSettings.currentState == "playing") this.tileFields.visible = true;

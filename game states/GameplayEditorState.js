@@ -26,10 +26,32 @@ function GameplayEditorState(layer) {
     this.previousRoomButton.ui = true;
     this.add(this.previousRoomButton);
 
-    this.addTravelPointButton = new LabelledButton(sprites.button_default, "Add Travel Point", "Arial", "20px", ID.layer_overlays);
+    this.addTravelPointButton = new LabelledButton(sprites.button_default, "Travel Tile", "Arial", "20px", ID.layer_overlays);
     this.addTravelPointButton.position = new powerupjs.Vector2(900, 105);
     this.addTravelPointButton.ui = true;
     this.add(this.addTravelPointButton);
+
+    this.extendCamBoundsRight = new DraggableObject(sprites.arrowButtons, ID.layer_overlays, "cam_bounds_right_handle");
+    this.extendCamBoundsRight.sheetIndex = 1;
+    this.extendCamBoundsRight.origin = this.extendCamBoundsRight.center;
+    this.add(this.extendCamBoundsRight);
+
+    this.extendCamBoundsLeft = new DraggableObject(sprites.arrowButtons, ID.layer_overlays, "cam_bounds_left_handle");
+    this.extendCamBoundsLeft.sheetIndex = 0;
+    this.extendCamBoundsLeft.origin = this.extendCamBoundsLeft.center;
+    this.add(this.extendCamBoundsLeft);
+
+    this.extendCamBoundsUp = new DraggableObject(sprites.arrowButtons, ID.layer_overlays, "cam_bounds_up_handle");
+    this.extendCamBoundsUp.sheetIndex = 2;
+    this.extendCamBoundsUp.origin = this.extendCamBoundsUp.center;
+    this.add(this.extendCamBoundsUp);
+
+    this.extendCamBoundsDown = new DraggableObject(sprites.arrowButtons, ID.layer_overlays, "cam_bounds_down_handle");
+    this.extendCamBoundsDown.sheetIndex = 3;
+    this.extendCamBoundsDown.origin = this.extendCamBoundsDown.center;
+    this.add(this.extendCamBoundsDown);
+
+    this.wasDraggingCameraBoundsHandle = false;
 
     this.editingTiles = true;
 
@@ -127,6 +149,7 @@ GameplayEditorState.prototype.loadLayers = function () {
     }
     // Room refactor: camera bounds are room-owned and mirrored onto WorldSettings helper.
     WorldSettings.cameraBounds = roomData.cameraBounds
+    this.syncCameraBoundsHandles();
 
     for (var i = 0; i < this.editorLayers.length; i++) {
         this.editorLayers.at(i).clear();
@@ -190,13 +213,34 @@ GameplayEditorState.prototype.update = function (delta) {
         this.objectMenu.visible = false;
     }
 
+    if (!this.isDraggingCameraBoundsHandle()) {
+        this.syncCameraBoundsHandles();
+    }
+
     this.currentRoomDisplay.text = "Room: " + (WorldSettings.currentLevel.currentRoomIndex + 1) + "/" + WorldSettings.currentLevel.rooms.length;
 }
 
 GameplayEditorState.prototype.draw = function () {
     WorldSettings.currentLevel.draw();
+    this.drawCameraBoundsOutline();
     powerupjs.GameObjectList.prototype.draw.call(this);
 
+}
+
+GameplayEditorState.prototype.drawCameraBoundsOutline = function() {
+    var room = WorldSettings.currentLevel && WorldSettings.currentLevel.room;
+    if (!room || !room.cameraBounds) return;
+
+    var scale = (typeof room.scale === 'number' && room.scale !== 0) ? room.scale : 1;
+    var bounds = room.cameraBounds;
+    var scaledBounds = new powerupjs.Rectangle(
+        bounds.x * scale,
+        bounds.y * scale,
+        bounds.width * scale,
+        bounds.height * scale
+    );
+
+    scaledBounds.draw("cyan");
 }
 
 GameplayEditorState.prototype.saveLevel = function () {
@@ -225,6 +269,97 @@ GameplayEditorState.prototype.adjustScale = function(value) {
     powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
 }
 
+GameplayEditorState.prototype.getScaledCameraBounds = function() {
+    var room = WorldSettings.currentLevel && WorldSettings.currentLevel.room;
+    if (!room || !room.cameraBounds) return null;
+    var scale = (typeof room.scale === 'number' && room.scale !== 0) ? room.scale : 1;
+
+    return new powerupjs.Rectangle(
+        room.cameraBounds.x * scale,
+        room.cameraBounds.y * scale,
+        room.cameraBounds.width * scale,
+        room.cameraBounds.height * scale
+    );
+}
+
+GameplayEditorState.prototype.syncCameraBoundsHandles = function() {
+    var scaled = this.getScaledCameraBounds();
+    if (!scaled) return;
+
+    var centerX = scaled.x + (scaled.width / 2);
+    var centerY = scaled.y + (scaled.height / 2);
+
+    this.extendCamBoundsLeft.position = new powerupjs.Vector2(scaled.x, centerY);
+    this.extendCamBoundsRight.position = new powerupjs.Vector2(scaled.x + scaled.width, centerY);
+    this.extendCamBoundsUp.position = new powerupjs.Vector2(centerX, scaled.y);
+    this.extendCamBoundsDown.position = new powerupjs.Vector2(centerX, scaled.y + scaled.height);
+}
+
+GameplayEditorState.prototype.isDraggingCameraBoundsHandle = function() {
+    return !!(
+        this.extendCamBoundsLeft.dragging ||
+        this.extendCamBoundsRight.dragging ||
+        this.extendCamBoundsUp.dragging ||
+        this.extendCamBoundsDown.dragging
+    );
+}
+
+GameplayEditorState.prototype.persistRoomCameraBounds = function() {
+    var roomData = this.getActiveRoomData();
+    if (!roomData || !roomData.cameraBounds) return;
+    roomData.cameraBounds.x = WorldSettings.currentLevel.room.cameraBounds.x;
+    roomData.cameraBounds.y = WorldSettings.currentLevel.room.cameraBounds.y;
+    roomData.cameraBounds.width = WorldSettings.currentLevel.room.cameraBounds.width;
+    roomData.cameraBounds.height = WorldSettings.currentLevel.room.cameraBounds.height;
+}
+
+GameplayEditorState.prototype.applyCameraBoundsFromHandles = function() {
+    var room = WorldSettings.currentLevel && WorldSettings.currentLevel.room;
+    if (!room || !room.cameraBounds) return false;
+
+    var scale = (typeof room.scale === 'number' && room.scale !== 0) ? room.scale : 1;
+    var scaled = this.getScaledCameraBounds();
+    if (!scaled) return false;
+
+    var left = scaled.x;
+    var right = scaled.x + scaled.width;
+    var top = scaled.y;
+    var bottom = scaled.y + scaled.height;
+
+    var changed = false;
+    var viewportWidth = (powerupjs.Camera && powerupjs.Camera.viewWidth) ? powerupjs.Camera.viewWidth : powerupjs.Game.size.x;
+    var viewportHeight = (powerupjs.Camera && powerupjs.Camera.viewHeight) ? powerupjs.Camera.viewHeight : powerupjs.Game.size.y;
+    var minWidthScaled = viewportWidth;
+    var minHeightScaled = viewportHeight;
+
+    if (this.extendCamBoundsLeft.dragging) {
+        left = Math.min(this.extendCamBoundsLeft.position.x, right - minWidthScaled);
+        changed = true;
+    }
+    if (this.extendCamBoundsRight.dragging) {
+        right = Math.max(this.extendCamBoundsRight.position.x, left + minWidthScaled);
+        changed = true;
+    }
+    if (this.extendCamBoundsUp.dragging) {
+        top = Math.min(this.extendCamBoundsUp.position.y, bottom - minHeightScaled);
+        changed = true;
+    }
+    if (this.extendCamBoundsDown.dragging) {
+        bottom = Math.max(this.extendCamBoundsDown.position.y, top + minHeightScaled);
+        changed = true;
+    }
+
+    if (!changed) return false;
+
+    room.cameraBounds.x = left / scale;
+    room.cameraBounds.y = top / scale;
+    room.cameraBounds.width = (right - left) / scale;
+    room.cameraBounds.height = (bottom - top) / scale;
+    this.persistRoomCameraBounds();
+
+    return true;
+}
+
 GameplayEditorState.prototype.handleInput = function (delta) {
         powerupjs.GameObjectList.prototype.handleInput.call(this, delta);
         WorldSettings.currentLevel.handleInput(delta);
@@ -237,13 +372,22 @@ GameplayEditorState.prototype.handleInput = function (delta) {
     }
 
     if (this.addTravelPointButton.pressed) {
-        var travelPointPos = this.getNewTravelPointPosition();
-        var travelPoint = new TravelPoint(travelPointPos.copy(), 2, this.playerStartPos.position.copy());
-        travelPoint.position = travelPointPos;
-        WorldSettings.currentLevel.room.addTravelPoint(travelPoint);
-        this.saveLevel();
+        this.mode = "Drawing";
+        this.objectMenu.visible = true;
+        this.editingMenu.visible = false;
+        WorldSettings.currentBlock = { sprite: sprites.portal, sheetIndex: 0 };
+        this.objectMenu.blockSelector.visible = false;
         return;
     }
+
+    var draggingBoundsHandle = this.isDraggingCameraBoundsHandle();
+    if (draggingBoundsHandle) {
+        this.applyCameraBoundsFromHandles();
+    }
+    if (this.wasDraggingCameraBoundsHandle && !draggingBoundsHandle) {
+        this.saveLevel();
+    }
+    this.wasDraggingCameraBoundsHandle = draggingBoundsHandle;
 
     if (this.addRoomButton.pressed) {
         WorldSettings.currentLevel.addRoom();
@@ -332,7 +476,6 @@ GameplayEditorState.prototype.handleInput = function (delta) {
         powerupjs.Camera.position.addTo(
             powerupjs.Mouse.screenPosition.subtractFrom(this.previousMousePosition).multiplyWith(-1) // move camera opposite to mouse movement
         );
-        powerupjs.Camera.manageBoundaries(WorldSettings.currentLevel.room.cameraBounds);
     }
 
 

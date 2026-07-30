@@ -1,7 +1,7 @@
 
 function TileDataManager_Singleton() {
     this.dataStrings = [];
-    this.globalDataValues = 7; // Values saved in every tile (position, sprite, rotation, key, scale, sheetIndex)
+    this.globalDataValues = 9; // Values saved in every tile (key, position, sprite, rotation, scale, sheetIndex, travelPointID, targetID)
 }
 
 TileDataManager_Singleton.prototype.writeTiles = function (tiles) { // tiles is an array of Tile objects
@@ -41,6 +41,10 @@ TileDataManager_Singleton.prototype.handleObject = function(sprite) { // create 
         return new CameraBoundTile(sprite);
     }
 
+    if (sprite.image.src == sprites.portal.image.src) {
+        return new TravelPointTile(sprite);
+    }
+
     // Backward compatibility for existing maps that used crosshair as camera barrier.
     if (sprite.image.src == sprites.crosshair.image.src) {
         return new CameraBoundTile(sprite);
@@ -63,7 +67,9 @@ TileDataManager_Singleton.prototype.writeTile = function(tile) {  // write basic
         spriteIndex = 0;
     }
     var tileScale = (typeof tile.baseScale !== 'undefined' && !isNaN(tile.baseScale)) ? tile.baseScale : tile.scale;
-    return tile.key + "|" + tile.index.x + "|" + tile.index.y + "|" + spriteIndex + "|" + tile.rotation + "|" + tileScale + "|" + tile.sheetIndex + "|"; // create data string ==> (key|x|y|spriteIndex|rotation|scale|sheetIndex)
+    var travelPointID = (typeof tile.travelPointID === 'number') ? tile.travelPointID : 0;
+    var targetID = (typeof tile.targetID === 'number') ? tile.targetID : 0;
+    return tile.key + "|" + tile.index.x + "|" + tile.index.y + "|" + spriteIndex + "|" + tile.rotation + "|" + tileScale + "|" + tile.sheetIndex + "|" + travelPointID + "|" + targetID + "|"; // create data string ==> (key|x|y|spriteIndex|rotation|scale|sheetIndex|travelPointID|targetID)
 }
 
 TileDataManager_Singleton.prototype.writeMovingPlatform = function(tile) { // write moving platform data
@@ -89,6 +95,8 @@ TileDataManager_Singleton.prototype.convertDataToTile = function(data) {
     tile.scale = tile.baseScale;
     tile.playAnimation("normal");
     tile.sheetIndex = parseInt(tileData[6]) || 0;
+    tile.travelPointID = parseInt(tileData[7], 10) || 0;
+    tile.targetID = parseInt(tileData[8], 10) || 0;
     tile.origin = tile.center;
     this.readSpecialTileData(tile, data)
     return tile;
@@ -98,7 +106,11 @@ TileDataManager_Singleton.prototype.readSpecialTileData = function(tile, data) {
     if (!tile || !tile.sprite || !tile.sprite.image) return;
     if (tile.sprite.image.src == sprites.movingPlatform.image.src) { // moving platform tile
         var tileData = data.split("|"); // split tile data into components
-        for (var i = this.globalDataValues; i < (tileData.length); i += 2) { // for each movement node
+        var nodeStartIndex = 7;
+        if (tileData.length >= this.globalDataValues && ((tileData.length - this.globalDataValues) % 2 === 0)) {
+            nodeStartIndex = this.globalDataValues;
+        }
+        for (var i = nodeStartIndex; i < (tileData.length); i += 2) { // for each movement node
             tile.movementNodes.push(new powerupjs.Vector2(parseFloat(tileData[i]), parseFloat(tileData[i + 1]))); // add node position
         }
     }

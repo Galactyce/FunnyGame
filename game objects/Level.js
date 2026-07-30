@@ -9,6 +9,8 @@ function Level() {
     this.name;
     // Add rooms list as a child so draw/update/input flow remains list-driven.
     this.add(this.rooms)
+    this.travelPoints = []; // array to hold level-wide travel points
+
 }
 
 Level.prototype = Object.create(powerupjs.GameObjectList.prototype);
@@ -17,6 +19,44 @@ Level.prototype.addRoom = function(room) {
     var roomToAdd = room || new Room();
     this.rooms.add(roomToAdd);
     return roomToAdd;
+}
+
+Level.prototype.collectTravelPoints = function() {
+    this.travelPoints = [];
+    for (var r = 0; r < this.rooms.length; r++) {
+        var room = this.rooms.at(r);
+        if (!room || !Array.isArray(room.travelPoints)) continue;
+        for (var t = 0; t < room.travelPoints.length; t++) {
+            var point = room.travelPoints[t];
+            if (!point) continue;
+            this.travelPoints.push(point);
+        }
+    }
+}
+
+Level.prototype.getNextTravelPointId = function() {
+    this.collectTravelPoints();
+    var maxId = 0;
+    for (var i = 0; i < this.travelPoints.length; i++) {
+        var point = this.travelPoints[i];
+        if (!point || typeof point.id !== 'number') continue;
+        if (point.id > maxId) maxId = point.id;
+    }
+    return maxId + 1;
+}
+
+Level.prototype.linkTravelPoints = function() {
+    this.collectTravelPoints();
+    for (var i = 0; i < this.travelPoints.length; i++) {
+        var travelPoint = this.travelPoints[i];
+        travelPoint.targetTravelPoint = null;
+        if (travelPoint.targetID > 0) {
+            var targetTravelPoint = this.travelPoints.find(tp => tp.id === travelPoint.targetID);
+            if (targetTravelPoint && targetTravelPoint !== travelPoint) {
+                travelPoint.targetTravelPoint = targetTravelPoint;
+            }
+        }
+    }
 }
 
 Level.prototype.indexOfRoom = function(room) {

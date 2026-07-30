@@ -51,6 +51,20 @@ var powerupjs = (function (powerupjs) {
         if (!room.tileFields || room.tileFields.length === 0) return;
 
         var cameraRect = new powerupjs.Rectangle(this.position.x, this.position.y, this.viewWidth, this.viewHeight);
+        var escapePadding = 1;
+
+        var getBarrierFacing = function(tile) {
+            var quarterTurn = Math.PI / 2;
+            var rawRotation = (tile && typeof tile.rotation === "number") ? tile.rotation : 0;
+            var normalized = ((rawRotation % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+            var snapped = Math.round(normalized / quarterTurn) % 4;
+
+            // 0=up, 1=right, 2=down, 3=left
+            if (snapped === 1) return "right";
+            if (snapped === 2) return "down";
+            if (snapped === 3) return "left";
+            return "up";
+        };
 
         for (var i = 0; i < room.tileFields.length; i++) {
             var field = room.tileFields.at(i);
@@ -62,12 +76,18 @@ var powerupjs = (function (powerupjs) {
                 if (typeof tile.hitbox.width !== "number" || typeof tile.hitbox.height !== "number") continue;
                 if (!cameraRect.intersects(tile.hitbox)) continue;
 
-                var depth = cameraRect.calculateIntersectionDepth(tile.hitbox);
-                if (Math.abs(depth.x) < Math.abs(depth.y)) {
-                    this.position.x += depth.x;
+                var facing = getBarrierFacing(tile);
+                if (facing === "right") {
+                    this.position.x += (tile.hitbox.right - cameraRect.left) + escapePadding;
+                }
+                else if (facing === "left") {
+                    this.position.x -= (cameraRect.right - tile.hitbox.left) + escapePadding;
+                }
+                else if (facing === "down") {
+                    this.position.y += (tile.hitbox.bottom - cameraRect.top) + escapePadding;
                 }
                 else {
-                    this.position.y += depth.y;
+                    this.position.y -= (cameraRect.bottom - tile.hitbox.top) + escapePadding;
                 }
 
                 cameraRect.x = this.position.x;

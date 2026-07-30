@@ -100,7 +100,7 @@ WorldSettingsSingleton.prototype.saveLevels = function () { // save levels to lo
             if (!runtimeRoom) continue;
 
             var existingRoomData = existingRooms[r] || null;
-            var savedBackgrounds = existingRoomData && Array.isArray(existingRoomData.backgrounds)
+            var savedBackgrounds = existingRoomData && Array.isArray(existingRoomData.backgrounds) && existingRoomData.backgrounds.length > 0
                 ? existingRoomData.backgrounds
                 : [0, 1];
 
@@ -119,18 +119,20 @@ WorldSettingsSingleton.prototype.saveLevels = function () { // save levels to lo
                 },
                 backgrounds: savedBackgrounds,
                 travelPoints: (runtimeRoom.travelPoints || []).map(function(point) {
-                    if (!point || !point.position || !point.targetPosition) return null;
+                    if (!point || !point.position) return null;
 
                     return {
+                        id: (typeof point.id === 'number') ? point.id : 0,
+                        targetID: (typeof point.targetID === 'number') ? point.targetID : 0,
                         position: {
                             x: point.position.x,
                             y: point.position.y
                         },
                         targetRoomIndex: point.targetRoomIndex,
-                        targetPosition: {
+                        targetPosition: point.targetPosition ? {
                             x: point.targetPosition.x,
                             y: point.targetPosition.y
-                        }
+                        } : null
                     };
                 }).filter(function(point) { return point !== null; })
             });
@@ -189,25 +191,38 @@ WorldSettingsSingleton.prototype.manageLevelProperties = function(level) { // ma
             runtimeRoom.playerStartPos = new powerupjs.Vector2(400, 400);
         }
 
+        if (!Array.isArray(runtimeRoom.travelPoints)) {
+            runtimeRoom.travelPoints = [];
+        }
+
         var savedTravelPoints = Array.isArray(roomData.travelPoints) ? roomData.travelPoints : [];
         for (var t = 0; t < savedTravelPoints.length; t++) {
             var pointData = savedTravelPoints[t];
-            if (!pointData || !pointData.position || !pointData.targetPosition) continue;
+            if (!pointData || !pointData.position) continue;
             if (typeof pointData.position.x !== 'number' || typeof pointData.position.y !== 'number') continue;
-            if (typeof pointData.targetPosition.x !== 'number' || typeof pointData.targetPosition.y !== 'number') continue;
 
-            var targetRoomIndex = typeof pointData.targetRoomIndex === 'number' ? pointData.targetRoomIndex : 0;
-            var travelPoint = new TravelPoint(
-                new powerupjs.Vector2(pointData.position.x, pointData.position.y),
-                targetRoomIndex,
-                new powerupjs.Vector2(pointData.targetPosition.x, pointData.targetPosition.y)
-            );
+            var travelPoint = new TravelPoint(new powerupjs.Vector2(pointData.position.x, pointData.position.y));
+            if (typeof pointData.id === 'number') travelPoint.id = pointData.id;
+            travelPoint.targetID = typeof pointData.targetID === 'number' ? pointData.targetID : 0;
+
+            // Backward compatibility for older travel-point schema.
+            if (travelPoint.targetID === 0 && typeof pointData.targetRoomIndex === 'number') {
+                travelPoint.targetRoomIndex = pointData.targetRoomIndex;
+            }
+            if (pointData.targetPosition && typeof pointData.targetPosition.x === 'number' && typeof pointData.targetPosition.y === 'number') {
+                travelPoint.targetPosition = new powerupjs.Vector2(pointData.targetPosition.x, pointData.targetPosition.y);
+            }
+
             travelPoint.currentRoomIndex = r;
             runtimeRoom.travelPoints.push(travelPoint);
             runtimeRoom.add(travelPoint);
         }
 
         level.rooms.add(runtimeRoom);
+    }
+
+    if (typeof level.linkTravelPoints === 'function') {
+        level.linkTravelPoints();
     }
 
     level.currentRoomIndex = typeof levelData.activeRoomIndex === 'number' ? levelData.activeRoomIndex : 0;
@@ -308,28 +323,35 @@ WorldSettingsSingleton.prototype.normalizeLevelData = function(levelData) {
             };
         }
 
-        if (Array.isArray(roomSource.backgrounds)) {
+        if (Array.isArray(roomSource.backgrounds) && roomSource.backgrounds.length > 0) {
             normalizedRoom.backgrounds = roomSource.backgrounds;
         }
 
         if (Array.isArray(roomSource.travelPoints)) {
             normalizedRoom.travelPoints = roomSource.travelPoints
                 .filter(function(point) {
-                    return point && point.position && point.targetPosition;
+                    return point && point.position;
                 })
                 .map(function(point) {
                     var targetRoomIndex = typeof point.targetRoomIndex === 'number' ? point.targetRoomIndex : 0;
                     var posX = parseFloat(point.position.x);
                     var posY = parseFloat(point.position.y);
-                    var targetX = parseFloat(point.targetPosition.x);
-                    var targetY = parseFloat(point.targetPosition.y);
+                    var targetID = typeof point.targetID === 'number' ? point.targetID : 0;
+                    var pointId = typeof point.id === 'number' ? point.id : 0;
+                    var hasTargetPosition = point.targetPosition && typeof point.targetPosition.x !== 'undefined' && typeof point.targetPosition.y !== 'undefined';
+                    var targetX = hasTargetPosition ? parseFloat(point.targetPosition.x) : null;
+                    var targetY = hasTargetPosition ? parseFloat(point.targetPosition.y) : null;
 
-                    if (isNaN(posX) || isNaN(posY) || isNaN(targetX) || isNaN(targetY)) return null;
+                    if (isNaN(posX) || isNaN(posY)) return null;
 
                     return {
+                        id: pointId,
+                        targetID: targetID,
                         position: { x: posX, y: posY },
                         targetRoomIndex: targetRoomIndex,
-                        targetPosition: { x: targetX, y: targetY }
+                        targetPosition: (targetX !== null && targetY !== null && !isNaN(targetX) && !isNaN(targetY))
+                            ? { x: targetX, y: targetY }
+                            : null
                     };
                 })
                 .filter(function(point) { return point !== null; });
@@ -450,7 +472,7 @@ WorldSettingsSingleton.prototype.playLevel = function(levelIndex) { // load curr
     // Guard against invalid index or failed load state.
     if (!this.currentLevel) return;
     this.currentLevel.room.loadBackground(); // load background
-    powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(); // load level in playing state
+    powerupjs.GameStateManager.get(ID.game_state_playing).loadLevel(undefined, true); // load level in playing state
     powerupjs.GameStateManager.switchTo(ID.game_state_playing); // switch to playing state
     this.currentState = "playing"; // set current state to playing
 }

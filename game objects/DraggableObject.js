@@ -10,8 +10,12 @@ DraggableObject.prototype = Object.create(powerupjs.SpriteGameObject.prototype);
 DraggableObject.prototype.handleInput = function (delta) {
     powerupjs.SpriteGameObject.prototype.handleInput.call(this, delta);
 
+    var editorState = powerupjs.GameStateManager.get(ID.game_state_editor);
+
     if (powerupjs.Mouse.left.down && this.boundingBox.contains(powerupjs.Mouse.position) && this.draggable) {
-        this.parent.editingTiles = false;
+        if (editorState) {
+            editorState.editingTiles = false;
+        }
         this.position.addTo(powerupjs.Mouse.screenPosition.copy().subtractFrom(this.lastMousePosition));
         this.dragging = true;
     }
