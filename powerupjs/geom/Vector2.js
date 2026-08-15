@@ -101,8 +101,9 @@ var powerupjs = (function (powerupjs) {
     Vector2.prototype.normalize = function () { // normalize this vector
         var length = this.length; // get length
         if (length === 0) // if length is zero, do nothing
-            return;
+            return this;
         this.divideBy(length); // divide by length to normalize
+        return this;
     };
 
     Vector2.prototype.copy = function () { // return a copy of this vector

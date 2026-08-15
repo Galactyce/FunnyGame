@@ -3,6 +3,7 @@ function WorldSettingsSingleton() {
     this.activeLayer = 0;
     this.levels = [];
     this.blockSprites = []; // list of block sprites
+    this._playingState = null;
     this.currentBlock = undefined; // current block sprite
     this.currentBlockIndex = 0; // index of current block in blockSprites
     this.activePlayer;
@@ -18,6 +19,19 @@ function WorldSettingsSingleton() {
 
     // MANAGING PLAYER PROPERTIES CAN BE DONE IN "PlayerProperties.js"
 }
+
+Object.defineProperty(WorldSettingsSingleton.prototype, "playingState", {
+    get: function () {
+        if (this._playingState) return this._playingState;
+        if (powerupjs && powerupjs.GameStateManager && ID && typeof ID.game_state_playing !== "undefined") {
+            this._playingState = powerupjs.GameStateManager.get(ID.game_state_playing);
+        }
+        return this._playingState;
+    },
+    set: function (value) {
+        this._playingState = value;
+    }
+});
 
 WorldSettingsSingleton.prototype.createDefaultRoomData = function() {
     return {
@@ -257,7 +271,7 @@ WorldSettingsSingleton.prototype.createLevel = function(index) { // create new l
     
 }
 
-WorldSettingsSingleton.prototype.normalizeLevelData = function(levelData) {
+WorldSettingsSingleton.prototype.normalizeLevelData = function(levelData) { // Normalize level data into canonical structure with rooms[] and activeRoomIndex. This ensures that all level records have a consistent schema, even if they were saved in older formats.
     // If data is missing/invalid, return a complete safe default object.
     if (!levelData || typeof levelData !== 'object') {
         return this.syncRoomAlias({
@@ -520,5 +534,7 @@ WorldSettingsSingleton.prototype.setPlayerSpawn = function(position, levelIndex)
     }
     window.LEVELS[levelIndex].room.playerSpawnPos = {x: position.x, y: position.y}; // set player spawn position
 }
+
+
 
 var WorldSettings = new WorldSettingsSingleton();

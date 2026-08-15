@@ -44,7 +44,8 @@ powerupjs.Game.loadAssets = function () {
     sprites.cyberBackground = loadSprite("background.png");
     sprites.cyberForeground = loadSprite("background1.png");
     sprites.greenTiles = loadSprite("BasicGreen@10x4.png");
-
+    sprites.sword = loadSprite("sword.png");
+    sprites.projectile = loadSprite("projectile.png");
 };
 
 powerupjs.Game.initialize = function () {

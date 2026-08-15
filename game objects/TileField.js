@@ -216,6 +216,9 @@ TileField.prototype.saveTiles = function () {
         var roomData = window.LEVELS[WorldSettings.currentLevelIndex].room;
         if (!Array.isArray(roomData.tiles)) roomData.tiles = [];
         roomData.tiles[this.editorLayer] = this.data; // save to LEVELS
+        if (WorldSettings.currentLevel && WorldSettings.currentLevel.room) {
+            WorldSettings.currentLevel.room.tiles = roomData.tiles;
+        }
     }
 }
 
@@ -226,7 +229,9 @@ TileField.prototype.loadTiles = function () {
     }
     this.scale = WorldSettings.currentLevel.room.scale
     // Room refactor: read serialized tile layer data from nested room payload.
-    this.data = window.LEVELS[WorldSettings.currentLevelIndex].room.tiles[this.editorLayer]; // get tile data
+    var roomData = window.LEVELS[WorldSettings.currentLevelIndex].room;
+    if (!Array.isArray(roomData.tiles)) roomData.tiles = [];
+    this.data = roomData.tiles[this.editorLayer]; // get tile data
     if (!this.data) return; // no tile data
     var splitData = this.data.split("/"); // split into individual tile data
     for (var i = 0; i < splitData.length; i++) { // for each tile

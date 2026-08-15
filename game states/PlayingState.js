@@ -3,6 +3,11 @@ function PlayingState(layer) {
     powerupjs.GameObjectList.call(this, layer);
     this.player = new Player();
     this.tileFields = new powerupjs.GameObjectList(); // list to hold tile fields
+    this.enemies = new powerupjs.GameObjectList(); // list of enemies
+    this.add(this.enemies); // add enemies to game state
+    this.projectiles = new powerupjs.GameObjectList(); // list of projectiles
+    this.add(this.projectiles); // add projectiles to game state
+
     this.nextRoomButton = new LabelledButton(sprites.button_default, "Next Room", "Arial", "20px", ID.layer_overlays); // button to go to next room
     this.nextRoomButton.position = new powerupjs.Vector2(600, 15);
     this.nextRoomButton.ui = true;
@@ -61,7 +66,6 @@ PlayingState.prototype.placeCameraAtSpawn = function () {
     powerupjs.Camera.velocity = new powerupjs.Vector2(0, 0); // Stop any prior camera motion.
     powerupjs.Camera.manageBoundaries(this.currentLevel.room.cameraBounds); // Clamp the camera to the room bounds.
 }
-
 
 // Load the current room data, place the player, and optionally re-center the camera.
 PlayingState.prototype.loadLevel = function (spawnOverride, alignCameraToSpawn) {
@@ -282,6 +286,7 @@ PlayingState.prototype.update = function(delta) {
     this.syncRoomVisibility(); // Keep the visible room state in sync each frame.
     this.currentLevel.update(delta); // Update the level's room objects.
     powerupjs.GameObjectList.prototype.update.call(this, delta); // Update the player and other managed objects.
+    
     this.handleTravelTileTeleport(); // Check whether the player should trigger a travel-point transition.
     this.currentRoomDisplay.text = "Room: " + (WorldSettings.currentLevel.currentRoomIndex + 1) + "/" + WorldSettings.currentLevel.rooms.length; // Show the current room number in the HUD.
 }

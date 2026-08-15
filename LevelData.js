@@ -4,12 +4,13 @@ function saveLevelToTxt(levelIndex) {
   var str = ""
   // Room refactor: export uses nested room payload as single source of truth.
   var roomData = window.LEVELS[levelIndex].room;
+  var tileLayers = Array.isArray(roomData.tiles) ? roomData.tiles : [];
+  var encodedLayers = encodeURIComponent(JSON.stringify(tileLayers));
 
   str += window.LEVELS[levelIndex].name + "!"
-  for (var i = 0; i < roomData.tiles.length; i++) {
-    if (i < roomData.tiles.length - 1)
-        str += roomData.tiles[i] + "?"
-  }
+  // Persist every editor layer in one payload segment to avoid dropping
+  // empty/final layers when using delimiter-based concatenation.
+  str += encodedLayers;
   str += "!"
   var cameraBounds = roomData.cameraBounds
   str += cameraBounds.x + "|" + cameraBounds.y + "|" + cameraBounds.width + "|" + cameraBounds.height + "!"
@@ -34,10 +35,24 @@ function DecryptRawLevelData(data, levelIndex) {
     window.LEVELS[levelIndex] = WorldSettings.normalizeLevelData(window.LEVELS[levelIndex]);
   }
   var roomData = window.LEVELS[levelIndex].room;
-    var fieldSplit = dataSplit[1].split("?");
-    for (var i = 0; i < fieldSplit.length; i++) {
-    roomData.tiles[i] = fieldSplit[i];
+  roomData.tiles = [];
+    try {
+        var parsedLayers = JSON.parse(decodeURIComponent(dataSplit[1] || ""));
+        if (Array.isArray(parsedLayers)) {
+            for (var i = 0; i < parsedLayers.length; i++) {
+                roomData.tiles.push(parsedLayers[i] || "");
+            }
+        }
     }
+    catch (e) {
+        // Backward compatibility with older exports that used '?' as a layer separator.
+        var fieldSplit = (dataSplit[1] || "").split("?");
+        for (var j = 0; j < fieldSplit.length; j++) {
+            roomData.tiles.push(fieldSplit[j] || "");
+        }
+    }
+
+    if (roomData.tiles.length === 0) roomData.tiles.push("");
   roomData.scale = parseFloat(dataSplit[5]);
     var boundSplit = dataSplit[2].split("|");
   roomData.cameraBounds = new powerupjs.Rectangle(
