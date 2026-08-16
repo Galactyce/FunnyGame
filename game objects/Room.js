@@ -3,6 +3,7 @@ function Room() {
     this.tileFields = new powerupjs.GameObjectList(5); // array to hold tile fields
     // Serialized tile layers for this room (kept in sync with LEVELS[].room.tiles).
     this.tiles = []; // array to hold serialized tile data for each layer
+    this.enemies = []; // editor + runtime enemy placements serialized per room
     this.playerStartPos = powerupjs.Vector2.zero; // default player start position
     // Runtime camera bounds for this room; persisted under LEVELS[].room.cameraBounds.
     this.cameraBounds = new powerupjs.Rectangle(-500, -400, 3000, 1400);
@@ -104,6 +105,7 @@ Room.prototype.loadTiles = function() {
     this.tileFields.clear()
     // Keep a local reference to serialized tile layers for room-level operations.
     this.tiles = roomData.tiles;
+    this.enemies = Array.isArray(roomData.enemies) ? roomData.enemies.slice() : [];
     // Keep camera bounds pointer aligned with room JSON data.
     this.cameraBounds = roomData.cameraBounds
     for (var i = 0; i < roomData.tiles.length; i++) { // for each tile layer

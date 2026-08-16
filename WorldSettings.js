@@ -9,6 +9,7 @@ function WorldSettingsSingleton() {
     this.activePlayer;
     this.currentState;
     this.mapBottom;
+    this.enemies = [];
     this.debugMode = false;
     //  GLOBAL PROPERTIES   //
 
@@ -36,6 +37,7 @@ Object.defineProperty(WorldSettingsSingleton.prototype, "playingState", {
 WorldSettingsSingleton.prototype.createDefaultRoomData = function() {
     return {
         tiles: [],
+        enemies: [],
         cameraBounds: { x: -500, y: -400, width: 3000, height: 1400 },
         playerSpawnPos: { x: 400, y: 400 },
         backgrounds: [0, 1],
@@ -118,8 +120,13 @@ WorldSettingsSingleton.prototype.saveLevels = function () { // save levels to lo
                 ? existingRoomData.backgrounds
                 : [0, 1];
 
+            var savedEnemies = Array.isArray(runtimeRoom && runtimeRoom.enemies)
+                ? runtimeRoom.enemies.slice()
+                : (Array.isArray(existingRoomData && existingRoomData.enemies) ? existingRoomData.enemies.slice() : []);
+
             levelData.rooms.push({
                 tiles: runtimeRoom.tiles || [],
+                enemies: savedEnemies,
                 scale: runtimeRoom.scale,
                 cameraBounds: {
                     x: runtimeRoom.cameraBounds.x,
@@ -188,6 +195,7 @@ WorldSettingsSingleton.prototype.manageLevelProperties = function(level) { // ma
         var runtimeRoom = new Room();
 
         runtimeRoom.tiles = Array.isArray(roomData.tiles) ? roomData.tiles : [];
+        runtimeRoom.enemies = Array.isArray(roomData.enemies) ? roomData.enemies.slice() : [];
         runtimeRoom.scale = typeof roomData.scale === 'number' ? roomData.scale : 1;
 
         var bounds = roomData.cameraBounds;
@@ -309,6 +317,18 @@ WorldSettingsSingleton.prototype.normalizeLevelData = function(levelData) { // N
 
         if (Array.isArray(roomSource.tiles)) {
             normalizedRoom.tiles = roomSource.tiles;
+        }
+
+        if (Array.isArray(roomSource.enemies)) {
+            normalizedRoom.enemies = roomSource.enemies
+                .filter(function(enemy) { return enemy && typeof enemy.x === 'number' && typeof enemy.y === 'number'; })
+                .map(function(enemy) {
+                    return {
+                        x: enemy.x,
+                        y: enemy.y,
+                        sprite: typeof enemy.sprite === 'string' ? enemy.sprite : ''
+                    };
+                });
         }
 
         if (typeof roomSource.cameraBounds === 'string') {

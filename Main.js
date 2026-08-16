@@ -46,6 +46,8 @@ powerupjs.Game.loadAssets = function () {
     sprites.greenTiles = loadSprite("BasicGreen@10x4.png");
     sprites.sword = loadSprite("sword.png");
     sprites.projectile = loadSprite("projectile.png");
+    sprites.enemy = loadSprite("enemy.png");
+    sprites.tab = loadSprite("tab.png");
 };
 
 powerupjs.Game.initialize = function () {
@@ -80,6 +82,9 @@ powerupjs.Game.initialize = function () {
     ID.game_state_playing = powerupjs.GameStateManager.add(new PlayingState());
     powerupjs.GameStateManager.switchTo(ID.game_state_title);
     WorldSettings.currentState = "title"
+
+    // GAME OBJECTS FROM THE GAMEPLAY EDITOR ARE INSTANTIATED FROM THE TILE DATA MANAGER, WHICH IS LOADED FROM LOCAL STORAGE. THE GAMEPLAY EDITOR MUST BE INITIALIZED FIRST SO THAT THE TILE DATA MANAGER CAN BE POPULATED WITH THE CORRECT OBJECTS.
+
     WorldSettings.blockSprites = [ // list of block sprites
         sprites.defaultTile,
         sprites.spike,
@@ -88,7 +93,8 @@ powerupjs.Game.initialize = function () {
         sprites.spring,
         sprites.movingPlatform,
         sprites.greenTiles,
-        sprites.portal
+        sprites.portal,
+        sprites.enemy
     ]
     WorldSettings.backgrounds = [
         sprites.cyberBackground,

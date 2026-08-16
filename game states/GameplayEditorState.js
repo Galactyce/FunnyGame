@@ -75,6 +75,9 @@ function GameplayEditorState(layer) {
   this.wasDraggingCameraBoundsHandle = false;
 
   this.editingTiles = true;
+  this.previewEnemy = null;
+  this.editorPlacedEnemies = new powerupjs.GameObjectList(ID.layer_objects);
+  this.add(this.editorPlacedEnemies);
 
   this.editorLayers = new powerupjs.GameObjectList(ID.layer_objects); // list of tile fields for editing
   var field = new TileField(); // create new tile field
@@ -247,7 +250,44 @@ GameplayEditorState.prototype.ensureEditorLayers = function (layerCount) {
 GameplayEditorState.prototype.loadLayers = function () {
   var roomData = this.getActiveRoomData();
   if (!Array.isArray(roomData.tiles)) roomData.tiles = [];
+  if (!Array.isArray(roomData.enemies)) roomData.enemies = [];
   this.ensureEditorLayers(roomData.tiles.length);
+  this.editorPlacedEnemies.clear();
+  WorldSettings.currentLevel.room.enemies = Array.isArray(roomData.enemies)
+    ? roomData.enemies.slice()
+    : [];
+  for (var e = 0; e < roomData.enemies.length; e++) {
+    var enemyData = roomData.enemies[e];
+    if (
+      !enemyData ||
+      typeof enemyData.x !== "number" ||
+      typeof enemyData.y !== "number"
+    )
+      continue;
+    var enemySprite = sprites.enemy;
+    if (
+      enemyData.sprite &&
+      enemyData.sprite.indexOf &&
+      typeof enemyData.sprite === "string"
+    ) {
+      for (var s = 0; s < WorldSettings.blockSprites.length; s++) {
+        var blockSprite = WorldSettings.blockSprites[s];
+        if (
+          blockSprite &&
+          blockSprite.image &&
+          blockSprite.image.src === enemyData.sprite
+        ) {
+          enemySprite = blockSprite;
+          break;
+        }
+      }
+    }
+    var editorEnemy = new Enemy(enemySprite, enemyData.x, enemyData.y);
+    editorEnemy.position = new powerupjs.Vector2(enemyData.x, enemyData.y);
+    editorEnemy.origin = editorEnemy.center;
+    editorEnemy.manageHitboxes(enemySprite);
+    this.editorPlacedEnemies.add(editorEnemy);
+  }
   // Ensure active room backgrounds are rebuilt whenever editor loads/switches rooms.
   WorldSettings.currentLevel.room.loadBackground();
   // Room refactor: editor spawn marker reads from room-owned spawn data.
@@ -298,6 +338,7 @@ GameplayEditorState.prototype.update = function (delta) {
 
   this.currentEditorLayerDisplay.text =
     "Layer: " + (this.currentEditorLayer + 1) + "/" + this.editorLayers.length;
+  this.updateEnemyPreview();
 
   if (this.mode == "Drawing") {
     this.objectMenu.visible = true;
@@ -316,6 +357,33 @@ GameplayEditorState.prototype.update = function (delta) {
     (WorldSettings.currentLevel.currentRoomIndex + 1) +
     "/" +
     WorldSettings.currentLevel.rooms.length;
+};
+
+GameplayEditorState.prototype.updateEnemyPreview = function () {
+  var selectedBlock = WorldSettings.currentBlock;
+  var shouldShowPreview =
+    this.mode === "Drawing" &&
+    selectedBlock &&
+    selectedBlock.tab === "enemies" &&
+    this.editingTiles;
+
+  if (!shouldShowPreview) {
+    if (this.previewEnemy) {
+      this.previewEnemy.visible = false;
+    }
+    return;
+  }
+
+  if (!this.previewEnemy) {
+    this.previewEnemy = new Enemy(selectedBlock.sprite || sprites.enemy, 0, 0);
+    this.previewEnemy.visible = true;
+    this.editorPlacedEnemies.add(this.previewEnemy);
+  }
+
+  this.previewEnemy.visible = true;
+  this.previewEnemy.position = powerupjs.Mouse.position.copy();
+  this.previewEnemy.origin = this.previewEnemy.center;
+  this.previewEnemy.manageHitboxes(this.previewEnemy.sprite);
 };
 
 GameplayEditorState.prototype.draw = function () {
@@ -346,6 +414,7 @@ GameplayEditorState.prototype.drawCameraBoundsOutline = function () {
 GameplayEditorState.prototype.saveLevel = function () {
   var roomData = this.getActiveRoomData();
   if (!Array.isArray(roomData.tiles)) roomData.tiles = [];
+  if (!Array.isArray(roomData.enemies)) roomData.enemies = [];
   this.ensureEditorLayers(
     Math.max(roomData.tiles.length, this.editorLayers.length),
   );
@@ -354,7 +423,25 @@ GameplayEditorState.prototype.saveLevel = function () {
     // for each editor layer
     this.editorLayers.at(i).saveTiles(); // save current editor layer tiles
   }
+
+  roomData.enemies = [];
+  for (var e = 0; e < this.editorPlacedEnemies.length; e++) {
+    var editorEnemy = this.editorPlacedEnemies.at(e);
+    if (!editorEnemy || !editorEnemy.position) continue;
+    roomData.enemies.push({
+      x: editorEnemy.position.x,
+      y: editorEnemy.position.y,
+      sprite:
+        editorEnemy.sprite && editorEnemy.sprite.image
+          ? editorEnemy.sprite.image.src
+          : sprites.enemy && sprites.enemy.image
+            ? sprites.enemy.image.src
+            : "",
+    });
+  }
+
   var activeRoom = WorldSettings.currentLevel.room;
+  activeRoom.enemies = roomData.enemies.slice();
   var spawnPosition = this.playerStartPos.position.copy();
   // Keep runtime room state in sync so saveLevels does not overwrite spawn with stale values.
   activeRoom.playerStartPos = spawnPosition.copy();
@@ -621,7 +708,8 @@ GameplayEditorState.prototype.isMouseOverEditorButton = function () {
 
 GameplayEditorState.prototype.handleInput = function (delta) {
   powerupjs.GameObjectList.prototype.handleInput.call(this, delta);
-  if (!WorldSettings.currentLevel || !WorldSettings.currentLevel.handleInput) return;
+  if (!WorldSettings.currentLevel || !WorldSettings.currentLevel.handleInput)
+    return;
 
   WorldSettings.currentLevel.handleInput(delta);
 
@@ -669,6 +757,46 @@ GameplayEditorState.prototype.handleInput = function (delta) {
     // place/edit once per click
 
     if (this.mode == "Drawing") {
+      var selectedBlock = WorldSettings.currentBlock;
+      var isEnemyPlacement = selectedBlock && selectedBlock.tab === "enemies";
+
+      if (isEnemyPlacement) {
+        var playingState = powerupjs.GameStateManager.get(
+          ID.game_state_playing,
+        );
+        if (
+          playingState &&
+          playingState.enemies &&
+          typeof playingState.enemies.addEnemy === "function"
+        ) {
+          var enemySpawnPosition = powerupjs.Mouse.position.copy();
+          var runtimeEnemy = new Enemy(
+            selectedBlock.sprite,
+            enemySpawnPosition.x,
+            enemySpawnPosition.y,
+          );
+          runtimeEnemy.position = enemySpawnPosition.copy();
+          runtimeEnemy.origin = runtimeEnemy.center;
+          runtimeEnemy.manageHitboxes(selectedBlock.sprite);
+          playingState.enemies.addEnemy(runtimeEnemy);
+
+          var editorEnemyPreview = new Enemy(
+            selectedBlock.sprite,
+            enemySpawnPosition.x,
+            enemySpawnPosition.y,
+          );
+          editorEnemyPreview.position = enemySpawnPosition.copy();
+          editorEnemyPreview.origin = editorEnemyPreview.center;
+          editorEnemyPreview.manageHitboxes(selectedBlock.sprite);
+          this.editorPlacedEnemies.add(editorEnemyPreview);
+
+          if (this.previewEnemy) {
+            this.previewEnemy.visible = false;
+          }
+        }
+        return;
+      }
+
       var field = this.editorLayers.at(this.currentEditorLayer); // get current editor layer
       if (field.hasTileAt(powerupjs.Mouse.position)) {
         field.removeTileAt(powerupjs.Mouse.position); // remove tile if one already exists at mouse position
@@ -681,11 +809,34 @@ GameplayEditorState.prototype.handleInput = function (delta) {
     } else if (this.mode == "Erasing") {
       var field = this.editorLayers.at(this.currentEditorLayer); // get current editor layer
       field.removeTileAt(powerupjs.Mouse.position); // remove tile at mouse position
+
+      if (this.editorPlacedEnemies.length > 0) {
+        for (var e = this.editorPlacedEnemies.length - 1; e >= 0; e--) {
+          var editorEnemy = this.editorPlacedEnemies.at(e);
+          if (!editorEnemy || !editorEnemy.position) continue;
+          var enemyBounds = editorEnemy.boundingBox;
+          if (enemyBounds && enemyBounds.contains(powerupjs.Mouse.position)) {
+            this.editorPlacedEnemies.remove(editorEnemy); // remove enemy if mouse is over it
+            break; // exit loop after removing one enemy
+          }
+        }
+      }
     } else if (this.mode == "Editing") {
       var field = this.editorLayers.at(this.currentEditorLayer); // get current editor layer
       var tile = field.getTileAt(powerupjs.Mouse.position); // get tile at mouse position
       if (tile != null) {
         this.editingMenu.selectedObj = tile; // set selected object in editing menu
+      }
+      if (this.editorPlacedEnemies.length > 0) {
+        for (var e = this.editorPlacedEnemies.length - 1; e >= 0; e--) {
+          var editorEnemy = this.editorPlacedEnemies.at(e);
+          if (!editorEnemy || !editorEnemy.position) continue;
+          var enemyBounds = editorEnemy.boundingBox;
+          if (enemyBounds && enemyBounds.contains(powerupjs.Mouse.position)) {
+            this.editingMenu.selectedObj = editorEnemy; // set selected object in editing menu
+            break; // exit loop after selecting one enemy
+          }
+        }
       }
     }
   }

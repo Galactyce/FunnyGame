@@ -35,7 +35,7 @@ Weapon.prototype.swing = function (delta) {
         var launchDirection = powerupjs.Mouse.position.subtract(this.position.copy());
         launchDirection.normalize();
 
-        var projectile = new Projectile(sprites && sprites.projectile, this.speed, launchDirection, this.damage);
+        var projectile = new Projectile(sprites && sprites.projectile, this.speed, launchDirection, this.damage, "sword");
         projectile.position = this.position.copy();
         return projectile;
     }

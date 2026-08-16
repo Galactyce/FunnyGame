@@ -28,14 +28,32 @@ var powerupjs = (function (powerupjs) {
 
     // Set up the canvas element and resize handling for the game window.
     Canvas2D_Singleton.prototype.initialize = function (divName, canvasName) {
+        if (!document || !document.getElementById) {
+            console.error('Canvas2D.initialize: document is unavailable.');
+            return false;
+        }
+
         this._canvas = document.getElementById(canvasName); // get canvas element
         this._div = document.getElementById(divName); // get div element
+
+        if (!this._canvas || !this._div) {
+            if (document.readyState === 'loading') {
+                var self = this;
+                document.addEventListener('DOMContentLoaded', function () {
+                    self.initialize(divName, canvasName);
+                }, { once: true });
+                return false;
+            }
+
+            console.error('Canvas2D.initialize: missing canvas or game area element:', divName, canvasName);
+            return false;
+        }
 
         if (this._canvas.getContext) // check for canvas support
             this._canvasContext = this._canvas.getContext('2d'); // get 2D context
         else {
             alert('Your browser is not HTML5 compatible.!'); // alert if no support
-            return;
+            return false;
         }
 
         this._pixeldrawingCanvas = document.createElement('canvas'); // create offscreen canvas
@@ -44,6 +62,7 @@ var powerupjs = (function (powerupjs) {
 
         window.onresize = this.resize; // handle window resize
         this.resize(); // initial resize
+        return true;
     };
 
     // Clear the visible canvas before the next frame is drawn.

@@ -3,8 +3,8 @@ function PlayingState(layer) {
     powerupjs.GameObjectList.call(this, layer);
     this.player = new Player();
     this.tileFields = new powerupjs.GameObjectList(); // list to hold tile fields
-    this.enemies = new powerupjs.GameObjectList(); // list of enemies
-    this.add(this.enemies); // add enemies to game state
+    this.enemies = new EnemyManager(); // dedicated runtime enemy manager
+    this.add(this.enemies); // add enemy manager to game state
     this.projectiles = new powerupjs.GameObjectList(); // list of projectiles
     this.add(this.projectiles); // add projectiles to game state
 
@@ -95,6 +95,46 @@ PlayingState.prototype.loadLevel = function (spawnOverride, alignCameraToSpawn) 
     this.currentLevel = WorldSettings.currentLevel; // Point the state at the active level object.
     WorldSettings.currentLevel.room.loadTiles(); // Reload the tiles for the currently active room.
     this.syncRoomVisibility(); // Ensure only the active room is visible.
+
+    this.enemies.clear();
+    var room = this.currentLevel && this.currentLevel.room;
+    var roomData = this.currentLevel && this.currentLevel.room && this.currentLevel.room.getRoomData ? this.currentLevel.room.getRoomData() : null;
+    var roomEnemyData = Array.isArray(room && room.enemies) ? room.enemies : (roomData && Array.isArray(roomData.enemies) ? roomData.enemies : []);
+    if (Array.isArray(roomEnemyData)) {
+        for (var e = 0; e < roomEnemyData.length; e++) {
+            var enemyData = roomEnemyData[e];
+            if (!enemyData || typeof enemyData.x !== 'number' || typeof enemyData.y !== 'number') continue;
+            var enemySprite = sprites.enemy;
+            if (enemyData.sprite) {
+                for (var s = 0; s < WorldSettings.blockSprites.length; s++) {
+                    var candidate = WorldSettings.blockSprites[s];
+                    if (candidate && candidate.image && candidate.image.src === enemyData.sprite) {
+                        enemySprite = candidate;
+                        break;
+                    }
+                }
+            }
+            var spawnedEnemy = new Enemy(enemySprite, enemyData.x, enemyData.y);
+            spawnedEnemy.position = new powerupjs.Vector2(enemyData.x, enemyData.y);
+            spawnedEnemy.origin = spawnedEnemy.center;
+            spawnedEnemy.manageHitboxes(enemySprite);
+            this.enemies.addEnemy(spawnedEnemy);
+        }
+    }
+    if (room && room.tileFields) {
+        for (var i = 0; i < room.tileFields.length; i++) {
+            var field = room.tileFields.at(i);
+            if (!field) continue;
+            for (var j = 0; j < field.length; j++) {
+                var obj = field.at(j);
+                if (obj instanceof Enemy) {
+                    field.remove(obj);
+                    this.enemies.addEnemy(obj);
+                }
+            }
+        }
+    }
+    this.enemies.syncWorldSettings();
 
     if (alignCameraToSpawn) {
         this.placeCameraAtSpawn(); // Re-center the camera on the new player position.

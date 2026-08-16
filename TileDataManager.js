@@ -54,6 +54,10 @@ TileDataManager_Singleton.prototype.handleObject = function(sprite) { // create 
     if (sprite.image.src == sprites.spring.image.src) { // spring tile
         return new Spring(sprite);
     }
+    if (sprite.image.src == sprites.enemy.image.src) { // enemy objects are spawned directly from the editor menu, not through tile creation.
+        return null;
+    }
+
     if (sprite.image.src == sprites.movingPlatform.image.src) { // moving platform tile
         return new MovingPlatform(sprite);
     }

@@ -53,9 +53,20 @@ var powerupjs = (function (powerupjs) {
     Game_Singleton.prototype.start = function (divName, canvasName, x, y) { // start the game
         this._size = new powerupjs.Vector2(x, y); // set game size
 
-        powerupjs.Canvas2D.initialize(divName, canvasName); // initialize canvas
-        this.loadAssets(); // load assets
-        this.assetLoadingLoop(); // start asset loading loop
+        var startGame = function () {
+            if (!powerupjs.Canvas2D.initialize(divName, canvasName)) {
+                return;
+            }
+            powerupjs.Game.loadAssets(); // load assets
+            powerupjs.Game.assetLoadingLoop(); // start asset loading loop
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startGame, { once: true });
+            return;
+        }
+
+        startGame();
     };
 
     Game_Singleton.prototype.initialize = function () {

@@ -18,11 +18,12 @@ var powerupjs = (function (powerupjs) {
         this.detachTime = 0;
         this.detachBufferTime = 0.2;
         this.accelerationMultiplier = 10;
-        this.stableBox;
         this.resetJumpVelo = false;
         this.neutralJumpTime = 0.4;
         this.baseVelocity = 0;
-        this.circleHitbox = new powerupjs.Circle();
+        this.hitbox = new powerupjs.Rectangle(0, 0, 1, 1);
+        this.circleHitbox = null;
+        this.stableBox = null;
         this.collidingTiles = new powerupjs.GameObjectList();
         this.jumpKey = (powerupjs.Keys && powerupjs.Keys.C) || 67;
         this.moveSpeed = 225;
@@ -177,18 +178,17 @@ var powerupjs = (function (powerupjs) {
     };
 
     PhysicsGameObject.prototype.adjustHitbox = function () {
-        this.hitbox = new powerupjs.Rectangle(
-            this.boundingBox.x + this.width / 16,
-            this.boundingBox.y + this.height / 16,
-            this.boundingBox.width - this.width / 8,
-            this.boundingBox.height - this.height / 16
-        );
+        if (this.boundingBox && typeof this.width !== 'undefined' && typeof this.height !== 'undefined') {
+            this.hitbox = new powerupjs.Rectangle(
+                this.boundingBox.x,
+                this.boundingBox.y,
+                this.boundingBox.width,
+                this.boundingBox.height
+            );
+            return;
+        }
 
-        this.circleHitbox = new powerupjs.Circle(
-            this.position.x, this.position.y, this.hitbox.width / 2
-        );
-
-        this.stableBox = new powerupjs.Rectangle(this.hitbox.x + 0.5, this.hitbox.y, this.hitbox.width - 1, this.hitbox.height + 1);
+        this.hitbox = new powerupjs.Rectangle(this.position.x, this.position.y, 1, 1);
     };
 
     PhysicsGameObject.prototype.simulateGravity = function () {

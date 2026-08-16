@@ -2,6 +2,8 @@
 function Player(layer, id) {
     powerupjs.PhysicsGameObject.call(this, layer, id);
     this.spawnPosition = new powerupjs.Vector2(0, 0);
+    this.circleHitbox = new powerupjs.Circle();
+    this.stableBox = new powerupjs.Rectangle(0, 0, 1, 1);
     this.weapon = typeof Weapon !== "undefined" ? new Weapon() : null;
     this.loadAnimation(sprites.player["idle"], "idle", true, 0.05);
     this.loadAnimation(sprites.player["run"], "run", true, 0.05);
@@ -11,6 +13,18 @@ function Player(layer, id) {
 }
 
 Player.prototype = Object.create(powerupjs.PhysicsGameObject.prototype);
+
+Player.prototype.adjustHitbox = function () {
+    powerupjs.PhysicsGameObject.prototype.adjustHitbox.call(this);
+    this.hitbox = new powerupjs.Rectangle(
+        this.boundingBox.x + this.width / 16,
+        this.boundingBox.y + this.height / 16,
+        this.boundingBox.width - this.width / 8,
+        this.boundingBox.height - this.height / 16
+    );
+    this.circleHitbox = new powerupjs.Circle(this.position.x, this.position.y, this.hitbox.width / 2);
+    this.stableBox = new powerupjs.Rectangle(this.hitbox.x + 0.5, this.hitbox.y, this.hitbox.width - 1, this.hitbox.height + 1);
+};
 
 Player.prototype.update = function (delta) {
     powerupjs.PhysicsGameObject.prototype.update.call(this, delta);

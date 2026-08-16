@@ -15,6 +15,7 @@ var powerupjs = (function (powerupjs) {
     };
 
     AnimatedGameObject.prototype.playAnimation = function (id) { // play animation by id
+        if (!this._animations || !this._animations[id]) return;
         if (this._current === this._animations[id]) // already playing this animation
             return; // do nothing
         this._sheetIndex = 0; // reset sheet index
