@@ -23,6 +23,8 @@ function saveLevelToTxt(levelIndex) {
 
   }
   str += "!" + roomData.scale
+  str += "!" + (roomData.song || "")
+  str += "!" + encodeURIComponent(JSON.stringify(roomData.eventNodes || []))
   return str;
 }
  
@@ -66,6 +68,15 @@ function DecryptRawLevelData(data, levelIndex) {
     for (var i = 0; i < backgroundSplit.length; i++) {
     roomData.backgrounds.push(parseInt(backgroundSplit[i]))
     }
+
+  roomData.song = dataSplit[6] || "";
+  try {
+    var parsedNodes = JSON.parse(decodeURIComponent(dataSplit[7] || "[]"));
+    roomData.eventNodes = Array.isArray(parsedNodes) ? parsedNodes : [];
+  }
+  catch (e) {
+    roomData.eventNodes = [];
+  }
 
 }
 

@@ -123,6 +123,22 @@ function GameplayEditorState(layer) {
   this.editingMenu.position = new powerupjs.Vector2(400, 600);
   this.add(this.editingMenu);
 
+  this.musicMenu = new MusicMenuGUI(ID.layer_overlays); // song + event node editor
+  this.musicMenu.position = new powerupjs.Vector2(400, 600);
+  this.musicMenu.visible = false;
+  this.add(this.musicMenu);
+
+  this.musicButton = new LabelledButton(
+    sprites.button_default,
+    "Music",
+    "Arial",
+    "20px",
+    ID.layer_overlays,
+  ); // toggles the music menu
+  this.musicButton.position = new powerupjs.Vector2(900, 115);
+  this.musicButton.ui = true;
+  this.add(this.musicButton);
+
   this.playButton = new LabelledButton(
     sprites.button_default,
     "Return",
@@ -348,6 +364,16 @@ GameplayEditorState.prototype.update = function (delta) {
     this.objectMenu.visible = false;
   }
 
+  if (this.musicMenu.visible) {
+    this.objectMenu.visible = false;
+    this.editingMenu.visible = false;
+    this.movePageLeftButton.visible = false;
+    this.movePageRightButton.visible = false;
+  } else {
+    this.movePageLeftButton.visible = true;
+    this.movePageRightButton.visible = true;
+  }
+
   if (!this.isDraggingCameraBoundsHandle()) {
     this.syncCameraBoundsHandles();
   }
@@ -442,6 +468,10 @@ GameplayEditorState.prototype.saveLevel = function () {
 
   var activeRoom = WorldSettings.currentLevel.room;
   activeRoom.enemies = roomData.enemies.slice();
+  roomData.song = typeof activeRoom.song === "string" ? activeRoom.song : "";
+  roomData.eventNodes = Array.isArray(activeRoom.eventNodes)
+    ? activeRoom.eventNodes.slice()
+    : [];
   var spawnPosition = this.playerStartPos.position.copy();
   // Keep runtime room state in sync so saveLevels does not overwrite spawn with stale values.
   activeRoom.playerStartPos = spawnPosition.copy();
@@ -902,6 +932,10 @@ GameplayEditorState.prototype.handleEditorButtons = function () {
     this.saveLevel();
     this.saveButton.text = "Saved!";
     // setTimeout(this.saveButton.resetText, 5000);
+  }
+
+  if (this.musicButton.pressed) {
+    this.musicMenu.visible = !this.musicMenu.visible;
   }
 
   if (this.playButton.pressed) {

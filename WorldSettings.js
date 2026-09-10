@@ -10,6 +10,7 @@ function WorldSettingsSingleton() {
     this.currentState;
     this.mapBottom;
     this.enemies = [];
+    this.music = null;
     this.debugMode = false;
     //  GLOBAL PROPERTIES   //
 
@@ -42,7 +43,9 @@ WorldSettingsSingleton.prototype.createDefaultRoomData = function() {
         playerSpawnPos: { x: 400, y: 400 },
         backgrounds: [0, 1],
         scale: 1,
-        travelPoints: []
+        travelPoints: [],
+        song: "", // key into the global sounds object
+        eventNodes: []
     };
 }
 
@@ -128,6 +131,15 @@ WorldSettingsSingleton.prototype.saveLevels = function () { // save levels to lo
                 tiles: runtimeRoom.tiles || [],
                 enemies: savedEnemies,
                 scale: runtimeRoom.scale,
+                song: typeof runtimeRoom.song === 'string' ? runtimeRoom.song : '',
+                eventNodes: (runtimeRoom.eventNodes || []).map(function(node) {
+                    return {
+                        id: String(node.id),
+                        start: parseFloat(node.start) || 0,
+                        end: parseFloat(node.end) || 0,
+                        rhythm: parseFloat(node.rhythm) || 0
+                    };
+                }),
                 cameraBounds: {
                     x: runtimeRoom.cameraBounds.x,
                     y: runtimeRoom.cameraBounds.y,
@@ -197,6 +209,8 @@ WorldSettingsSingleton.prototype.manageLevelProperties = function(level) { // ma
         runtimeRoom.tiles = Array.isArray(roomData.tiles) ? roomData.tiles : [];
         runtimeRoom.enemies = Array.isArray(roomData.enemies) ? roomData.enemies.slice() : [];
         runtimeRoom.scale = typeof roomData.scale === 'number' ? roomData.scale : 1;
+        runtimeRoom.song = typeof roomData.song === 'string' ? roomData.song : '';
+        runtimeRoom.eventNodes = Array.isArray(roomData.eventNodes) ? roomData.eventNodes.slice() : [];
 
         var bounds = roomData.cameraBounds;
         if (bounds && typeof bounds.x === 'number') {
@@ -398,6 +412,23 @@ WorldSettingsSingleton.prototype.normalizeLevelData = function(levelData) { // N
             normalizedRoom.scale = parseFloat(roomSource.scale) || 1;
         }
 
+        if (typeof roomSource.song === 'string') {
+            normalizedRoom.song = roomSource.song;
+        }
+
+        if (Array.isArray(roomSource.eventNodes)) {
+            normalizedRoom.eventNodes = roomSource.eventNodes
+                .filter(function(node) { return node && typeof node.id !== 'undefined'; })
+                .map(function(node) {
+                    return {
+                        id: String(node.id),
+                        start: parseFloat(node.start) || 0,
+                        end: typeof node.end === 'undefined' ? 0 : (parseFloat(node.end) || 0),
+                        rhythm: parseFloat(node.rhythm) || 0
+                    };
+                });
+        }
+
         normalized.rooms.push(normalizedRoom);
     }
 
@@ -513,6 +544,7 @@ WorldSettingsSingleton.prototype.playLevel = function(levelIndex) { // load curr
 
 WorldSettingsSingleton.prototype.editLevel = function(levelIndex) { // edit current level
     this.currentLevelIndex = levelIndex; // set current level index
+    if (this.music) this.music.stop(); // no level music while editing
     // Guard against invalid index or failed load state.
     if (!this.currentLevel) return;
     this.currentLevel.room.loadBackground(); // load background

@@ -60,19 +60,22 @@ var powerupjs = (function (powerupjs) {
     };
 
     GameObjectList.prototype.handleInput = function (delta) { // handle input for all game objects
-        for (var i = this.length - 1; i >= 0; --i) // iterate in reverse order
-            this._gameObjects[i].handleInput(delta); // delegate input handling
+        var objects = this._gameObjects.slice(); // snapshot so objects may remove themselves
+        for (var i = objects.length - 1; i >= 0; --i) // iterate in reverse order
+            objects[i].handleInput(delta); // delegate input handling
     };
 
     GameObjectList.prototype.update = function (delta) { // update all game objects
-        for (var i = 0, l = this.length; i < l; ++i) // iterate through internal array
-            this._gameObjects[i].update(delta); // delegate update
+        var objects = this._gameObjects.slice(); // snapshot so objects may remove themselves
+        for (var i = 0, l = objects.length; i < l; ++i) // iterate through the snapshot
+            objects[i].update(delta); // delegate update
     };
 
     GameObjectList.prototype.draw = function () { // draw all game objects
-        for (var i = 0, l = this.length; i < l; ++i) // iterate through internal array
-            if (this._gameObjects[i].visible) // if visible
-                this._gameObjects[i].draw(); // delegate draw
+        var objects = this._gameObjects.slice(); // snapshot so objects may remove themselves
+        for (var i = 0, l = objects.length; i < l; ++i) // iterate through the snapshot
+            if (objects[i].visible) // if visible
+                objects[i].draw(); // delegate draw
     };
 
     GameObjectList.prototype.reset = function () { // reset all game objects

@@ -25,7 +25,12 @@ var powerupjs = (function (powerupjs) {
         this.circleHitbox = null;
         this.stableBox = null;
         this.collidingTiles = new powerupjs.GameObjectList();
-        this.jumpKey = (powerupjs.Keys && powerupjs.Keys.C) || 67;
+        this.jumpKey = [
+            powerupjs.Keys && powerupjs.Keys.space,
+            powerupjs.Keys && powerupjs.Keys.up,
+            powerupjs.Keys && powerupjs.Keys.W,
+            powerupjs.Keys && powerupjs.Keys.C
+        ].filter(function(key) { return typeof key === "number"; });
         this.moveSpeed = 225;
         this.jumpForce = -460;
         this.airResistance = 0.65;

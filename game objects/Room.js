@@ -12,6 +12,8 @@ function Room() {
     this.backgrounds = new powerupjs.GameObjectList(1);
     // Room-specific visual/gameplay scale. Level proxies this to maintain old API calls.
     this.scale = 1;
+    this.song = ""; // key into the global sounds object
+    this.eventNodes = []; // { id, start, end, rhythm } definitions for this room's song
     this.add(this.tileFields)
     // Scratch/original bounds used by scaling workflows in the editor.
     this.originalBounds;

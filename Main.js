@@ -48,6 +48,9 @@ powerupjs.Game.loadAssets = function () {
     sprites.projectile = loadSprite("projectile.png");
     sprites.enemy = loadSprite("enemy.png");
     sprites.tab = loadSprite("tab.png");
+
+
+    sounds.song1 = loadSound("music/Iris of a Puppeteer.mp3", true);
 };
 
 powerupjs.Game.initialize = function () {

@@ -7,6 +7,10 @@ function PlayingState(layer) {
     this.add(this.enemies); // add enemy manager to game state
     this.projectiles = new powerupjs.GameObjectList(); // list of projectiles
     this.add(this.projectiles); // add projectiles to game state
+    this.music = new MusicManager(); // background music + rhythm event nodes
+    this.add(this.music);
+    WorldSettings.music = this.music;
+
 
     this.nextRoomButton = new LabelledButton(sprites.button_default, "Next Room", "Arial", "20px", ID.layer_overlays); // button to go to next room
     this.nextRoomButton.position = new powerupjs.Vector2(600, 15);
@@ -32,6 +36,34 @@ function PlayingState(layer) {
 
 PlayingState.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
+// Starts the room's saved song and links every enemy to that song's event nodes.
+PlayingState.prototype.applyRoomMusic = function (levelIndex, roomIndex) {
+    var room = this.currentLevel ? this.currentLevel.room : null;
+    if (!room) return;
+
+    var song = (room.song && sounds[room.song]) ? sounds[room.song] : null;
+    var nodes = Array.isArray(room.eventNodes) ? room.eventNodes : [];
+
+    this.music.setRoomSong(levelIndex, roomIndex, song, true, nodes.map(function (node) {
+        return {
+            id: String(node.id),
+            start: parseFloat(node.start) || 0,
+            end: parseFloat(node.end) || 0,
+            rhythm: parseFloat(node.rhythm) || 0
+        };
+    }));
+    this.music.playForRoom(levelIndex, roomIndex);
+
+    for (var i = 0; i < nodes.length; i++) {
+        var eventID = String(nodes[i].id);
+        for (var e = 0; e < this.enemies.length; e++) {
+            var enemy = this.enemies.at(e);
+            if (enemy && typeof enemy.registerAttack === "function")
+                enemy.registerAttack(eventID, null, this.music);
+        }
+    }
+}
+
 // Make only the active room visible so the game can switch between room layouts cleanly.
 PlayingState.prototype.syncRoomVisibility = function () {
     if (!this.currentLevel || !this.currentLevel.rooms) return; // Exit early if no level data is available.
@@ -45,6 +77,7 @@ PlayingState.prototype.syncRoomVisibility = function () {
 PlayingState.prototype.handleInput = function (delta) {
     powerupjs.GameObjectList.prototype.handleInput.call(this, delta); // Let the base object list process its UI/input state first.
     if (this.returnButton.pressed) {
+        this.music.stop(); // Silence the level's song on the way out.
         powerupjs.Camera.position = powerupjs.Vector2.zero; // Reset the camera when returning to the title screen.
         powerupjs.GameStateManager.switchTo(ID.game_state_title); // Switch to the title state.
         WorldSettings.currentState = "title" // Update the global state flag.
@@ -135,6 +168,9 @@ PlayingState.prototype.loadLevel = function (spawnOverride, alignCameraToSpawn) 
         }
     }
     this.enemies.syncWorldSettings();
+
+    // Music, event nodes and enemy attacks are set up once everything has spawned.
+    this.applyRoomMusic(WorldSettings.currentLevelIndex, this.currentLevel.currentRoomIndex);
 
     if (alignCameraToSpawn) {
         this.placeCameraAtSpawn(); // Re-center the camera on the new player position.

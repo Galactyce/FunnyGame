@@ -5,7 +5,9 @@ var powerupjs = (function (powerupjs) {
     function Sound(sound, looping) {
         this.looping = typeof looping !== 'undefined' ? looping : false;
         this.snd = new Audio();
-        if (this.snd.canPlayType("audio/ogg")) {
+        if (/\.(ogg|mp3|wav)$/i.test(sound)) { // path already names the file to use
+            this.snd.src = sound;
+        } else if (this.snd.canPlayType("audio/ogg")) {
             this.snd.src = sound + ".ogg";
         } else if (this.snd.canPlayType("audio/mpeg")) {
             this.snd.src = sound + ".mp3";

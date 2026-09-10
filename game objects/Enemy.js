@@ -6,6 +6,10 @@ function Enemy(sprite, x, y) {
     this.loadAnimation(enemySprite, "normal", true, 0.1);
     this.playAnimation("normal");
     this.health = 100;
+    this.attacks = {}; // eventID -> attack function
+    this.lastAttackBeat = -1;
+    this.lastAttackEventID = null;
+    this.attacking = false;
     this._hitbox = new powerupjs.Rectangle(this.position.x, this.position.y, this.sprite ? this.sprite.width : 0, this.sprite ? this.sprite.height : 0);
     this.hurtbox = new powerupjs.Rectangle(this.position.x, this.position.y, this.sprite ? this.sprite.width : 0, this.sprite ? this.sprite.height : 0);
     this.hitbox = this._hitbox;
@@ -61,6 +65,62 @@ Enemy.prototype.update = function (delta) {
     }
 }
 
+// Links an attack to a music EventNode; each eventID can drive its own attack function.
+// Registration works even if the node does not exist yet - call bindAttacks once it does.
+Enemy.prototype.registerAttack = function (eventID, attackFunction, musicManager) {
+    this.attacks[eventID] = typeof attackFunction === "function" ? attackFunction : this.attack;
+    var music = musicManager || (WorldSettings && WorldSettings.music);
+    if (!music) return null;
+    var node = music.findEventNode(eventID);
+    if (node !== null) node.addListener(this);
+    return node;
+};
+
+Enemy.prototype.unregisterAttack = function (eventID, musicManager) {
+    delete this.attacks[eventID];
+    var music = musicManager || (WorldSettings && WorldSettings.music);
+    if (!music) return;
+    var node = music.findEventNode(eventID);
+    if (node !== null) node.removeListener(this);
+};
+
+Enemy.prototype.bindAttacks = function (musicManager) {
+    var music = musicManager || (WorldSettings && WorldSettings.music);
+    if (!music) return;
+    for (var eventID in this.attacks) {
+        if (!this.attacks.hasOwnProperty(eventID)) continue;
+        var node = music.findEventNode(eventID);
+        if (node !== null) node.addListener(this);
+    }
+};
+
+Enemy.prototype.unbindAttacks = function (musicManager) {
+    var music = musicManager || (WorldSettings && WorldSettings.music);
+    if (!music) return;
+    for (var eventID in this.attacks) {
+        if (!this.attacks.hasOwnProperty(eventID)) continue;
+        var node = music.findEventNode(eventID);
+        if (node !== null) node.removeListener(this);
+    }
+};
+
+Enemy.prototype.onBeat = function (beat, songTime, node) {
+    this.lastAttackBeat = beat;
+    this.lastAttackEventID = node ? node.eventID : null;
+    var attack = node ? this.attacks[node.eventID] : null;
+    if (typeof attack === "function")
+        attack.call(this, beat, songTime, node);
+    else
+        this.attack(beat, songTime, node);
+};
+
+// Fallback for event IDs registered without their own function.
+Enemy.prototype.attack = function (beat, songTime, node) {
+    this.attacking = true;
+    attackManager.radialAttack(this.position, 8, 400, sprites.projectile, 1, 0);
+    console.log("Enemy attacked on beat " + beat + " at time " + songTime + " for event ID: " + (node ? node.eventID : "unknown"));
+};
+
 Enemy.prototype.manageHitboxes = function (sprite) {
     var objSprite = sprite || this.sprite;
     if (!objSprite || !objSprite.image) return;
@@ -103,6 +163,8 @@ Enemy.prototype.destroy = function () {
     if (playingState && playingState.enemies && typeof playingState.enemies.remove === "function") {
         playingState.enemies.remove(this);
     }
+
+    this.unbindAttacks();
 
     if (WorldSettings && Array.isArray(WorldSettings.enemies)) {
         for (var i = WorldSettings.enemies.length - 1; i >= 0; i--) {
