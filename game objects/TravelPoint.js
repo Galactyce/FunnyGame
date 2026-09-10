@@ -7,6 +7,7 @@ function TravelPoint(position) {
     this.IDLabel = new powerupjs.Label("Arial", "12px", ID.layer_overlays, 0, powerupjs.Color.white);
     this.lastClickTime = 0;
     this.doubleClickWindowMs = 300;
+    this.roomID = null; // will be set when the travel point is added to a room
 }
 
 TravelPoint.prototype = Object.create(DraggableObject.prototype);
@@ -56,7 +57,7 @@ TravelPoint.prototype.update = function(delta) {
         return;
     }
 
-    if (player.hitbox.intersects(travelHitbox)) {
+    if (player.hitbox.intersects(travelHitbox)) { // Player has entered the travel point's hitbox
         if (this.currentRoomIndex !== null && this.currentRoomIndex !== WorldSettings.currentLevel.currentRoomIndex) {
             return; // Player is not in the same room as the travel point
         }

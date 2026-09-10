@@ -1,4 +1,4 @@
-function Room() {
+function Room(roomID) {
     powerupjs.GameObjectList.call(this);
     this.tileFields = new powerupjs.GameObjectList(5); // array to hold tile fields
     // Serialized tile layers for this room (kept in sync with LEVELS[].room.tiles).
@@ -8,6 +8,7 @@ function Room() {
     // Runtime camera bounds for this room; persisted under LEVELS[].room.cameraBounds.
     this.cameraBounds = new powerupjs.Rectangle(-500, -400, 3000, 1400);
     this.name;
+    this.roomID = roomID;
     // Background sprites are hosted by the room so parallax can be room-scoped.
     this.backgrounds = new powerupjs.GameObjectList(1);
     // Room-specific visual/gameplay scale. Level proxies this to maintain old API calls.
@@ -30,6 +31,7 @@ Room.prototype.addTravelPoint = function(travelPoint) {
             travelPoint.id = level.getNextTravelPointId();
         }
         travelPoint.currentRoomIndex = WorldSettings.currentLevel.currentRoomIndex;
+        travelPoint.roomID = this.roomID; // Assign the roomID to the travel point
         this.travelPoints.push(travelPoint);
         this.add(travelPoint);
         if (level && typeof level.linkTravelPoints === 'function') {
@@ -76,17 +78,11 @@ Room.prototype.loadBackground = function () {  // Loads backgrounds for the leve
 
     // Rebuild backgrounds from data every load so edits and scale changes are reflected.
     this.backgrounds.clear();
-    for (var i = 0; i < roomData.backgrounds.length; i++) {
-        var index = roomData.backgrounds[i];
-        // Camera bounds are scaled to produce the rendered room area for parallax setup.
-        var camBounds = new powerupjs.Rectangle(
-            roomData.cameraBounds.x * WorldSettings.currentLevel.room.scale,
-            roomData.cameraBounds.y * WorldSettings.currentLevel.room.scale,
-            roomData.cameraBounds.width * WorldSettings.currentLevel.room.scale,
-            roomData.cameraBounds.height * WorldSettings.currentLevel.room.scale,
 
-        )
-        
+    // Camera bounds are scaled to produce the rendered room area for parallax setup.
+    var camBounds = this.cameraBounds;
+    for (var i = 0; i < roomData.backgrounds.length; i++) {
+        var index = roomData.backgrounds[i]; // Get the background index for this layer
         var background = new powerupjs.SpriteGameObject(WorldSettings.backgrounds[index]);
         // Scale to room height, then anchor from the camera-bounds bottom edge.
         background.scale = ((camBounds.height) / (background.height));
@@ -94,7 +90,6 @@ Room.prototype.loadBackground = function () {  // Loads backgrounds for the leve
         background.position = new powerupjs.Vector2(camBounds.x,
             (camBounds.y + camBounds.height) - scaledBackgroundHeight);
         this.backgrounds.add(background);
-       
     }
     this.add(this.backgrounds);
 }
@@ -134,17 +129,10 @@ Room.prototype.update = function(delta) {
     // Re-read room data each frame in case editor tools mutated active level data.
     var roomData = this.getRoomData();
     if (!roomData) return;
-
+    // Compute scaled room bounds for parallax camera interpolation.
+    var camBounds = this.cameraBounds;
     for (var i = 0; i < this.backgrounds.length; i++) {
         var background = this.backgrounds.at(this.backgrounds.length - i - 1);
-        // Compute scaled room bounds for parallax camera interpolation.
-        var camBounds = new powerupjs.Rectangle(
-            roomData.cameraBounds.x * WorldSettings.currentLevel.room.scale,
-            roomData.cameraBounds.y * WorldSettings.currentLevel.room.scale,
-            roomData.cameraBounds.width * WorldSettings.currentLevel.room.scale,
-            roomData.cameraBounds.height * WorldSettings.currentLevel.room.scale,
-
-        )
         // Amount is normalized camera progress through the room on both axes.
         var amount = new powerupjs.Vector2((powerupjs.Camera.position.x - camBounds.x) / (camBounds.width - powerupjs.Camera.viewWidth),
             (powerupjs.Camera.position.y - camBounds.y) / (camBounds.height - powerupjs.Camera.viewHeight))
@@ -152,10 +140,10 @@ Room.prototype.update = function(delta) {
         background.position.x = powerupjs.Camera.position.x - (((background.width * background.scale) 
             - powerupjs.Camera.viewWidth) * amount.x) / (i+1)
         
-        var scaledBackgroundHeight = background.height * background.scale;
-        var maxVerticalTravel = Math.max(0, scaledBackgroundHeight - powerupjs.Camera.viewHeight);
-        var roomBottom = camBounds.y + camBounds.height;
-        var backgroundBottomAnchoredY = roomBottom - scaledBackgroundHeight;
+        var scaledBackgroundHeight = background.height * background.scale; // Compute the height of the background after scaling
+        var maxVerticalTravel = Math.max(0, scaledBackgroundHeight - powerupjs.Camera.viewHeight); // Maximum vertical distance the background can travel for parallax effect
+        var roomBottom = camBounds.y + camBounds.height; // Y-coordinate of the bottom of the room
+        var backgroundBottomAnchoredY = roomBottom - scaledBackgroundHeight; // Y-coordinate where the bottom of the background should be anchored to the bottom of the room
         // Start from room-bottom alignment, then add layered parallax travel.
         background.position.y = backgroundBottomAnchoredY + (maxVerticalTravel * amount.y) / (i + 1);
     }
@@ -167,3 +155,27 @@ Room.prototype.update = function(delta) {
 Room.prototype.handleInput = function(delta) {
     powerupjs.GameObjectList.prototype.handleInput.call(this, delta);
 }
+
+
+Object.defineProperties(Room.prototype, {
+    cameraBounds: {
+        get: function() {
+            var roomData = this.getRoomData();
+            if (!roomData) return null;
+            return new powerupjs.Rectangle(
+                        roomData.cameraBounds.x * WorldSettings.currentLevel.room.scale,
+                        roomData.cameraBounds.y * WorldSettings.currentLevel.room.scale,
+                        roomData.cameraBounds.width * WorldSettings.currentLevel.room.scale,
+                        roomData.cameraBounds.height * WorldSettings.currentLevel.room.scale,
+
+                    );
+        },
+        set: function(value) {
+            var roomData = this.getRoomData();
+            if (!roomData) return;
+            roomData.cameraBounds = value;
+        }
+    },
+    
+
+});

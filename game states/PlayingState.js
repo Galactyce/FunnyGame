@@ -133,7 +133,7 @@ PlayingState.prototype.loadLevel = function (spawnOverride, alignCameraToSpawn) 
     var room = this.currentLevel && this.currentLevel.room;
     var roomData = this.currentLevel && this.currentLevel.room && this.currentLevel.room.getRoomData ? this.currentLevel.room.getRoomData() : null;
     var roomEnemyData = Array.isArray(room && room.enemies) ? room.enemies : (roomData && Array.isArray(roomData.enemies) ? roomData.enemies : []);
-    if (Array.isArray(roomEnemyData)) {
+    if (Array.isArray(roomEnemyData)) { // Spawn enemies defined in the room's enemy data array.
         for (var e = 0; e < roomEnemyData.length; e++) {
             var enemyData = roomEnemyData[e];
             if (!enemyData || typeof enemyData.x !== 'number' || typeof enemyData.y !== 'number') continue;
@@ -154,7 +154,7 @@ PlayingState.prototype.loadLevel = function (spawnOverride, alignCameraToSpawn) 
             this.enemies.addEnemy(spawnedEnemy);
         }
     }
-    if (room && room.tileFields) {
+    if (room && room.tileFields) {  // Move any enemies from the room's tile fields into the centralized enemy manager.
         for (var i = 0; i < room.tileFields.length; i++) {
             var field = room.tileFields.at(i);
             if (!field) continue;

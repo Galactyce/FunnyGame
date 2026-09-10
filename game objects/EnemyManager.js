@@ -29,10 +29,10 @@ EnemyManager.prototype.removeEnemy = function (enemy) {
     this.syncWorldSettings();
 };
 
-EnemyManager.prototype.syncFromRoom = function (room) {
+EnemyManager.prototype.syncFromRoom = function (room) { // Converts enemies from the room's tile fields into the EnemyManager's list
     this.clear();
-    if (!room || !room.tileFields) {
-        this.syncWorldSettings();
+    if (!room || !room.tileFields) { // No room or no tile fields, nothing to sync from
+        this.syncWorldSettings(); // Sync even if there's no room or tile fields
         return;
     }
 

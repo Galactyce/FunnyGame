@@ -22,6 +22,7 @@ LevelDataManagerSingleton.prototype.registerDefault = function (setup) {
     this.defaultSetup = setup;
 };
 
+// Retrieves the setup function for a given level and room, falling back to the default setup if none is registered.
 LevelDataManagerSingleton.prototype.getSetup = function (levelIndex, roomIndex) {
     var roomSetup = this.setups[this.key(levelIndex, roomIndex)];
     if (typeof roomSetup === "function") return roomSetup;
@@ -32,8 +33,8 @@ LevelDataManagerSingleton.prototype.getSetup = function (levelIndex, roomIndex) 
 
 // Called by PlayingState every time a level or room finishes loading.
 LevelDataManagerSingleton.prototype.startLevel = function (playingState, levelIndex, roomIndex) {
-    var setup = this.getSetup(levelIndex, roomIndex);
-    this.currentKey = this.key(levelIndex, roomIndex);
+    var setup = this.getSetup(levelIndex, roomIndex); // Retrieve the setup function for the specified level and room
+    this.currentKey = this.key(levelIndex, roomIndex); // Store the current level and room key for reference
     if (typeof setup !== "function") return null;
 
     var context = {
