@@ -1,0 +1,14 @@
+{
+  "name": "funnygame-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "quiz": "node test/quiz.js",
+    "learn": "node test/quiz.js && echo && node --test --test-reporter=spec",
+    "start": "node Main.js"
+  },
+  "devDependencies": {
+    "electron": "^44.3.0"
+  }
+}

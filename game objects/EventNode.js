@@ -4,7 +4,7 @@ function EventNode(id, start, end, rhythm, action) {
     this.startTime = start;
     this.endTime = end;
     this.rhythm = typeof rhythm !== 'undefined' ? rhythm : 0;
-    this.action = typeof action !== 'undefined' ? action : null;
+    this.action = EventNode.resolveAction(action);
     this.active = false;
     this.beat = -1;
     this.listeners = [];
@@ -12,6 +12,21 @@ function EventNode(id, start, end, rhythm, action) {
 }
 
 EventNode.prototype = Object.create(powerupjs.GameObject.prototype);
+
+// Named action registry: add an entry here to make a rhythm action reusable by
+// name from room data / level setups instead of writing an inline function each time.
+EventNode.actions = {};
+
+EventNode.registerAction = function (name, action) {
+    EventNode.actions[name] = action;
+};
+
+// Accepts a function directly, or a string naming a registered action.
+EventNode.resolveAction = function (action) {
+    if (typeof action === "function") return action;
+    if (typeof action === "string" && typeof EventNode.actions[action] === "function") return EventNode.actions[action];
+    return null;
+};
 
 EventNode.prototype.reset = function () {
     powerupjs.GameObject.prototype.reset.call(this);

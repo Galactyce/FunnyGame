@@ -3,6 +3,8 @@
 var powerupjs = (function (powerupjs) {
 
     function handleMouseMove(evt) { // handle mouse move event
+        if (!powerupjs.Canvas2D || !powerupjs.Canvas2D._canvas ||
+            !powerupjs.Game || !powerupjs.Game.size) return;
         var canvasScale = powerupjs.Canvas2D.scale; // get canvas scale
         var canvasOffset = powerupjs.Canvas2D.offset; // get canvas offset
         var mx = (evt.pageX - canvasOffset.x) / canvasScale.x; // calculate x position

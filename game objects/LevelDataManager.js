@@ -15,7 +15,7 @@ LevelDataManagerSingleton.prototype.register = function (levelIndex, roomIndex, 
         setup = roomIndex;
         roomIndex = undefined;
     }
-    this.setups[this.key(levelIndex, roomIndex)] = setup;
+    this.setups[this.key(levelIndex, roomIndex)] = setup; // Store the setup function for the specified level and room
 };
 
 LevelDataManagerSingleton.prototype.registerDefault = function (setup) {
@@ -37,7 +37,7 @@ LevelDataManagerSingleton.prototype.startLevel = function (playingState, levelIn
     this.currentKey = this.key(levelIndex, roomIndex); // Store the current level and room key for reference
     if (typeof setup !== "function") return null;
 
-    var context = {
+    var context = { // Context object passed to the setup function containing relevant game state and level information
         state: playingState,
         music: playingState ? playingState.music : (WorldSettings && WorldSettings.music),
         enemies: playingState ? playingState.enemies : null,
@@ -47,7 +47,7 @@ LevelDataManagerSingleton.prototype.startLevel = function (playingState, levelIn
         levelIndex: levelIndex,
         roomIndex: roomIndex
     };
-    setup.call(this, context);
+    setup.call(this, context); // Invoke the setup function with the context object
     return context;
 };
 
@@ -77,7 +77,8 @@ LevelDataManager.registerDefault(function (context) {
             id: String(node.id),
             start: parseFloat(node.start) || 0,
             end: parseFloat(node.end) || 0,
-            rhythm: parseFloat(node.rhythm) || 0
+            rhythm: parseFloat(node.rhythm) || 0,
+            action: node.action
         };
     }));
     music.playForRoom(context.levelIndex, context.roomIndex);

@@ -33,11 +33,12 @@ var powerupjs = (function (powerupjs) {
     function Touch_Singleton() { // singleton class for touch input
         this._touches = []; // list of current touches
         this._touchPresses = []; // list of touch press states
-        document.addEventListener('touchstart', handleTouchStart, false); // add event listeners
-        document.addEventListener('touchend', handleTouchEnd, false); // add event listeners
-        document.addEventListener('touchcancel', handleTouchEnd, false); // add event listeners
-        document.addEventListener('touchleave', handleTouchEnd, false); // add event listeners
-        document.body.addEventListener('touchmove', handleTouchMove, false); // add event listeners
+        var nonPassive = { passive: false };
+        document.addEventListener('touchstart', handleTouchStart, nonPassive); // add event listeners
+        document.addEventListener('touchend', handleTouchEnd, nonPassive); // add event listeners
+        document.addEventListener('touchcancel', handleTouchEnd, nonPassive); // add event listeners
+        document.addEventListener('touchleave', handleTouchEnd, nonPassive); // add event listeners
+        document.body.addEventListener('touchmove', handleTouchMove, nonPassive); // add event listeners
     }
 
     Object.defineProperty(Touch_Singleton.prototype, "nrTouches", { // get number of current touches

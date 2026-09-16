@@ -10,9 +10,12 @@ function Player(layer, id) {
     this.loadAnimation(sprites.player["jump"], "jump", true, 0.2);
     this.loadAnimation(sprites.player["fall"], "fall", true, 0.2);
     this.playAnimation("idle");
+    this.initialize();
 }
 
 Player.prototype = Object.create(powerupjs.PhysicsGameObject.prototype);
+
+
 
 Player.prototype.adjustHitbox = function () {
     powerupjs.PhysicsGameObject.prototype.adjustHitbox.call(this);

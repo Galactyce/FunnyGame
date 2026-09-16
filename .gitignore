@@ -1,1 +1,4 @@
 *.aseprite
+
+out/
+node_modules

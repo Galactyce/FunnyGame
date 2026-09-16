@@ -86,6 +86,28 @@ var powerupjs = (function (powerupjs) {
         return new powerupjs.Rectangle(xmin, ymin, xmax - xmin, ymax - ymin); // return intersection rectangle
     };
 
+    Rectangle.prototype.panInnerRect = function (containerRect, innerRect, axis, layerDepth) {
+        axis = axis === "y" ? "y" : "x";
+        layerDepth = typeof layerDepth === "number" && layerDepth > 0 ? layerDepth : 1;
+
+        var cameraStart = axis === "x" ? this.x : this.y;
+        var containerStart = axis === "x" ? containerRect.x : containerRect.y;
+        var cameraSize = axis === "x" ? this.width : this.height;
+        var containerSize = axis === "x" ? containerRect.width : containerRect.height;
+        var innerSize = axis === "x" ? innerRect.width : innerRect.height;
+        var cameraTravel = containerSize - cameraSize;
+        var amount = cameraTravel === 0 ? 0 : (cameraStart - containerStart) / cameraTravel;
+        var innerTravel = Math.max(0, innerSize - cameraSize);
+
+        if (axis === "x") {
+            innerRect.x = cameraStart - (innerTravel * amount) / layerDepth;
+        } else {
+            innerRect.y = containerRect.bottom - innerSize + (innerTravel * amount) / layerDepth;
+        }
+
+        return innerRect;
+    };
+
     Rectangle.prototype.draw = function (color) { // draw rectangle for debugging
         color = typeof color !== 'undefined' ? color : powerupjs.Color.black; // default color black
         powerupjs.Canvas2D.drawRectangle(this.x - powerupjs.Camera.position.x, this.y - powerupjs.Camera.position.y // draw rectangle at camera-adjusted position

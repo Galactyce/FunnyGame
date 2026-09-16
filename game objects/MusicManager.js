@@ -3,7 +3,7 @@ function MusicManager(layer, id) {
     this.currentSong = null;
     this.songTime = 0;
     this._previousSongTime = 0;
-    this._volume = 1;
+    this._volume = 0.3;
     this.beatListeners = [];
     this.roomSongs = {}; // "levelIndex:roomIndex" -> song entry
     this.defaultSong = null;
@@ -31,17 +31,21 @@ Object.defineProperty(MusicManager.prototype, "playing", {
 
 MusicManager.prototype.playSong = function (sound, looping) {
     this.stop();
-    this._currentSource = sound;
+    this._currentSource = sound; // store the source to avoid unnecessary restarts
     if (sound instanceof powerupjs.Sound)
         this.currentSong = sound;
     else
         this.currentSong = new powerupjs.Sound(sound, typeof looping !== 'undefined' ? looping : true);
     if (this.currentSong.snd !== null)
         this.currentSong.volume = this._volume;
+    else
+        this.currentSong = sounds.reassurance;
     this.currentSong.play();
     this._ensurePlayback();
     this.resetEventNodes();
 };
+
+
 
 // Browsers block audio until the page has been interacted with, so retry on the first input.
 MusicManager.prototype._ensurePlayback = function () {

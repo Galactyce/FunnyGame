@@ -204,7 +204,7 @@ WorldSettingsSingleton.prototype.manageLevelProperties = function(level) { // ma
     level.rooms.clear();
     for (var r = 0; r < levelData.rooms.length; r++) {
         var roomData = levelData.rooms[r];
-        var runtimeRoom = new Room();
+        var runtimeRoom = new Room(r);
 
         runtimeRoom.tiles = Array.isArray(roomData.tiles) ? roomData.tiles : [];
         runtimeRoom.enemies = Array.isArray(roomData.enemies) ? roomData.enemies.slice() : [];
@@ -586,6 +586,7 @@ WorldSettingsSingleton.prototype.setPlayerSpawn = function(position, levelIndex)
     }
     window.LEVELS[levelIndex].room.playerSpawnPos = {x: position.x, y: position.y}; // set player spawn position
 }
+
 
 
 

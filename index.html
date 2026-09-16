@@ -40,7 +40,6 @@
                     .script(powerupjsdir + 'Game.js').wait()
                     .script(powerupjsdir + 'Camera.js').wait()
                     .script('TileDataManager.js').wait()                    
-                    .script('Main.js').wait()
                     .script('WorldSettings.js').wait()
                     .script('LevelData.js').wait()
                     .script('dataStorage.js').wait()
@@ -68,12 +67,12 @@
                     .script('game objects/Room.js').wait()
                     .script('game objects/Level.js').wait()
                     .script('game objects/TileField.js').wait()
-                    .script('PlayerProperties.js').wait()
                     .script('game objects/Player.js').wait()
+                    .script('PlayerProperties.js').wait()
                     .script('game states/PlayingState.js').wait()
                     .script('game states/TitleMenuState.js').wait()
                     .script('game states/GameplayEditorState.js').wait()
-                    .script('Main.js').wait(function() {
+                    .script('LoadAssets.js').wait(function() {
                         powerupjs.Game.start('gameArea', 'mycanvas', 1440, 825);
                     });
 
@@ -87,6 +86,8 @@
             <canvas id="mycanvas">Your browser doesn't support canvas tag</canvas>
             <section id="debugArea" aria-label="Runtime debug area"></section>
         </div>
-        
+        <p id="info"></p>
+
     </body>
+    <script src="Application Handling/renderer.js"></script>
 </html>

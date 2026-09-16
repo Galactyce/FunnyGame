@@ -17,6 +17,47 @@ function Enemy(sprite, x, y) {
 
 Enemy.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
 
+// Pluggable enemy subclasses. To add a new enemy type (distinct class/behavior),
+// push one entry here instead of editing Enemy.create/Enemy.fromData directly.
+Enemy.types = [];
+
+Enemy.resolveType = function (sprite) {
+    if (!sprite || !sprite.image) return null;
+    for (var i = 0; i < Enemy.types.length; i++) {
+        if (Enemy.types[i].matches(sprite)) return Enemy.types[i];
+    }
+    return null;
+};
+
+Enemy.create = function (sprite, position) {
+    var enemyPosition = position && typeof position.x === "number" && typeof position.y === "number"
+        ? position
+        : powerupjs.Vector2.zero;
+    var type = Enemy.resolveType(sprite);
+    var enemy = type ? type.create(sprite, enemyPosition.x, enemyPosition.y) : new Enemy(sprite, enemyPosition.x, enemyPosition.y);
+    enemy.position = enemyPosition.copy ? enemyPosition.copy() : new powerupjs.Vector2(enemyPosition.x, enemyPosition.y);
+    enemy.origin = enemy.center;
+    enemy.manageHitboxes(sprite);
+    return enemy;
+};
+
+Enemy.fromData = function (enemyData) {
+    if (!enemyData || typeof enemyData.x !== "number" || typeof enemyData.y !== "number") return null;
+
+    var enemySprite = sprites.enemy;
+    if (enemyData.sprite) {
+        for (var i = 0; i < WorldSettings.blockSprites.length; i++) {
+            var candidate = WorldSettings.blockSprites[i];
+            if (candidate && candidate.image && candidate.image.src === enemyData.sprite) {
+                enemySprite = candidate;
+                break;
+            }
+        }
+    }
+
+    return Enemy.create(enemySprite, new powerupjs.Vector2(enemyData.x, enemyData.y));
+};
+
 Object.defineProperty(Enemy.prototype, "hitbox", {
     get: function () {
         if (!this._hitbox) {
@@ -66,8 +107,15 @@ Enemy.prototype.update = function (delta) {
 }
 
 // Links an attack to a music EventNode; each eventID can drive its own attack function.
+// attackFunction may also be a string naming an entry in attackManager.types.
 // Registration works even if the node does not exist yet - call bindAttacks once it does.
 Enemy.prototype.registerAttack = function (eventID, attackFunction, musicManager) {
+    if (typeof attackFunction === "string") {
+        var attackName = attackFunction;
+        attackFunction = function (beat, songTime, node) {
+            attackManager.perform(attackName, this, this.position);
+        };
+    }
     this.attacks[eventID] = typeof attackFunction === "function" ? attackFunction : this.attack;
     var music = musicManager || (WorldSettings && WorldSettings.music);
     if (!music) return null;
@@ -117,8 +165,7 @@ Enemy.prototype.onBeat = function (beat, songTime, node) {
 // Fallback for event IDs registered without their own function.
 Enemy.prototype.attack = function (beat, songTime, node) {
     this.attacking = true;
-    attackManager.radialAttack(this.position, 8, 400, sprites.projectile, 1, 0);
-    console.log("Enemy attacked on beat " + beat + " at time " + songTime + " for event ID: " + (node ? node.eventID : "unknown"));
+    attackManager.perform("radial", this, this.position);
 };
 
 Enemy.prototype.manageHitboxes = function (sprite) {

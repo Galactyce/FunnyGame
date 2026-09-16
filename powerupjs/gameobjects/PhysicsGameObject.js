@@ -4,7 +4,7 @@ var powerupjs = (function (powerupjs) {
 
     function PhysicsGameObject(layer, id) {
         powerupjs.AnimatedGameObject.call(this, layer, id);
-
+        this.mass = 1;
         this.currentLevelIndex;
         this.previousYPosition;
         this.tileLeft = false;
@@ -31,14 +31,24 @@ var powerupjs = (function (powerupjs) {
             powerupjs.Keys && powerupjs.Keys.W,
             powerupjs.Keys && powerupjs.Keys.C
         ].filter(function(key) { return typeof key === "number"; });
-        this.moveSpeed = 225;
-        this.jumpForce = -460;
-        this.airResistance = 0.65;
-        this.wallJumpForce = 300;
         this.initialize();
     }
 
     PhysicsGameObject.prototype = Object.create(powerupjs.AnimatedGameObject.prototype);
+
+    PhysicsGameObject.prototype.wellFormed = function () {
+        return powerupjs.GameObject.prototype.wellFormed.call(this) &&
+            typeof this.mass === "number" && isFinite(this.mass) && this.mass > 0 &&
+            Array.isArray(this.jumpKey);
+    };
+
+    PhysicsGameObject.prototype.wellFormedAssertions = function () {
+        var valid = this.wellFormed();
+        if (typeof console !== "undefined" && typeof console.assert === "function") {
+            console.assert(valid, "PhysicsGameObject is not well-formed");
+        }
+        return valid;
+    };
 
     PhysicsGameObject.prototype.initialize = function () {
         this.detachBufferTime = 0.2;
@@ -141,7 +151,7 @@ var powerupjs = (function (powerupjs) {
         );
 
         for (var i = 0; i < WorldSettings.currentLevel.room.tileFields.length; i++) {
-            var field = WorldSettings.currentLevel.room.tileFields[i];
+            var field = WorldSettings.currentLevel.room.tileFields.at(i);
             if (!field) continue;
 
             for (var l = 0; l < field.length; l++) {
@@ -213,7 +223,7 @@ var powerupjs = (function (powerupjs) {
         this.grounded = false;
 
         for (var i = 0; i < WorldSettings.currentLevel.room.tileFields.length; i++) {
-            var field = WorldSettings.currentLevel.room.tileFields[i];
+            var field = WorldSettings.currentLevel.room.tileFields.at(i);
 
             for (var l = 0; l < field.length; l++) {
                 var tile = field.at(l);
@@ -247,7 +257,7 @@ var powerupjs = (function (powerupjs) {
 
     PhysicsGameObject.prototype.refreshGroundedState = function() {
         for (var i = 0; i < WorldSettings.currentLevel.room.tileFields.length; i++) {
-            var field = WorldSettings.currentLevel.room.tileFields[i];
+            var field = WorldSettings.currentLevel.room.tileFields.at(i);
             for (var l = 0; l < field.length; l++) {
                 var tile = field.at(l);
                 if (tile == null || tile.hitboxType != "solid") continue;
@@ -263,7 +273,7 @@ var powerupjs = (function (powerupjs) {
 
     PhysicsGameObject.prototype.clearPhysicsDebugHighlights = function() {
         for (var i = 0; i < WorldSettings.currentLevel.room.tileFields.length; i++) {
-            var field = WorldSettings.currentLevel.room.tileFields[i];
+            var field = WorldSettings.currentLevel.room.tileFields.at(i);
             for (var l = 0; l < field.length; l++) {
                 var tile = field.at(l);
                 if (tile == null) continue;
@@ -323,10 +333,22 @@ var powerupjs = (function (powerupjs) {
     };
 
     PhysicsGameObject.prototype.jump = function() {
-        this.velocity.y = this.jumpForce;
+        this.velocity.y = 0;
+        this.applyForce(new powerupjs.Vector2(0, this.jumpForce), true);
         this.jumpAvailable = false;
         this.timeAfterWallJump = 0;
         this.resetJumpVelo = true;
+    };
+
+    PhysicsGameObject.prototype.applyForce = function(force, impulse) {
+        var impulse = typeof impulse != 'undefined' ? impulse : false;
+        if (impulse) {
+            this.velocity.x += force.x / this.mass;
+            this.velocity.y += force.y / this.mass;
+        } else {
+            this.velocity.x += force.x * powerupjs.Game.deltaTime / this.mass;
+            this.velocity.y += force.y * powerupjs.Game.deltaTime / this.mass;
+        }
     };
 
     Object.defineProperty(PhysicsGameObject.prototype, "isGrounded", {

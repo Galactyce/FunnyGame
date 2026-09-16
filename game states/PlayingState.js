@@ -49,7 +49,8 @@ PlayingState.prototype.applyRoomMusic = function (levelIndex, roomIndex) {
             id: String(node.id),
             start: parseFloat(node.start) || 0,
             end: parseFloat(node.end) || 0,
-            rhythm: parseFloat(node.rhythm) || 0
+            rhythm: parseFloat(node.rhythm) || 0,
+            action: node.action
         };
     }));
     this.music.playForRoom(levelIndex, roomIndex);
@@ -135,23 +136,8 @@ PlayingState.prototype.loadLevel = function (spawnOverride, alignCameraToSpawn) 
     var roomEnemyData = Array.isArray(room && room.enemies) ? room.enemies : (roomData && Array.isArray(roomData.enemies) ? roomData.enemies : []);
     if (Array.isArray(roomEnemyData)) { // Spawn enemies defined in the room's enemy data array.
         for (var e = 0; e < roomEnemyData.length; e++) {
-            var enemyData = roomEnemyData[e];
-            if (!enemyData || typeof enemyData.x !== 'number' || typeof enemyData.y !== 'number') continue;
-            var enemySprite = sprites.enemy;
-            if (enemyData.sprite) {
-                for (var s = 0; s < WorldSettings.blockSprites.length; s++) {
-                    var candidate = WorldSettings.blockSprites[s];
-                    if (candidate && candidate.image && candidate.image.src === enemyData.sprite) {
-                        enemySprite = candidate;
-                        break;
-                    }
-                }
-            }
-            var spawnedEnemy = new Enemy(enemySprite, enemyData.x, enemyData.y);
-            spawnedEnemy.position = new powerupjs.Vector2(enemyData.x, enemyData.y);
-            spawnedEnemy.origin = spawnedEnemy.center;
-            spawnedEnemy.manageHitboxes(enemySprite);
-            this.enemies.addEnemy(spawnedEnemy);
+            var spawnedEnemy = Enemy.fromData(roomEnemyData[e]);
+            if (spawnedEnemy) this.enemies.addEnemy(spawnedEnemy);
         }
     }
     if (room && room.tileFields) {  // Move any enemies from the room's tile fields into the centralized enemy manager.

@@ -12,6 +12,14 @@ function TravelPoint(position) {
 
 TravelPoint.prototype = Object.create(DraggableObject.prototype);
 
+TravelPoint.prototype.wellFormedAssertions = function() {
+    console.assert(this.targetID > 0, "TargetID should not be negative or 0");
+    console.assert(this.targetTravelPoint !== null, "Target travel point should not be null");
+    console.assert(this.currentRoomIndex !== null, "Current room index should not be null");
+    console.assert(this.roomID !== null, "Room ID should not be null");
+    console.assert(WorldSettings.cameraBounds.contains(this.position), "Position should be within camera bounds");
+};
+
 TravelPoint.prototype.handleInput = function(delta) {
     DraggableObject.prototype.handleInput.call(this, delta);
     if (WorldSettings.currentState !== "editing") return;

@@ -256,6 +256,7 @@ function loadGameplayScripts() {
     'powerupjs/GameStateManager.js',
     'game objects/DraggableObject.js',
     'game objects/Tile.js',
+    'game objects/TileField.js',
     'game objects/Room.js',
     'game objects/Level.js',
     'game objects/Player.js',
@@ -327,6 +328,29 @@ test('Rectangle intersection and contains logic', async () => {
     width: 5,
     height: 5
   });
+});
+
+test('Rectangle pans inner rectangles across either axis', async () => {
+  await quizBefore('Rectangle inner-rect panning',
+    'Tests that a camera rectangle moves an inner rectangle across horizontal and vertical axes with layer depth');
+
+  const powerupjs = loadEngine();
+  const camera = new powerupjs.Rectangle(50, 25, 100, 50);
+  const container = new powerupjs.Rectangle(0, 0, 200, 100);
+  const inner = new powerupjs.Rectangle(0, 0, 300, 150);
+
+  camera.panInnerRect(container, inner, 'x');
+  assert.equal(inner.x, -50);
+
+  camera.panInnerRect(container, inner, 'y');
+  assert.equal(inner.y, 0);
+
+  camera.x = 100;
+  camera.y = 50;
+  camera.panInnerRect(container, inner, 'x', 2);
+  camera.panInnerRect(container, inner, 'y', 2);
+  assert.equal(inner.x, 0);
+  assert.equal(inner.y, 0);
 });
 
 test('GameObjectList and GameObject hierarchy behave predictably', async () => {
@@ -501,6 +525,45 @@ test('Level tracks room travel points and links matching IDs', async () => {
   assert.equal(level.travelPoints[1].targetID, 1);
 });
 
+test('Room wellFormed invariant rejects invalid room state', async () => {
+  await quizBefore('Room wellFormed invariant',
+    'Tests that Room accepts valid identity and structure values and rejects invalid room IDs, tile fields, and scale');
+
+  const sandbox = loadGameplayScripts();
+  const room = new sandbox.Room(3);
+  room.tileFields.add(new sandbox.powerupjs.GameObjectList());
+
+  assert.equal(room.wellFormed(), true);
+
+  room.roomID = '3';
+  assert.equal(room.wellFormed(), false);
+
+  room.roomID = -1;
+  assert.equal(room.wellFormed(), false);
+
+  room.roomID = 3;
+  room.tileFields = [];
+  assert.equal(room.wellFormed(), false);
+
+  room.tileFields = new sandbox.powerupjs.GameObjectList(5);
+  room.tileFields.add(new sandbox.powerupjs.GameObjectList());
+  room.scale = 0;
+  assert.equal(room.wellFormed(), false);
+
+  room.scale = 1;
+  assert.equal(room.wellFormed(), true);
+  assert.equal(room.wellFormedAssertions(), true);
+
+  const list = new sandbox.powerupjs.GameObjectList();
+  const field = new sandbox.TileField();
+  const level = new sandbox.Level();
+  const player = new sandbox.Player();
+  assert.equal(list.wellFormedAssertions(), true);
+  assert.equal(field.wellFormedAssertions(), true);
+  assert.equal(level.wellFormedAssertions(), true);
+  assert.equal(player.wellFormedAssertions(), true);
+});
+
 test('Player jump checks detect keyboard input and wall jump direction', async () => {
   await quizBefore('Player wall jump mechanics',
     'Tests that players can detect jump input, perform wall jumps when touching tiles, and push in the correct direction');
@@ -525,6 +588,14 @@ test('Player jump checks detect keyboard input and wall jump direction', async (
   player.handleJumps();
   assert.equal(player.velocity.x, 300);
   assert.equal(player.previousWallJumpDir, 'right');
+
+  player.grounded = true;
+  player.tileLeft = false;
+  player.tileRight = false;
+  player.jumpAvailable = true;
+  player.jumpForce = -460;
+  player.handleJumps();
+  assert.equal(player.velocity.y, -460);
 });
 
 test('WorldSettings stores and manages level data structures', async () => {

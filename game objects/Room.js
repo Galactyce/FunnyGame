@@ -23,6 +23,27 @@ function Room(roomID) {
 
 Room.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
+
+Room.prototype.wellFormed = function () {
+    return typeof this.roomID === "number" && isFinite(this.roomID) && this.roomID >= 0 &&
+        this.tileFields && Array.isArray(this.tileFields._gameObjects) &&
+            this.tileFields.length === this.tileFields._gameObjects.length &&
+        typeof this.scale === "number" && isFinite(this.scale) && this.scale > 0;
+};
+
+Room.prototype.wellFormedAssertions = function () {
+    var valid = this.wellFormed();
+    if (typeof console !== "undefined" && typeof console.assert === "function") {
+        console.assert(valid, "Room is not well-formed at roomID: " + this.roomID);
+    }
+    return valid;
+};
+
+function assertRoomWellFormed(room) {
+    room.wellFormedAssertions();
+}
+
+
 Room.prototype.addTravelPoint = function(travelPoint) {
     if (travelPoint instanceof TravelPoint) {
         if (!Array.isArray(this.travelPoints)) this.travelPoints = [];
@@ -38,9 +59,13 @@ Room.prototype.addTravelPoint = function(travelPoint) {
             level.linkTravelPoints();
         }
     }
+
+    assertRoomWellFormed(this);
 }
 
-Room.prototype.getRoomData = function () {
+
+
+Room.prototype.getRoomData = function () { // Retrieves the canonical room data for the current room in the active level
     // Resolve the active level JSON record.
     var levelData = window.LEVELS[WorldSettings.currentLevelIndex];
     // If there is no usable level data, caller should bail out safely.
@@ -65,6 +90,7 @@ Room.prototype.getRoomData = function () {
 
     // All room runtime functions read and write through this canonical nested room entry.
     return levelData.rooms[roomIndex];
+    
 }
 
 Room.prototype.loadBackground = function () {  // Loads backgrounds for the level from window.LEVELS
@@ -92,6 +118,7 @@ Room.prototype.loadBackground = function () {  // Loads backgrounds for the leve
         this.backgrounds.add(background);
     }
     this.add(this.backgrounds);
+    assertRoomWellFormed(this);
 }
 
 Room.prototype.loadTiles = function() {
@@ -111,9 +138,12 @@ Room.prototype.loadTiles = function() {
         field.loadTiles();  // load tiles for the layer
         this.tileFields.add(field); // add tile field to list
     };
+    assertRoomWellFormed(this);
+    console.log(this.tileFields)
 }
 
 Room.prototype.scaleCameraBounds = function() {
+
     var roomData = this.getRoomData();
     if (!roomData) return;
 
@@ -131,21 +161,16 @@ Room.prototype.update = function(delta) {
     if (!roomData) return;
     // Compute scaled room bounds for parallax camera interpolation.
     var camBounds = this.cameraBounds;
+    var cameraRect = new powerupjs.Rectangle(powerupjs.Camera.position.x, powerupjs.Camera.position.y,
+        powerupjs.Camera.viewWidth, powerupjs.Camera.viewHeight);
     for (var i = 0; i < this.backgrounds.length; i++) {
         var background = this.backgrounds.at(this.backgrounds.length - i - 1);
-        // Amount is normalized camera progress through the room on both axes.
-        var amount = new powerupjs.Vector2((powerupjs.Camera.position.x - camBounds.x) / (camBounds.width - powerupjs.Camera.viewWidth),
-            (powerupjs.Camera.position.y - camBounds.y) / (camBounds.height - powerupjs.Camera.viewHeight))
-        // Deeper layers move slower to create depth (simple parallax division by layer depth).
-        background.position.x = powerupjs.Camera.position.x - (((background.width * background.scale) 
-            - powerupjs.Camera.viewWidth) * amount.x) / (i+1)
-        
-        var scaledBackgroundHeight = background.height * background.scale; // Compute the height of the background after scaling
-        var maxVerticalTravel = Math.max(0, scaledBackgroundHeight - powerupjs.Camera.viewHeight); // Maximum vertical distance the background can travel for parallax effect
-        var roomBottom = camBounds.y + camBounds.height; // Y-coordinate of the bottom of the room
-        var backgroundBottomAnchoredY = roomBottom - scaledBackgroundHeight; // Y-coordinate where the bottom of the background should be anchored to the bottom of the room
-        // Start from room-bottom alignment, then add layered parallax travel.
-        background.position.y = backgroundBottomAnchoredY + (maxVerticalTravel * amount.y) / (i + 1);
+        var backgroundRect = new powerupjs.Rectangle(background.position.x, background.position.y,
+            background.width * background.scale, background.height * background.scale);
+        // Deeper layers move slower to create parallax division by layer depth.
+        cameraRect.panInnerRect(camBounds, backgroundRect, "x", i + 1);
+        cameraRect.panInnerRect(camBounds, backgroundRect, "y", i + 1);
+        background.position = backgroundRect.position;
     }
     // Preserve previous behavior: only show tile layers in playing state.
     if (WorldSettings.currentState == "playing") this.tileFields.visible = true;
@@ -176,6 +201,8 @@ Object.defineProperties(Room.prototype, {
             roomData.cameraBounds = value;
         }
     },
+    
+    
     
 
 });

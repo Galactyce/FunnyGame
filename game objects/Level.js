@@ -5,7 +5,7 @@ function Level() {
     this.currentRoomIndex = 0;
 
     // Keep one default room so existing flows always have an active room.
-    this.rooms.add(new Room());
+    this.rooms.add(new Room(0));
     this.name;
     // Add rooms list as a child so draw/update/input flow remains list-driven.
     this.add(this.rooms)
@@ -15,8 +15,23 @@ function Level() {
 
 Level.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
+Level.prototype.wellFormed = function() {
+    return powerupjs.GameObjectList.prototype.wellFormed.call(this) &&
+        this.rooms && this.rooms.length > 0 &&
+        this.currentRoomIndex >= 0 && this.currentRoomIndex < this.rooms.length;
+};
+
+Level.prototype.wellFormedAssertions = function() {
+    var valid = this.wellFormed();
+    if (typeof console !== "undefined" && typeof console.assert === "function") {
+        console.assert(valid, "Level is not well-formed");
+    }
+    return valid;
+};
+
 Level.prototype.addRoom = function(room) {
-    var roomToAdd = room || new Room();
+    var roomToAdd = room || new Room(this.rooms.length);
+    if (typeof roomToAdd.roomID !== "number") roomToAdd.roomID = this.rooms.length;
     this.rooms.add(roomToAdd);
     return roomToAdd;
 }
@@ -82,7 +97,7 @@ Level.prototype.removeRoom = function(room) {
 Object.defineProperty(Level.prototype, "room", {
     get: function() {
         if (this.rooms.length === 0) {
-            this.rooms.add(new Room());
+            this.rooms.add(new Room(0));
             this.currentRoomIndex = 0;
         }
 
@@ -92,7 +107,8 @@ Object.defineProperty(Level.prototype, "room", {
         return this.rooms.at(this.currentRoomIndex);
     },
     set: function(value) {
-        var roomValue = value || new Room();
+        var roomValue = value || new Room(this.currentRoomIndex);
+        if (typeof roomValue.roomID !== "number") roomValue.roomID = this.currentRoomIndex;
         var existingIndex = this.indexOfRoom(roomValue);
         if (existingIndex >= 0) {
             this.currentRoomIndex = existingIndex;

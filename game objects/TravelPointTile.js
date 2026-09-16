@@ -11,6 +11,12 @@ function TravelPointTile(sprite) {
 
 TravelPointTile.prototype = Object.create(Tile.prototype);
 
+TravelPointTile.prototype.wellFormedAssertions = function() {
+    console.assert(this.travelPointID > 0, "TravelPointID should not be negative or 0");
+    console.assert(this.targetID > 0, "TargetID should not be negative or 0");
+    console.assert(this.targetID !== this.travelPointID, "Target ID should not be the same as TravelPoint ID");
+};
+
 TravelPointTile.prototype.manageHitboxes = function(sprite) {
     Tile.prototype.manageHitboxes.call(this, sprite);
     this.hitbox = this.boundingBox;
@@ -41,6 +47,7 @@ TravelPointTile.prototype.handleInput = function(delta) {
     this.applyTargetToConnectedTiles();
 }
 
+// Propagates the targetID to all connected travel point tiles.
 TravelPointTile.prototype.applyTargetToConnectedTiles = function() {
     var field = this.parent;
     if (!field || typeof field.getTileAtIndex !== "function" || !this.index) return;
@@ -70,6 +77,7 @@ TravelPointTile.prototype.applyTargetToConnectedTiles = function() {
             if (neighbor && neighbor.isTravelPointTile) queue.push(neighbor);
         }
     }
+    this.wellFormedAssertions();
 }
 
 TravelPointTile.prototype.draw = function() {

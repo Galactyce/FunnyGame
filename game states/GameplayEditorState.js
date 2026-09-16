@@ -273,36 +273,8 @@ GameplayEditorState.prototype.loadLayers = function () {
     ? roomData.enemies.slice()
     : [];
   for (var e = 0; e < roomData.enemies.length; e++) {
-    var enemyData = roomData.enemies[e];
-    if (
-      !enemyData ||
-      typeof enemyData.x !== "number" ||
-      typeof enemyData.y !== "number"
-    )
-      continue;
-    var enemySprite = sprites.enemy;
-    if (
-      enemyData.sprite &&
-      enemyData.sprite.indexOf &&
-      typeof enemyData.sprite === "string"
-    ) {
-      for (var s = 0; s < WorldSettings.blockSprites.length; s++) {
-        var blockSprite = WorldSettings.blockSprites[s];
-        if (
-          blockSprite &&
-          blockSprite.image &&
-          blockSprite.image.src === enemyData.sprite
-        ) {
-          enemySprite = blockSprite;
-          break;
-        }
-      }
-    }
-    var editorEnemy = new Enemy(enemySprite, enemyData.x, enemyData.y);
-    editorEnemy.position = new powerupjs.Vector2(enemyData.x, enemyData.y);
-    editorEnemy.origin = editorEnemy.center;
-    editorEnemy.manageHitboxes(enemySprite);
-    this.editorPlacedEnemies.add(editorEnemy);
+    var editorEnemy = Enemy.fromData(roomData.enemies[e]);
+    if (editorEnemy) this.editorPlacedEnemies.add(editorEnemy);
   }
   // Ensure active room backgrounds are rebuilt whenever editor loads/switches rooms.
   WorldSettings.currentLevel.room.loadBackground();
@@ -800,24 +772,10 @@ GameplayEditorState.prototype.handleInput = function (delta) {
           typeof playingState.enemies.addEnemy === "function"
         ) {
           var enemySpawnPosition = powerupjs.Mouse.position.copy();
-          var runtimeEnemy = new Enemy(
-            selectedBlock.sprite,
-            enemySpawnPosition.x,
-            enemySpawnPosition.y,
-          );
-          runtimeEnemy.position = enemySpawnPosition.copy();
-          runtimeEnemy.origin = runtimeEnemy.center;
-          runtimeEnemy.manageHitboxes(selectedBlock.sprite);
+          var runtimeEnemy = Enemy.create(selectedBlock.sprite, enemySpawnPosition);
           playingState.enemies.addEnemy(runtimeEnemy);
 
-          var editorEnemyPreview = new Enemy(
-            selectedBlock.sprite,
-            enemySpawnPosition.x,
-            enemySpawnPosition.y,
-          );
-          editorEnemyPreview.position = enemySpawnPosition.copy();
-          editorEnemyPreview.origin = editorEnemyPreview.center;
-          editorEnemyPreview.manageHitboxes(selectedBlock.sprite);
+          var editorEnemyPreview = Enemy.create(selectedBlock.sprite, enemySpawnPosition);
           this.editorPlacedEnemies.add(editorEnemyPreview);
 
           if (this.previewEnemy) {

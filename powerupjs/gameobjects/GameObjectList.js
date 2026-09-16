@@ -11,6 +11,21 @@ var powerupjs = (function (powerupjs) {
         this.length = 0; // number of game objects
     }
 
+    GameObjectList.prototype.wellFormed = function () {
+        return powerupjs.GameObject.prototype.wellFormed.call(this) &&
+            Array.isArray(this._gameObjects) &&
+            this.length === this._gameObjects.length &&
+            typeof this.scale === "number" && isFinite(this.scale) && this.scale > 0;
+    };
+
+    GameObjectList.prototype.wellFormedAssertions = function () {
+        var valid = this.wellFormed();
+        if (typeof console !== "undefined" && typeof console.assert === "function") {
+            console.assert(valid, "GameObjectList is not well-formed");
+        }
+        return valid;
+    };
+
  
 
     GameObjectList.prototype.add = function (gameobject) { // add game object to list

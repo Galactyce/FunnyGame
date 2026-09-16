@@ -60,6 +60,20 @@ var powerupjs = (function (powerupjs) {
         this._visible = true; // set visible
     };
 
+    GameObject.prototype.wellFormed = function () {
+        return this.position && this.velocity &&
+            typeof this.layer === "number" && isFinite(this.layer) &&
+            typeof this.id !== "undefined";
+    };
+
+    GameObject.prototype.wellFormedAssertions = function () {
+        var valid = this.wellFormed();
+        if (typeof console !== "undefined" && typeof console.assert === "function") {
+            console.assert(valid, "GameObject is not well-formed");
+        }
+        return valid;
+    };
+
     GameObject.prototype.update = function (delta) { // update game object
         this.position.addTo(this.velocity.multiply(delta)); // update position based on velocity
     };

@@ -13,6 +13,20 @@ function TileField(layer, id) {
 
 TileField.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
+TileField.prototype.wellFormed = function() {
+    return powerupjs.GameObjectList.prototype.wellFormed.call(this) &&
+        typeof this.cellWidth === "number" && isFinite(this.cellWidth) && this.cellWidth > 0 &&
+        typeof this.cellHeight === "number" && isFinite(this.cellHeight) && this.cellHeight > 0;
+};
+
+TileField.prototype.wellFormedAssertions = function() {
+    var valid = this.wellFormed();
+    if (typeof console !== "undefined" && typeof console.assert === "function") {
+        console.assert(valid, "TileField is not well-formed");
+    }
+    return valid;
+};
+
 TileField.prototype.normalizeIndex = function(index) {
     if (!index || isNaN(index.x) || isNaN(index.y)) return null;
     return new powerupjs.Vector2(index.x, index.y);

@@ -1,6 +1,5 @@
-var physicsProto = powerupjs.PhysicsGameObject ? powerupjs.PhysicsGameObject.prototype : null;
-if (physicsProto && !Object.getOwnPropertyDescriptor(physicsProto, "moveSpeed")) {
-    physicsProto.initialize = function() {
+if (typeof Player !== "undefined") {
+    Player.prototype.initialize = function() {
         this.detachBufferTime = 0.2;    // Time in takes to fall off wall after letting go 
         this.jumpKey = [
             powerupjs.Keys && powerupjs.Keys.space,
@@ -16,7 +15,7 @@ if (physicsProto && !Object.getOwnPropertyDescriptor(physicsProto, "moveSpeed"))
         this.wallJumpForce = 300;
     };
 
-    Object.defineProperty(physicsProto, "moveSpeed", { // get/set move speed
+    Object.defineProperty(Player.prototype, "moveSpeed", { // get/set move speed
         get: function() {
             return this._moveSpeed;
         },
@@ -25,7 +24,7 @@ if (physicsProto && !Object.getOwnPropertyDescriptor(physicsProto, "moveSpeed"))
         }
     });
 
-    Object.defineProperty(physicsProto, "jumpForce", { // get/set jump force
+    Object.defineProperty(Player.prototype, "jumpForce", { // get/set jump force
         get: function() {
             return this._jumpForce;
         },
@@ -34,7 +33,7 @@ if (physicsProto && !Object.getOwnPropertyDescriptor(physicsProto, "moveSpeed"))
         }
     });
 
-    Object.defineProperty(physicsProto, "acceleration", { // get/set acceleration multiplier
+    Object.defineProperty(Player.prototype, "acceleration", { // get/set acceleration multiplier
         get: function() {
             return this.accelerationMultiplier;
         },
@@ -43,7 +42,7 @@ if (physicsProto && !Object.getOwnPropertyDescriptor(physicsProto, "moveSpeed"))
         }
     });
 
-    Object.defineProperty(physicsProto, "airResistance", { // get/set air drag
+    Object.defineProperty(Player.prototype, "airResistance", { // get/set air drag
         get: function() {
             return this._airResistance;
         },
@@ -52,7 +51,7 @@ if (physicsProto && !Object.getOwnPropertyDescriptor(physicsProto, "moveSpeed"))
         }
     });
 
-    Object.defineProperty(physicsProto, "grounded", { // get/set grounded state
+    Object.defineProperty(Player.prototype, "grounded", { // get/set grounded state
         get: function() {
             return this._grounded;
         },
@@ -61,7 +60,7 @@ if (physicsProto && !Object.getOwnPropertyDescriptor(physicsProto, "moveSpeed"))
         }
     });
 
-    Object.defineProperty(physicsProto, "onWall", { // get on wall state
+    Object.defineProperty(Player.prototype, "onWall", { // get on wall state
         get: function() {
             if (this.tileLeft)
             return "left";
@@ -72,7 +71,7 @@ if (physicsProto && !Object.getOwnPropertyDescriptor(physicsProto, "moveSpeed"))
         }
     });
 
-    Object.defineProperty(physicsProto, "neutralJumpTime", { // get/set neutral jump time
+    Object.defineProperty(Player.prototype, "neutralJumpTime", { // get/set neutral jump time
         get: function() {
             return this._neutralJumpTime;
         },
@@ -81,13 +80,13 @@ if (physicsProto && !Object.getOwnPropertyDescriptor(physicsProto, "moveSpeed"))
         }
     });
 
-    Object.defineProperty(physicsProto, "tileColliding", { // get tiles currently colliding with player
+    Object.defineProperty(Player.prototype, "tileColliding", { // get tiles currently colliding with player
         get: function() {
             return this.collidingTiles;
         }
     });
 
-    Object.defineProperty(physicsProto, "baseVelocity", { // get/set base velocity
+    Object.defineProperty(Player.prototype, "baseVelocity", { // get/set base velocity
         get: function() {
             return this._baseVelocity;
         },
