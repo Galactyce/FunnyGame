@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1250" viewBox="0 0 1800 1250">
+  <rect width="1800" height="1250" fill="#f8fafc"/>
+  <text x="900" y="60" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#0f172a">FunnyGame Workspace Process Flowchart</text>
+  <text x="900" y="95" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#475569">End-to-end flow from boot to gameplay, editing, room transitions, and persistence</text>
+
+  <rect x="60" y="140" width="1680" height="1040" rx="24" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+
+  <rect x="100" y="180" width="320" height="280" rx="18" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/>
+  <text x="260" y="220" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#1d4ed8">1. Workspace Entry</text>
+  <text x="140" y="255" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• index.html boots the game</text>
+  <text x="140" y="285" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• LAB.js loads engine, UI, and game files</text>
+  <text x="140" y="315" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• Main.js loads sprites &amp; sounds</text>
+  <text x="140" y="345" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• Main.js initializes layers, IDs, and states</text>
+  <text x="140" y="375" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• Game state manager switches to Title</text>
+
+  <rect x="470" y="180" width="360" height="280" rx="18" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="650" y="220" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#7c3aed">2. State Bootstrap</text>
+  <text x="510" y="255" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• TitleMenuState shows level picker</text>
+  <text x="510" y="285" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• Create level / edit level / play level</text>
+  <text x="510" y="315" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• GameplayEditorState handles level building</text>
+  <text x="510" y="345" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• PlayingState runs the actual game loop</text>
+  <text x="510" y="375" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• WorldSettings tracks current level/state</text>
+
+  <rect x="880" y="180" width="360" height="280" rx="18" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+  <text x="1060" y="220" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#047857">3. Runtime Objects</text>
+  <text x="920" y="255" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• Level contains rooms and room index</text>
+  <text x="920" y="285" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• Room owns tile layers, camera bounds, and spawn</text>
+  <text x="920" y="315" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• TileField loads/saves serialized tile data</text>
+  <text x="920" y="345" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• Player handles movement, collision, and respawn</text>
+  <text x="920" y="375" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• TravelPoint/portal objects link rooms</text>
+
+  <rect x="1280" y="180" width="300" height="280" rx="18" fill="#fff7ed" stroke="#f59e0b" stroke-width="2"/>
+  <text x="1430" y="220" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#b45309">4. Persistence Layer</text>
+  <text x="1320" y="255" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• WorldSettings.loadLevels()</text>
+  <text x="1320" y="285" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• window.LEVELS stores level JSON</text>
+  <text x="1320" y="315" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• localStorage.levels persists saves</text>
+  <text x="1320" y="345" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• Editor saves room tiles + spawn + bounds</text>
+  <text x="1320" y="375" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">• Playing state rehydrates runtime state</text>
+
+  <line x1="420" y1="320" x2="470" y2="320" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="830" y1="320" x2="880" y2="320" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="1240" y1="320" x2="1280" y2="320" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <rect x="120" y="515" width="640" height="600" rx="18" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/>
+  <text x="440" y="555" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#1d4ed8">5. Editing Workflow</text>
+  <text x="160" y="595" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">A. Enter editor from Title Menu</text>
+  <text x="160" y="625" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">B. Choose Drawing / Erasing / Editing mode</text>
+  <text x="160" y="655" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">C. Select block from object menu or editing menu</text>
+  <text x="160" y="685" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">D. Add/modify tiles, travel points, and camera bounds</text>
+  <text x="160" y="715" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">E. Save current room data to WorldSettings</text>
+  <text x="160" y="745" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">F. Persist to localStorage.levels as JSON</text>
+  <text x="160" y="790" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="600" fill="#334155">Editor loop:</text>
+  <text x="160" y="825" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">GameplayEditorState → TileField.saveTiles() → Room data → WorldSettings.saveLevels()</text>
+  <text x="160" y="860" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">Room changes are also reflected in PlayingState via loadLevel()</text>
+  <text x="160" y="900" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">Camera bounds and player spawn are room-scoped and saved per room</text>
+
+  <rect x="820" y="515" width="640" height="600" rx="18" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="1140" y="555" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#7c3aed">6. Gameplay Workflow</text>
+  <text x="860" y="595" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">A. Enter Play from Title Menu</text>
+  <text x="860" y="625" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">B. PlayingState loads the selected level and active room</text>
+  <text x="860" y="655" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">C. Player spawns at the room’s saved playerSpawnPos</text>
+  <text x="860" y="685" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">D. Update loop moves the player and camera</text>
+  <text x="860" y="715" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">E. TravelPoint tiles detect overlaps and trigger teleport</text>
+  <text x="860" y="745" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">F. Room switching updates the visible room and camera</text>
+  <text x="860" y="790" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="600" fill="#334155">Gameplay loop:</text>
+  <text x="860" y="825" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">PlayingState.update() → Player movement → Room update → Travel tile check</text>
+  <text x="860" y="860" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">If a portal is entered, switchRoom() loads the destination room and spawn</text>
+  <text x="860" y="900" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1e293b">Return button switches back to the title state</text>
+
+  <line x1="760" y1="815" x2="820" y2="815" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <rect x="640" y="1080" width="520" height="70" rx="14" fill="#fef2f2" stroke="#ef4444" stroke-width="2"/>
+  <text x="900" y="1118" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#b91c1c">Outcome: a visual map of how the workspace boots, edits, plays, and persists game data</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+</svg>
