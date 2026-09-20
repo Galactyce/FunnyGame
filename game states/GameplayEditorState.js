@@ -9,133 +9,6 @@ function GameplayEditorState(layer) {
 
   this.currentRoomDisplay = new powerupjs.Label(
     "Arial",
-    "20px",
-    ID.layer_overlays,
-    0,
-    powerupjs.Color.white,
-  );
-  this.currentRoomDisplay.position = new powerupjs.Vector2(600, 35);
-
-  this.nextRoomButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays);
-  this.nextRoomButton.position = new powerupjs.Vector2(700, 15);
-  this.nextRoomButton.sheetIndex = 1;
-  this.nextRoomButton.ui = true;
-  this.add(this.nextRoomButton);
-
-  this.previousRoomButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays);
-  this.previousRoomButton.position = new powerupjs.Vector2(550, 15);
-  this.previousRoomButton.sheetIndex = 0;
-  this.previousRoomButton.ui = true;
-  this.add(this.previousRoomButton);
-
-  this.extendCamBoundsRight = new DraggableObject(
-    sprites.arrowButtons,
-    ID.layer_overlays,
-    "cam_bounds_right_handle",
-  );
-  this.extendCamBoundsRight.sheetIndex = 1;
-  this.extendCamBoundsRight.origin = this.extendCamBoundsRight.center;
-  this.add(this.extendCamBoundsRight);
-
-  this.extendCamBoundsLeft = new DraggableObject(
-    sprites.arrowButtons,
-    ID.layer_overlays,
-    "cam_bounds_left_handle",
-  );
-  this.extendCamBoundsLeft.sheetIndex = 0;
-  this.extendCamBoundsLeft.origin = this.extendCamBoundsLeft.center;
-  this.add(this.extendCamBoundsLeft);
-
-  this.extendCamBoundsUp = new DraggableObject(
-    sprites.arrowButtons,
-    ID.layer_overlays,
-    "cam_bounds_up_handle",
-  );
-  this.extendCamBoundsUp.sheetIndex = 2;
-  this.extendCamBoundsUp.origin = this.extendCamBoundsUp.center;
-  this.add(this.extendCamBoundsUp);
-
-  this.extendCamBoundsDown = new DraggableObject(
-    sprites.arrowButtons,
-    ID.layer_overlays,
-    "cam_bounds_down_handle",
-  );
-  this.extendCamBoundsDown.sheetIndex = 3;
-  this.extendCamBoundsDown.origin = this.extendCamBoundsDown.center;
-  this.add(this.extendCamBoundsDown);
-
-  this.wasDraggingCameraBoundsHandle = false;
-  this.editingTiles = true;
-  this.previewEnemy = null;
-  this.editorPlacedEnemies = new powerupjs.GameObjectList(ID.layer_objects);
-  this.add(this.editorPlacedEnemies);
-
-  this.editorLayers = new powerupjs.GameObjectList(ID.layer_objects);
-  var field = new TileField();
-  field.editorLayer = 0;
-  this.editorLayers.add(field);
-  this.add(this.editorLayers);
-
-  this.addRoomButton = new LabelledButton(
-    sprites.button_default,
-    "Add Room",
-    "Arial",
-    "20px",
-    ID.layer_overlays,
-  );
-  this.addRoomButton.position = new powerupjs.Vector2(900, 60);
-  this.addRoomButton.ui = true;
-  this.add(this.addRoomButton);
-
-  this.objectMenu = new ObjectMenuGUI(ID.layer_overlays);
-  this.objectMenu.position = new powerupjs.Vector2(400, 600);
-  this.objectMenu.ui = true;
-  this.add(this.objectMenu);
-
-  this.movePageLeftButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays);
-  this.movePageLeftButton.position = new powerupjs.Vector2(350, 685);
-  this.movePageLeftButton.sheetIndex = 0;
-  this.movePageLeftButton.ui = true;
-  this.add(this.movePageLeftButton);
-
-  this.movePageRightButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays);
-  this.movePageRightButton.position = new powerupjs.Vector2(1000, 685);
-  this.movePageRightButton.sheetIndex = 1;
-  this.movePageRightButton.ui = true;
-  this.add(this.movePageRightButton);
-
-  this.editingMenu = new EditingMenuGUI(); // editing menu
-  this.editingMenu.position = new powerupjs.Vector2(400, 600);
-  this.add(this.editingMenu);
-
-  this.musicMenu = new MusicMenuGUI(ID.layer_overlays); // song + event node editor
-  this.musicMenu.position = new powerupjs.Vector2(400, 600);
-  this.musicMenu.visible = false;
-  this.add(this.musicMenu);
-
-  this.musicButton = new LabelledButton(
-    sprites.button_default,
-    "Music",
-    "Arial",
-    "20px",
-    ID.layer_overlays,
-  ); // toggles the music menu
-  this.musicButton.position = new powerupjs.Vector2(900, 115);
-  this.musicButton.ui = true;
-  this.add(this.musicButton);
-
-  this.playButton = new LabelledButton(
-    sprites.button_default,
-    "Return",
-    "Arial",
-    "20px",
-    ID.layer_overlays,
-  ); // button to return to title screen
-  this.playButton.position = new powerupjs.Vector2(120, 95);
-  this.playButton.ui = true;
-  this.add(this.playButton);
-
-  this.playerStartPos = new DraggableObject(
     sprites.portal,
     ID.layer_overlays_2,
     ID.player_spawn,
@@ -191,6 +64,7 @@ function GameplayEditorState(layer) {
   this.swiping = false;
 
   this.loadModeButtons(); // load mode buttons
+  this.buttonManager = new EditorButtonManager(this);
 }
 
 GameplayEditorState.prototype = Object.create(
@@ -313,23 +187,7 @@ GameplayEditorState.prototype.update = function (delta) {
     "Layer: " + (this.currentEditorLayer + 1) + "/" + this.editorLayers.length;
   this.updateEnemyPreview();
 
-  if (this.mode == "Drawing") {
-    this.objectMenu.visible = true;
-    this.editingMenu.visible = false;
-  } else if (this.mode == "Erasing" || this.mode == "Editing") {
-    this.editingMenu.visible = true;
-    this.objectMenu.visible = false;
-  }
-
-  if (this.musicMenu.visible) {
-    this.objectMenu.visible = false;
-    this.editingMenu.visible = false;
-    this.movePageLeftButton.visible = false;
-    this.movePageRightButton.visible = false;
-  } else {
-    this.movePageLeftButton.visible = true;
-    this.movePageRightButton.visible = true;
-  }
+  this.menuManager.update(this.mode);
 
   if (!this.isDraggingCameraBoundsHandle()) {
     this.syncCameraBoundsHandles();
@@ -381,8 +239,7 @@ GameplayEditorState.prototype.drawCameraBoundsOutline = function () {
   var room = WorldSettings.currentLevel && WorldSettings.currentLevel.room;
   if (!room || !room.cameraBounds) return;
 
-  var scale =
-    typeof room.scale === "number" && room.scale !== 0 ? room.scale : 1;
+  var scale = typeof room.scale === "number" && room.scale !== 0 ? room.scale : 1;
   var bounds = room.cameraBounds;
   var scaledBounds = new powerupjs.Rectangle(
     bounds.x * scale,
@@ -398,13 +255,10 @@ GameplayEditorState.prototype.saveLevel = function () {
   var roomData = this.getActiveRoomData();
   if (!Array.isArray(roomData.tiles)) roomData.tiles = [];
   if (!Array.isArray(roomData.enemies)) roomData.enemies = [];
-  this.ensureEditorLayers(
-    Math.max(roomData.tiles.length, this.editorLayers.length),
-  );
+  this.ensureEditorLayers(Math.max(roomData.tiles.length, this.editorLayers.length));
 
   for (var i = 0; i < this.editorLayers.length; i++) {
-    // for each editor layer
-    this.editorLayers.at(i).saveTiles(); // save current editor layer tiles
+    this.editorLayers.at(i).saveTiles();
   }
 
   roomData.enemies = [];
@@ -414,12 +268,11 @@ GameplayEditorState.prototype.saveLevel = function () {
     roomData.enemies.push({
       x: editorEnemy.position.x,
       y: editorEnemy.position.y,
-      sprite:
-        editorEnemy.sprite && editorEnemy.sprite.image
-          ? editorEnemy.sprite.image.src
-          : sprites.enemy && sprites.enemy.image
-            ? sprites.enemy.image.src
-            : "",
+      sprite: editorEnemy.sprite && editorEnemy.sprite.image
+        ? editorEnemy.sprite.image.src
+        : sprites.enemy && sprites.enemy.image
+          ? sprites.enemy.image.src
+          : "",
     });
   }
 
@@ -429,12 +282,11 @@ GameplayEditorState.prototype.saveLevel = function () {
   roomData.eventNodes = Array.isArray(activeRoom.eventNodes)
     ? activeRoom.eventNodes.slice()
     : [];
+
   var spawnPosition = this.playerStartPos.position.copy();
-  // Keep runtime room state in sync so saveLevels does not overwrite spawn with stale values.
   activeRoom.playerStartPos = spawnPosition.copy();
-  // Room refactor: persist spawn marker back to room payload.
-  roomData.playerSpawnPos = { x: spawnPosition.x, y: spawnPosition.y }; // save player spawn position
-  WorldSettings.saveLevels(); // save levels to local storage
+  roomData.playerSpawnPos = { x: spawnPosition.x, y: spawnPosition.y };
+  WorldSettings.saveLevels();
 };
 
 GameplayEditorState.prototype.adjustScale = function (value) {
@@ -645,36 +497,7 @@ GameplayEditorState.prototype.isMouseOverEditorButton = function () {
     if (modeButton.boundingBox.contains(mouseScreen)) return true;
   }
 
-  if (this.objectMenu && this.objectMenu.visible) {
-    if (
-      this.objectMenu.frame &&
-      this.objectMenu.frame.boundingBox &&
-      this.objectMenu.frame.boundingBox.contains(mouseScreen)
-    ) {
-      return true;
-    }
-    for (var bi = 0; bi < this.objectMenu.blockIcons.length; bi++) {
-      var icon = this.objectMenu.blockIcons.at(bi);
-      if (!icon || !icon.visible || !icon.boundingBox) continue;
-      if (icon.boundingBox.contains(mouseScreen)) return true;
-    }
-  }
-
-  if (this.editingMenu && this.editingMenu.visible) {
-    if (
-      this.editingMenu.frame &&
-      this.editingMenu.frame.boundingBox &&
-      this.editingMenu.frame.boundingBox.contains(mouseScreen)
-    ) {
-      return true;
-    }
-    for (var eb = 0; eb < this.editingMenu.buttons.length; eb++) {
-      var editButton = this.editingMenu.buttons.at(eb);
-      if (!editButton || !editButton.visible || !editButton.boundingBox)
-        continue;
-      if (editButton.boundingBox.contains(mouseScreen)) return true;
-    }
-  }
+  if (this.menuManager.isMouseOver(mouseScreen)) return true;
 
   var worldHandles = [
     // camera bounds handles
@@ -832,7 +655,8 @@ GameplayEditorState.prototype.handleInput = function (delta) {
       this.editorLayers.at(this.currentEditorLayer).clear(); // clear current editor layer
   }
 
-  this.handleEditorButtons();
+  this.buttonManager.handleInput();
+  this.menuManager.handleInput();
 
   if (this.isMouseOverEditorButton()) {
     this.editingTiles = false;
@@ -958,87 +782,3 @@ GameplayEditorState.prototype.handleInput = function (delta) {
   this.editingTiles = true;
 };
 
-GameplayEditorState.prototype.handleEditorButtons = function () {
-  for (var i = 0; i < this.modeButtons.length; i++) {
-    var button = this.modeButtons.at(i);
-    if (button.pressed) {
-      this.mode = this.modes[i];
-    }
-  }
-
-  if (this.addRoomButton.pressed) {
-    WorldSettings.currentLevel.addRoom();
-    WorldSettings.currentLevel.currentRoomIndex =
-      WorldSettings.currentLevel.rooms.length - 1;
-    var roomData = this.getActiveRoomData();
-    if (
-      !Array.isArray(roomData.backgrounds) ||
-      roomData.backgrounds.length === 0
-    ) {
-      roomData.backgrounds = [0, 1];
-    }
-    WorldSettings.currentLevel.room.loadBackground();
-    this.loadLayers();
-  }
-
-  if (this.nextRoomButton.pressed) {
-    var currentRoomIndex = WorldSettings.currentLevel.currentRoomIndex;
-    var nextRoomIndex =
-      (currentRoomIndex + 1) % WorldSettings.currentLevel.rooms.length;
-    WorldSettings.currentLevel.currentRoomIndex = nextRoomIndex;
-    this.getActiveRoomData();
-    WorldSettings.currentLevel.room.loadBackground();
-    this.loadLayers();
-  }
-
-  if (this.previousRoomButton.pressed) {
-    var currentRoomIndex = WorldSettings.currentLevel.currentRoomIndex;
-    var previousRoomIndex =
-      (currentRoomIndex - 1 + WorldSettings.currentLevel.rooms.length) %
-      WorldSettings.currentLevel.rooms.length;
-    WorldSettings.currentLevel.currentRoomIndex = previousRoomIndex;
-    this.getActiveRoomData();
-    WorldSettings.currentLevel.room.loadBackground();
-    this.loadLayers();
-  }
-
-  if (this.saveButton.pressed) {
-    this.saveLevel();
-    this.saveButton.text = "Saved!";
-    // setTimeout(this.saveButton.resetText, 5000);
-  }
-
-  if (this.musicButton.pressed) {
-    this.musicMenu.visible = !this.musicMenu.visible;
-  }
-
-  if (this.playButton.pressed) {
-    // if (confirm("Save level before exiting?")) this.saveLevel();
-    powerupjs.GameStateManager.switchTo(ID.game_state_title); // return to title screen
-    WorldSettings.currentState = "title";
-    powerupjs.Camera.position = powerupjs.Vector2.zero; // reset camera position
-  }
-
-  if (this.nextLayerButton.pressed) {
-    this.currentEditorLayer++;
-    if (this.currentEditorLayer >= this.editorLayers.length) {
-      var field = new TileField(); // create new tile field
-      field.editorLayer = this.currentEditorLayer; // set layer index
-      this.editorLayers.add(field); // add tile field to editor layers
-      field.loadTiles(); // load persisted data for this layer if it exists
-    }
-  }
-
-  if (this.previousLayerButton.pressed) {
-    this.currentEditorLayer--;
-    if (this.currentEditorLayer < 0) this.currentEditorLayer = 0;
-  }
-
-  if (this.movePageLeftButton.pressed) {
-    this.objectMenu.pageNumber = this.objectMenu.pageNumber - 1;
-  }
-
-  if (this.movePageRightButton.pressed) {
-    this.objectMenu.pageNumber = this.objectMenu.pageNumber + 1;
-  }
-};
