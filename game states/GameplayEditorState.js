@@ -15,22 +15,14 @@ function GameplayEditorState(layer) {
     powerupjs.Color.white,
   );
   this.currentRoomDisplay.position = new powerupjs.Vector2(600, 35);
-  this.currentRoomDisplay.ui = true;
-  this.add(this.currentRoomDisplay);
 
-  this.nextRoomButton = new powerupjs.Button(
-    sprites.arrowButtons,
-    ID.layer_overlays,
-  );
+  this.nextRoomButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays);
   this.nextRoomButton.position = new powerupjs.Vector2(700, 15);
   this.nextRoomButton.sheetIndex = 1;
   this.nextRoomButton.ui = true;
   this.add(this.nextRoomButton);
 
-  this.previousRoomButton = new powerupjs.Button(
-    sprites.arrowButtons,
-    ID.layer_overlays,
-  );
+  this.previousRoomButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays);
   this.previousRoomButton.position = new powerupjs.Vector2(550, 15);
   this.previousRoomButton.sheetIndex = 0;
   this.previousRoomButton.ui = true;
@@ -73,16 +65,15 @@ function GameplayEditorState(layer) {
   this.add(this.extendCamBoundsDown);
 
   this.wasDraggingCameraBoundsHandle = false;
-
   this.editingTiles = true;
   this.previewEnemy = null;
   this.editorPlacedEnemies = new powerupjs.GameObjectList(ID.layer_objects);
   this.add(this.editorPlacedEnemies);
 
-  this.editorLayers = new powerupjs.GameObjectList(ID.layer_objects); // list of tile fields for editing
-  var field = new TileField(); // create new tile field
-  field.editorLayer = 0; // set layer index
-  this.editorLayers.add(field); // add tile field to editor layers
+  this.editorLayers = new powerupjs.GameObjectList(ID.layer_objects);
+  var field = new TileField();
+  field.editorLayer = 0;
+  this.editorLayers.add(field);
   this.add(this.editorLayers);
 
   this.addRoomButton = new LabelledButton(
@@ -91,32 +82,26 @@ function GameplayEditorState(layer) {
     "Arial",
     "20px",
     ID.layer_overlays,
-  ); // button to add a new room
+  );
   this.addRoomButton.position = new powerupjs.Vector2(900, 60);
   this.addRoomButton.ui = true;
   this.add(this.addRoomButton);
 
-  this.objectMenu = new ObjectMenuGUI(ID.layer_overlays); // object selection menu
+  this.objectMenu = new ObjectMenuGUI(ID.layer_overlays);
   this.objectMenu.position = new powerupjs.Vector2(400, 600);
   this.objectMenu.ui = true;
   this.add(this.objectMenu);
 
-  this.movePageLeftButton = new powerupjs.Button(
-    sprites.arrowButtons,
-    ID.layer_overlays,
-  ); // button to move to previous page of blocks
+  this.movePageLeftButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays);
   this.movePageLeftButton.position = new powerupjs.Vector2(350, 685);
-  this.movePageLeftButton.ui = true;
   this.movePageLeftButton.sheetIndex = 0;
+  this.movePageLeftButton.ui = true;
   this.add(this.movePageLeftButton);
 
-  this.movePageRightButton = new powerupjs.Button(
-    sprites.arrowButtons,
-    ID.layer_overlays,
-  ); // button to move to previous page of blocks
+  this.movePageRightButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays);
   this.movePageRightButton.position = new powerupjs.Vector2(1000, 685);
-  this.movePageRightButton.ui = true;
   this.movePageRightButton.sheetIndex = 1;
+  this.movePageRightButton.ui = true;
   this.add(this.movePageRightButton);
 
   this.editingMenu = new EditingMenuGUI(); // editing menu
@@ -698,6 +683,20 @@ GameplayEditorState.prototype.isMouseOverEditorButton = function () {
     this.extendCamBoundsUp,
     this.extendCamBoundsDown,
   ];
+
+  var activeRoom = WorldSettings.currentLevel && WorldSettings.currentLevel.room;
+  if (activeRoom && Array.isArray(activeRoom.travelPoints)) {
+    for (var tp = 0; tp < activeRoom.travelPoints.length; tp++) {
+      var travelPoint = activeRoom.travelPoints[tp];
+      if (!travelPoint || !travelPoint.handles) continue;
+      for (var side in travelPoint.handles) {
+        if (travelPoint.handles.hasOwnProperty(side)) {
+          worldHandles.push(travelPoint.handles[side]);
+        }
+      }
+    }
+  }
+
   for (var h = 0; h < worldHandles.length; h++) {
     // for each camera bounds handle
     var handle = worldHandles[h]; // get handle
@@ -705,6 +704,94 @@ GameplayEditorState.prototype.isMouseOverEditorButton = function () {
     if (handle.boundingBox.contains(mouseWorld)) return true; // return true if mouse is over handle
   }
 
+  return false;
+};
+
+GameplayEditorState.prototype.handleDrawingClick = function () {
+  var selectedBlock = WorldSettings.currentBlock;
+  var isEnemyPlacement = selectedBlock && selectedBlock.tab === "enemies";
+  var isTravelPointPlacement = selectedBlock && selectedBlock.objectType === "travelPoint";
+
+  if (isEnemyPlacement) {
+    var playingState = powerupjs.GameStateManager.get(ID.game_state_playing);
+    if (playingState && playingState.enemies && typeof playingState.enemies.addEnemy === "function") {
+      var enemySpawnPosition = powerupjs.Mouse.position.copy();
+      playingState.enemies.addEnemy(Enemy.create(selectedBlock.sprite, enemySpawnPosition));
+      this.editorPlacedEnemies.add(Enemy.create(selectedBlock.sprite, enemySpawnPosition));
+      if (this.previewEnemy) this.previewEnemy.visible = false;
+    }
+    return true;
+  }
+
+  if (isTravelPointPlacement) {
+    this.objectMenu.placeTravelPointFromMenu(powerupjs.Mouse.position);
+    return true;
+  }
+
+  var field = this.editorLayers.at(this.currentEditorLayer);
+  if (field.hasTileAt(powerupjs.Mouse.position)) {
+    field.removeTileAt(powerupjs.Mouse.position);
+  }
+  field.addTileAt(field.getTileByMouse(powerupjs.Mouse.position), "#", selectedBlock);
+  return false;
+};
+
+GameplayEditorState.prototype.handleErasingClick = function () {
+  var field = this.editorLayers.at(this.currentEditorLayer);
+  field.removeTileAt(powerupjs.Mouse.position);
+
+  for (var e = this.editorPlacedEnemies.length - 1; e >= 0; e--) {
+    var editorEnemy = this.editorPlacedEnemies.at(e);
+    if (!editorEnemy || !editorEnemy.position) continue;
+    if (editorEnemy.boundingBox.contains(powerupjs.Mouse.position)) {
+      this.editorPlacedEnemies.remove(editorEnemy);
+      break;
+    }
+  }
+
+  var activeRoom = WorldSettings.currentLevel && WorldSettings.currentLevel.room;
+  if (!activeRoom || !Array.isArray(activeRoom.travelPoints)) return;
+  for (var t = activeRoom.travelPoints.length - 1; t >= 0; t--) {
+    var travelPoint = activeRoom.travelPoints[t];
+    if (travelPoint && travelPoint.boundingBox.contains(powerupjs.Mouse.position)) {
+      activeRoom.removeTravelPoint(travelPoint);
+      break;
+    }
+  }
+};
+
+GameplayEditorState.prototype.handleEditingClick = function () {
+  var field = this.editorLayers.at(this.currentEditorLayer);
+  var tile = field.getTileAt(powerupjs.Mouse.position);
+  if (tile != null) this.editingMenu.selectedObj = tile;
+
+  for (var e = this.editorPlacedEnemies.length - 1; e >= 0; e--) {
+    var editorEnemy = this.editorPlacedEnemies.at(e);
+    if (!editorEnemy || !editorEnemy.position) continue;
+    if (editorEnemy.boundingBox.contains(powerupjs.Mouse.position)) {
+      this.editingMenu.selectedObj = editorEnemy;
+      break;
+    }
+  }
+
+  var activeRoom = WorldSettings.currentLevel && WorldSettings.currentLevel.room;
+  if (!activeRoom || !Array.isArray(activeRoom.travelPoints)) return;
+  for (var t = 0; t < activeRoom.travelPoints.length; t++) {
+    var travelPoint = activeRoom.travelPoints[t];
+    if (travelPoint && travelPoint.boundingBox.contains(powerupjs.Mouse.position)) {
+      this.editingMenu.selectedObj = travelPoint;
+      break;
+    }
+  }
+};
+
+GameplayEditorState.prototype.handleWorldEditClick = function () {
+  if (this.mode === "Drawing") return this.handleDrawingClick();
+  if (this.mode === "Erasing") {
+    this.handleErasingClick();
+    return false;
+  }
+  if (this.mode === "Editing") this.handleEditingClick();
   return false;
 };
 
@@ -756,11 +843,12 @@ GameplayEditorState.prototype.handleInput = function (delta) {
       (this.swiping && powerupjs.Mouse.left.down)) &&
     this.editingTiles
   ) {
-    // place/edit once per click
-
+    if (this.handleWorldEditClick()) return;
+    /*
     if (this.mode == "Drawing") {
       var selectedBlock = WorldSettings.currentBlock;
       var isEnemyPlacement = selectedBlock && selectedBlock.tab === "enemies";
+      var isTravelPointPlacement = selectedBlock && selectedBlock.objectType === "travelPoint";
 
       if (isEnemyPlacement) {
         var playingState = powerupjs.GameStateManager.get(
@@ -782,6 +870,11 @@ GameplayEditorState.prototype.handleInput = function (delta) {
             this.previewEnemy.visible = false;
           }
         }
+        return;
+      }
+
+      if (isTravelPointPlacement) {
+        this.objectMenu.placeTravelPointFromMenu(powerupjs.Mouse.position);
         return;
       }
 
@@ -809,6 +902,17 @@ GameplayEditorState.prototype.handleInput = function (delta) {
           }
         }
       }
+
+      var activeRoom = WorldSettings.currentLevel && WorldSettings.currentLevel.room;
+      if (activeRoom && Array.isArray(activeRoom.travelPoints)) {
+        for (var t = activeRoom.travelPoints.length - 1; t >= 0; t--) {
+          var travelPoint = activeRoom.travelPoints[t];
+          if (travelPoint && travelPoint.boundingBox.contains(powerupjs.Mouse.position)) {
+            activeRoom.removeTravelPoint(travelPoint);
+            break;
+          }
+        }
+      }
     } else if (this.mode == "Editing") {
       var field = this.editorLayers.at(this.currentEditorLayer); // get current editor layer
       var tile = field.getTileAt(powerupjs.Mouse.position); // get tile at mouse position
@@ -826,7 +930,19 @@ GameplayEditorState.prototype.handleInput = function (delta) {
           }
         }
       }
+
+      var editableRoom = WorldSettings.currentLevel && WorldSettings.currentLevel.room;
+      if (editableRoom && Array.isArray(editableRoom.travelPoints)) {
+        for (var tp = 0; tp < editableRoom.travelPoints.length; tp++) {
+          var editableTravelPoint = editableRoom.travelPoints[tp];
+          if (editableTravelPoint && editableTravelPoint.boundingBox.contains(powerupjs.Mouse.position)) {
+            this.editingMenu.selectedObj = editableTravelPoint;
+            break;
+          }
+        }
+      }
     }
+    */
   }
 
   if (powerupjs.Mouse.middle.down) {

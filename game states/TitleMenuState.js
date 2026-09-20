@@ -1,7 +1,7 @@
 function TitleMenuState(layer) {
     powerupjs.GameObjectList.call(this, layer);
 
-    this.levelName = new powerupjs.Label("Arial", "40px")
+    this.levelName = new powerupjs.Label("Arial", "40px");
     this.levelName.position = new powerupjs.Vector2(powerupjs.Game.screenCenter.x, 250);
     this.add(this.levelName);
 
@@ -16,7 +16,7 @@ function TitleMenuState(layer) {
     this.addLevelButton = new powerupjs.Button(sprites.plusButton);
     this.addLevelButton.position = new powerupjs.Vector2(powerupjs.Game.screenCenter.x + 280, 250)
     this.addLevelButton.origin = this.addLevelButton.center;
-    this.add(this.addLevelButton)
+    this.add(this.addLevelButton);
 
     this.editorButton = new LabelledButton(sprites.button, "Edit", "Arial", "20px", ID.layer_overlays); // editor button
     this.editorButton.position = new powerupjs.Vector2(powerupjs.Game.screenCenter.x, 500);
@@ -66,7 +66,7 @@ TitleMenuState.prototype.handleInput = function (delta) {
         WorldSettings.saveLevels(); // Save updated level name
     }
     if (WorldSettings.numberOfLevels > 0) {
-        this.levelName.text = WorldSettings.levels[this.levelSelectedIndex].name
+        this.levelName.text = WorldSettings.levels[this.levelSelectedIndex].name;
         this.levelName.origin = this.levelName.center;
         this.leftArrow.position = new powerupjs.Vector2(this.levelName.position.x - this.leftArrow.width - this.levelName.width / 2, this.levelName.position.y);
         this.rightArrow.position = new powerupjs.Vector2(this.levelName.position.x + this.rightArrow.width + this.levelName.width / 2, this.levelName.position.y);
@@ -79,4 +79,4 @@ TitleMenuState.prototype.handleInput = function (delta) {
         }
         
     }
-} 
+};

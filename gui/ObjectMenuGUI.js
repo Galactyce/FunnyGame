@@ -84,25 +84,30 @@ ObjectMenuGUI.prototype.updateTabVisualState = function () {
 ObjectMenuGUI.prototype.populateBlocks = function () {
     if (this.blocks.length > 0) return;
 
-    for (var i = 0; i < WorldSettings.blockSprites.length; i++) { // for each block sprite
-        var block = WorldSettings.blockSprites[i]; // get block sprite
+    var menuEntries = (WorldSettings.blockSprites || []).concat(WorldSettings.editorObjects || []);
+    for (var i = 0; i < menuEntries.length; i++) { // for each block sprite or editor object
+        var block = menuEntries[i];
+        var blockSprite = block.sprite || block;
+        if (!block.objectType && (blockSprite === sprites.portal || blockSprite === sprites.warp)) continue;
         var blockTab = this.getBlockTab(block);
-        if (block.isAnimated) {
+        if (blockSprite.isAnimated) {
             var animatedPiece = new powerupjs.AnimatedGameObject(); // create sprite game object
-            animatedPiece.loadAnimation(block, "moving");
+            animatedPiece.loadAnimation(blockSprite, "moving");
             animatedPiece.ui = true; // set as UI element
             animatedPiece.playAnimation("moving");
             animatedPiece.origin = animatedPiece.center; // set origin to center
             animatedPiece.tab = blockTab;
+            animatedPiece.objectType = block.objectType;
             this.blocks.add(animatedPiece);
         }
         else {
-            for (var l = 0; l < block.nrSheetElements; l++) { // for each variation of the block
-                var staticPiece = new powerupjs.SpriteGameObject(block); // create sprite game object
+            for (var l = 0; l < blockSprite.nrSheetElements; l++) { // for each variation of the block
+                var staticPiece = new powerupjs.SpriteGameObject(blockSprite); // create sprite game object
                 staticPiece.ui = true; // set as UI element
                 staticPiece.sheetIndex = l; // set sheet index
                 staticPiece.origin = staticPiece.center; // set origin to center
                 staticPiece.tab = blockTab;
+                staticPiece.objectType = block.objectType;
                 this.blocks.add(staticPiece);
             }
         }
@@ -181,6 +186,13 @@ ObjectMenuGUI.prototype.placeEnemyFromMenu = function (sprite, position) {
     enemy.origin = enemy.center;
     enemy.manageHitboxes(sprite);
     playingState.enemies.addEnemy(enemy);
+};
+
+ObjectMenuGUI.prototype.placeTravelPointFromMenu = function (position) {
+    if (!position || !WorldSettings.currentLevel || !WorldSettings.currentLevel.room) return;
+
+    var travelPoint = new TravelPoint(position.copy ? position.copy() : new powerupjs.Vector2(position.x, position.y));
+    WorldSettings.currentLevel.room.addTravelPoint(travelPoint);
 };
 
 ObjectMenuGUI.prototype.handleInput = function (delta) {

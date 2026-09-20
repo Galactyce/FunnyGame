@@ -21,6 +21,7 @@ powerupjs.Game.loadAssets = function () {
     sprites.plusButton = loadSprite("plusButton.png")
     sprites.minusButton = loadSprite("minusButton.png")
     sprites.crosshair = loadSprite("crosshair.png")
+    sprites.selectorCircle = loadSprite("selectorCircle.png")
     sprites.blank = loadSprite("blank.png")
     sprites.boundary = loadSprite("boundaryTile.png")
     sprites.player = {
@@ -100,6 +101,9 @@ powerupjs.Game.initialize = function () {
         sprites.portal,
         sprites.enemy
     ]
+    WorldSettings.editorObjects = [
+        { sprite: sprites.warp, tab: "tiles", objectType: "travelPoint", nrSheetElements: sprites.warp.nrSheetElements }
+    ];
     WorldSettings.backgrounds = [
         sprites.cyberBackground,
         sprites.cyberForeground

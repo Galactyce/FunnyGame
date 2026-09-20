@@ -1,6 +1,8 @@
 function TravelPoint(position) {
-    DraggableObject.call(this, sprites.blank, ID.layer_objects, "travel_point");
-    this.position = position;
+    var point = position || new powerupjs.Vector2(0, 0);
+    powerupjs.StretchyRectangle.call(this, point.x - 32, point.y - 32, 64, 64, 16, 16);
+    this.layer = ID.layer_objects;
+    this.id = "travel_point";
     this.targetTravelPoint = null;
     this.currentRoomIndex = null; // will be set when the travel point is added to a room
     this.targetID = 0; // ID of the target travel point in the target room
@@ -10,7 +12,20 @@ function TravelPoint(position) {
     this.roomID = null; // will be set when the travel point is added to a room
 }
 
-TravelPoint.prototype = Object.create(DraggableObject.prototype);
+TravelPoint.prototype = Object.create(powerupjs.StretchyRectangle.prototype);
+TravelPoint.prototype.constructor = TravelPoint;
+
+Object.defineProperty(TravelPoint.prototype, "position", {
+    get: function () {
+        return new powerupjs.Vector2(this.x + this.width / 2, this.y + this.height / 2);
+    },
+    set: function (value) {
+        if (!value) return;
+        this.x = value.x - this.width / 2;
+        this.y = value.y - this.height / 2;
+        this.updateHandlePositions();
+    }
+});
 
 TravelPoint.prototype.wellFormedAssertions = function() {
     console.assert(this.targetID > 0, "TargetID should not be negative or 0");
@@ -21,8 +36,11 @@ TravelPoint.prototype.wellFormedAssertions = function() {
 };
 
 TravelPoint.prototype.handleInput = function(delta) {
-    DraggableObject.prototype.handleInput.call(this, delta);
     if (WorldSettings.currentState !== "editing") return;
+    powerupjs.StretchyRectangle.prototype.handleInput.call(this, delta);
+
+    var editorState = powerupjs.GameStateManager.get(ID.game_state_editor);
+    if (!editorState || editorState.mode !== "Editing") return;
     if (!powerupjs.Mouse.left.pressed) return;
     if (!this.boundingBox.contains(powerupjs.Mouse.position)) return;
 
@@ -46,7 +64,7 @@ TravelPoint.prototype.handleInput = function(delta) {
 }
 
 TravelPoint.prototype.update = function(delta) {
-    DraggableObject.prototype.update.call(this, delta);
+    this.updateHandlePositions();
     if (!this.targetTravelPoint && this.targetID > 0 && WorldSettings.currentLevel && typeof WorldSettings.currentLevel.linkTravelPoints === 'function') {
         WorldSettings.currentLevel.linkTravelPoints();
     }
@@ -97,17 +115,24 @@ TravelPoint.prototype.update = function(delta) {
 }
 
 TravelPoint.prototype.draw = function() {
-    powerupjs.SpriteGameObject.prototype.draw.call(this);
+    if (WorldSettings.currentState === "editing") {
+        powerupjs.StretchyRectangle.prototype.draw.call(this, "purple");
+    }
+    else {
+        powerupjs.Rectangle.prototype.draw.call(this, "purple");
+    }
     if (WorldSettings.currentState === "editing") {
         this.IDLabel.text = "ID: " + this.id + " -> " + this.targetID;
         this.IDLabel.position = new powerupjs.Vector2(this.screenPosition.x - 20, this.screenPosition.y - 30);
         this.IDLabel.draw();
     }
 
-    if (!this.hitbox) return;
-        this.boundingBox.draw("purple");
-    
 }
+
+TravelPoint.prototype.manageHitboxes = function() {
+    this.updateHandlePositions();
+    this.hitbox = this.boundingBox;
+};
 
 Object.defineProperty(TravelPoint.prototype, "leftSide", {
     get: function() {

@@ -161,6 +161,8 @@ WorldSettingsSingleton.prototype.saveLevels = function () { // save levels to lo
                             x: point.position.x,
                             y: point.position.y
                         },
+                        width: point.width,
+                        height: point.height,
                         targetRoomIndex: point.targetRoomIndex,
                         targetPosition: point.targetPosition ? {
                             x: point.targetPosition.x,
@@ -238,6 +240,14 @@ WorldSettingsSingleton.prototype.manageLevelProperties = function(level) { // ma
             if (typeof pointData.position.x !== 'number' || typeof pointData.position.y !== 'number') continue;
 
             var travelPoint = new TravelPoint(new powerupjs.Vector2(pointData.position.x, pointData.position.y));
+            if (typeof pointData.width === 'number' && typeof pointData.height === 'number') {
+                travelPoint.setBounds(
+                    pointData.position.x - pointData.width / 2,
+                    pointData.position.y - pointData.height / 2,
+                    pointData.width,
+                    pointData.height
+                );
+            }
             if (typeof pointData.id === 'number') travelPoint.id = pointData.id;
             travelPoint.targetID = typeof pointData.targetID === 'number' ? pointData.targetID : 0;
 

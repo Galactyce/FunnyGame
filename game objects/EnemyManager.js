@@ -14,7 +14,6 @@ EnemyManager.prototype.syncWorldSettings = function () {
 };
 
 EnemyManager.prototype.addEnemy = function (enemy) {
-    console.log("Adding enemy:", enemy);
     if (!enemy || !(enemy instanceof Enemy)) return;
     if (enemy.parent && enemy.parent !== this) {
         enemy.parent.remove(enemy);
@@ -29,10 +28,11 @@ EnemyManager.prototype.removeEnemy = function (enemy) {
     this.syncWorldSettings();
 };
 
-EnemyManager.prototype.syncFromRoom = function (room) { // Converts enemies from the room's tile fields into the EnemyManager's list
+EnemyManager.prototype.syncFromRoom = function (room) {
+    // Move enemies from room tile fields into the dedicated manager.
     this.clear();
-    if (!room || !room.tileFields) { // No room or no tile fields, nothing to sync from
-        this.syncWorldSettings(); // Sync even if there's no room or tile fields
+    if (!room || !room.tileFields) {
+        this.syncWorldSettings();
         return;
     }
 

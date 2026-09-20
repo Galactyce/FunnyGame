@@ -23,7 +23,7 @@ function PlayingState(layer) {
     this.add(this.returnButton);
     this.add(this.player);
     this.add(this.tileFields); // add tile fields to game state
-    this.currentLevel;
+    this.currentLevel = null;
 
 
     this.currentRoomDisplay = new powerupjs.Label("Arial", "20px", ID.layer_overlays, 0, powerupjs.Color.white);
@@ -101,61 +101,80 @@ PlayingState.prototype.placeCameraAtSpawn = function () {
     powerupjs.Camera.manageBoundaries(this.currentLevel.room.cameraBounds); // Clamp the camera to the room bounds.
 }
 
-// Load the current room data, place the player, and optionally re-center the camera.
-PlayingState.prototype.loadLevel = function (spawnOverride, alignCameraToSpawn) {
-    var spawn = powerupjs.GameStateManager.get(ID.game_state_editor).find(ID.player_spawn); // Get the editor's spawn marker object.
+PlayingState.prototype.resolveSpawnPosition = function (spawnOverride) {
+    var editorState = powerupjs.GameStateManager.get(ID.game_state_editor);
+    var spawnMarker = editorState.find(ID.player_spawn);
+    var levelData = window.LEVELS[WorldSettings.currentLevelIndex];
+    var spawnData = levelData.room.playerSpawnPos;
 
-    var level = window.LEVELS[WorldSettings.currentLevelIndex]; // Access the serialized level data for the current level.
-    var spawnData = level.room.playerSpawnPos; // Read the room's spawn coordinate from the level data.
-    if (spawnData.x == null) {
-        spawn.position = new powerupjs.Vector2(400, 400); // Fall back to a safe default position if no spawn exists.
-    }
-    else {
-        spawn.position = new powerupjs.Vector2(spawnData.x, spawnData.y); // Apply the room's saved spawn position.
-    }
+    spawnMarker.position = spawnData.x == null
+        ? new powerupjs.Vector2(400, 400)
+        : new powerupjs.Vector2(spawnData.x, spawnData.y);
 
-    var playerStartPosition = spawn.position.copy();
-    if (spawnOverride && typeof spawnOverride.x === 'number' && typeof spawnOverride.y === 'number') {
-        playerStartPosition = spawnOverride.copy ? spawnOverride.copy() : new powerupjs.Vector2(spawnOverride.x, spawnOverride.y); // Use a teleport override when one is provided.
+    if (spawnOverride && typeof spawnOverride.x === "number" && typeof spawnOverride.y === "number") {
+        return spawnOverride.copy
+            ? spawnOverride.copy()
+            : new powerupjs.Vector2(spawnOverride.x, spawnOverride.y);
     }
 
-    this.player.position = playerStartPosition; // Place the player at the spawn point or override.
-    this.player.spawnPosition = this.player.position.copy(); // Store the spawn point as the player's reset position.
-    this.player.adjustHitbox(); // Recalculate the hitbox to match the sprite size.
-    this.player.scale = WorldSettings.currentLevel.room.scale; // Match the player's scale to the room scale.
-    this.player.currentLevelIndex = WorldSettings.currentLevelIndex; // Track which level the player is currently in.
-    this.player.initialize(); // Reinitialize the player after changing its position and scale.
-    WorldSettings.player = this.player; // Keep the global player reference in sync.
-    this.currentLevel = WorldSettings.currentLevel; // Point the state at the active level object.
-    WorldSettings.currentLevel.room.loadTiles(); // Reload the tiles for the currently active room.
-    this.syncRoomVisibility(); // Ensure only the active room is visible.
+    return spawnMarker.position.copy();
+};
+
+PlayingState.prototype.resetPlayerAt = function (position) {
+    this.player.position = position;
+    this.player.spawnPosition = this.player.position.copy();
+    this.player.adjustHitbox();
+    this.player.scale = WorldSettings.currentLevel.room.scale;
+    this.player.currentLevelIndex = WorldSettings.currentLevelIndex;
+    this.player.initialize();
+    WorldSettings.player = this.player;
+};
+
+PlayingState.prototype.loadRoomEnemies = function () {
+    var room = this.currentLevel && this.currentLevel.room;
+    var roomData = room && typeof room.getRoomData === "function"
+        ? room.getRoomData()
+        : null;
+    var roomEnemyData = Array.isArray(room && room.enemies)
+        ? room.enemies
+        : roomData && Array.isArray(roomData.enemies)
+            ? roomData.enemies
+            : [];
 
     this.enemies.clear();
-    var room = this.currentLevel && this.currentLevel.room;
-    var roomData = this.currentLevel && this.currentLevel.room && this.currentLevel.room.getRoomData ? this.currentLevel.room.getRoomData() : null;
-    var roomEnemyData = Array.isArray(room && room.enemies) ? room.enemies : (roomData && Array.isArray(roomData.enemies) ? roomData.enemies : []);
-    if (Array.isArray(roomEnemyData)) { // Spawn enemies defined in the room's enemy data array.
-        for (var e = 0; e < roomEnemyData.length; e++) {
-            var spawnedEnemy = Enemy.fromData(roomEnemyData[e]);
-            if (spawnedEnemy) this.enemies.addEnemy(spawnedEnemy);
-        }
+    for (var i = 0; i < roomEnemyData.length; i++) {
+        var spawnedEnemy = Enemy.fromData(roomEnemyData[i]);
+        if (spawnedEnemy) this.enemies.addEnemy(spawnedEnemy);
     }
-    if (room && room.tileFields) {  // Move any enemies from the room's tile fields into the centralized enemy manager.
-        for (var i = 0; i < room.tileFields.length; i++) {
-            var field = room.tileFields.at(i);
-            if (!field) continue;
-            for (var j = 0; j < field.length; j++) {
-                var obj = field.at(j);
-                if (obj instanceof Enemy) {
-                    field.remove(obj);
-                    this.enemies.addEnemy(obj);
-                }
-            }
-        }
-    }
-    this.enemies.syncWorldSettings();
 
-    // Music, event nodes and enemy attacks are set up once everything has spawned.
+    this.moveTileEnemiesToManager(room);
+    this.enemies.syncWorldSettings();
+};
+
+PlayingState.prototype.moveTileEnemiesToManager = function (room) {
+    if (!room || !room.tileFields) return;
+
+    for (var i = 0; i < room.tileFields.length; i++) {
+        var field = room.tileFields.at(i);
+        if (!field) continue;
+
+        for (var j = field.length - 1; j >= 0; j--) {
+            var enemy = field.at(j);
+            if (!(enemy instanceof Enemy)) continue;
+            field.remove(enemy);
+            this.enemies.addEnemy(enemy);
+        }
+    }
+};
+
+// Load the current room data, place the player, and optionally re-center the camera.
+PlayingState.prototype.loadLevel = function (spawnOverride, alignCameraToSpawn) {
+    var playerStartPosition = this.resolveSpawnPosition(spawnOverride);
+    this.resetPlayerAt(playerStartPosition);
+    this.currentLevel = WorldSettings.currentLevel;
+    this.currentLevel.room.loadTiles();
+    this.syncRoomVisibility();
+    this.loadRoomEnemies();
     this.applyRoomMusic(WorldSettings.currentLevelIndex, this.currentLevel.currentRoomIndex);
 
     if (alignCameraToSpawn) {

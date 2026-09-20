@@ -15,14 +15,13 @@ function Room(roomID) {
     this.scale = 1;
     this.song = ""; // key into the global sounds object
     this.eventNodes = []; // { id, start, end, rhythm } definitions for this room's song
-    this.add(this.tileFields)
+    this.add(this.tileFields);
     // Scratch/original bounds used by scaling workflows in the editor.
     this.originalBounds;
     this.travelPoints = []; // room travel connections
 }
 
 Room.prototype = Object.create(powerupjs.GameObjectList.prototype);
-
 
 Room.prototype.wellFormed = function () {
     return typeof this.roomID === "number" && isFinite(this.roomID) && this.roomID >= 0 &&
@@ -61,6 +60,17 @@ Room.prototype.addTravelPoint = function(travelPoint) {
     }
 
     assertRoomWellFormed(this);
+}
+
+Room.prototype.removeTravelPoint = function(travelPoint) {
+    if (!travelPoint || !Array.isArray(this.travelPoints)) return;
+    var index = this.travelPoints.indexOf(travelPoint);
+    if (index < 0) return;
+    this.travelPoints.splice(index, 1);
+    this.remove(travelPoint);
+    if (WorldSettings.currentLevel && typeof WorldSettings.currentLevel.linkTravelPoints === 'function') {
+        WorldSettings.currentLevel.linkTravelPoints();
+    }
 }
 
 
@@ -126,20 +136,19 @@ Room.prototype.loadTiles = function() {
     if (!roomData) return;
 
     // Rebuild tile field game objects from serialized room tile-layer strings.
-    this.tileFields.clear()
+    this.tileFields.clear();
     // Keep a local reference to serialized tile layers for room-level operations.
     this.tiles = roomData.tiles;
     this.enemies = Array.isArray(roomData.enemies) ? roomData.enemies.slice() : [];
     // Keep camera bounds pointer aligned with room JSON data.
-    this.cameraBounds = roomData.cameraBounds
+    this.cameraBounds = roomData.cameraBounds;
     for (var i = 0; i < roomData.tiles.length; i++) { // for each tile layer
         var field = new TileField(); // create new tile field
         field.editorLayer = i; // set layer index
         field.loadTiles();  // load tiles for the layer
         this.tileFields.add(field); // add tile field to list
-    };
+    }
     assertRoomWellFormed(this);
-    console.log(this.tileFields)
 }
 
 Room.prototype.scaleCameraBounds = function() {
@@ -148,14 +157,14 @@ Room.prototype.scaleCameraBounds = function() {
     if (!roomData) return;
 
     // Preserve expected editor behavior from previous implementation.
-    this.originalBounds = new powerupjs.Rectangle(-500, -400, 3000, 1400)
+    this.originalBounds = new powerupjs.Rectangle(-500, -400, 3000, 1400);
     // Persist edited camera bounds back into canonical room data.
     roomData.cameraBounds = this.cameraBounds;
     
 }
 
 Room.prototype.update = function(delta) {
-    powerupjs.GameObjectList.prototype.update.call(this, delta)
+    powerupjs.GameObjectList.prototype.update.call(this, delta);
     // Re-read room data each frame in case editor tools mutated active level data.
     var roomData = this.getRoomData();
     if (!roomData) return;
