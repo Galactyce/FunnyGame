@@ -28,7 +28,7 @@ var powerupjs = (function (powerupjs) {
 
     // Set up the canvas element and resize handling for the game window.
     Canvas2D_Singleton.prototype.initialize = function (divName, canvasName) {
-        if (!document || !document.getElementById) {
+        if (typeof document === "undefined" || !document.getElementById) {
             console.error('Canvas2D.initialize: document is unavailable.');
             return false;
         }
@@ -98,11 +98,11 @@ var powerupjs = (function (powerupjs) {
         var offset = powerupjs.Vector2.zero; // calculate canvas offset
         if (gameCanvas.offsetParent) { // traverse offset parents
             do {
-                offset.x += gameCanvas.offsetLeft; // accumulate left offset
-                offset.y += gameCanvas.offsetTop; // accumulate top offset
-            } while ((gameCanvas = gameCanvas.offsetParent)); // move to parent
+                offset.x += gameCanvas.offsetLeft;
+                offset.y += gameCanvas.offsetTop;
+            } while ((gameCanvas = gameCanvas.offsetParent)); 
         }
-        powerupjs.Canvas2D._canvasOffset = offset; // store canvas offset
+        powerupjs.Canvas2D._canvasOffset = offset; 
     };
 
     // Draw a sprite to the canvas with optional mirroring, rotation, scaling, and pixel snapping.
@@ -191,7 +191,7 @@ var powerupjs = (function (powerupjs) {
         var canvasScale = this.scale;
         this._canvasContext.save();
         this._canvasContext.scale(canvasScale.x, canvasScale.y);
-        this._canvasContext.strokeStyle = typeof color !== 'undefined' ? color : "blue"
+        this._canvasContext.strokeStyle = typeof color !== 'undefined' ? color : "blue";
         this._canvasContext.strokeRect(x, y, width, height);
         this._canvasContext.restore();
     };
@@ -206,7 +206,7 @@ var powerupjs = (function (powerupjs) {
         this._canvasContext.arc(x, y, radius, 0, 2 * Math.PI, false);
         this._canvasContext.stroke();
         this._canvasContext.restore();
-    }
+    };
 
     powerupjs.Canvas2D = new Canvas2D_Singleton();
 

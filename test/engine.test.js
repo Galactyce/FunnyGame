@@ -251,6 +251,7 @@ function loadGameplayScripts() {
     'powerupjs/gameobjects/SpriteGameObject.js',
     'powerupjs/gameobjects/AnimatedGameObject.js',
     'powerupjs/gameobjects/PhysicsGameObject.js',
+    'game objects/CharacterController.js',
     'powerupjs/gui/Label.js',
     'powerupjs/Camera.js',
     'powerupjs/GameStateManager.js',

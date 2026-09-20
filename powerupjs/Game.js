@@ -19,7 +19,7 @@ var powerupjs = (function (powerupjs) {
         this._size = null;
         this._spritesStillLoading = 0;
         this._totalSprites = 0;
-        this.savedDate = Date.now()
+        this.savedDate = Date.now();
     }
 
     Object.defineProperty(Game_Singleton.prototype, "totalTime",
@@ -69,31 +69,40 @@ var powerupjs = (function (powerupjs) {
         startGame();
     };
 
-    Game_Singleton.prototype.initialize = function () {
-    };
+    Game_Singleton.prototype.initialize = function () {};
 
-    Game_Singleton.prototype.loadAssets = function () {
-    };
+    Game_Singleton.prototype.loadAssets = function () {};
+
     Game_Singleton.prototype.assetLoadingLoop = function () {
         powerupjs.Canvas2D.clear(); // clear canvas
+        powerupjs.Canvas2D.drawText("Loading Assets...", powerupjs.Vector2.zero, powerupjs.Vector2.zero, 
+            powerupjs.Color.white, "left", "Arial", "30px"); // draw loading text
 
-        powerupjs.Canvas2D.drawText("Loading Assets...", powerupjs.Vector2.zero, powerupjs.Vector2.zero, "white", "left", "Arial", "30px"); // draw loading text
-        powerupjs.Canvas2D.drawText(Math.round((powerupjs.Game._totalSprites - powerupjs.Game._spritesStillLoading) /
-            powerupjs.Game._totalSprites * 100) + "%"); // draw loading percentage
+        var loadingPercentage = powerupjs.Game._totalSprites === 0
+            ? 100
+            : Math.round((powerupjs.Game._totalSprites - powerupjs.Game._spritesStillLoading) /
+                powerupjs.Game._totalSprites * 100);
+        powerupjs.Canvas2D.drawText(loadingPercentage + "%"); // draw loading percentage
 
         if (powerupjs.Game._spritesStillLoading > 0) // check if sprites are still loading
-            requestAnimationFrame(powerupjs.Game.assetLoadingLoop); // continue loading loop
+            requestAnimationFrame(function () {
+                powerupjs.Game.assetLoadingLoop();
+            }); // continue loading loop
         else { // all assets loaded
-            window.setTimeout(powerupjs.Game.initialize, 500); // initialize game
-            window.setTimeout(powerupjs.Game.mainLoop, 1000); // start drawing loop
-            window.setTimeout(powerupjs.Game.drawingLoop, 1000); // start drawing loop
+            window.setTimeout(function () {
+                powerupjs.Game.initialize();
+                powerupjs.Game.mainLoop();
+                powerupjs.Game.drawingLoop();
+            }, 500); // initialize and start game loops
         }
     };
 
     Game_Singleton.prototype.drawingLoop = function () {
         powerupjs.Canvas2D.clear(); // clear canvas
         powerupjs.GameStateManager.draw(); // draw game state
-        requestAnimationFrame(powerupjs.Game.drawingLoop); // request next frame
+        requestAnimationFrame(function () {
+            powerupjs.Game.drawingLoop();
+        }); // request next frame
     }
 
     Game_Singleton.prototype.mainLoop = function () { // main game loop
@@ -106,9 +115,9 @@ var powerupjs = (function (powerupjs) {
         powerupjs.Keyboard.reset(); // reset keyboard state
         powerupjs.Mouse.reset(); // reset mouse state
         powerupjs.Touch.reset(); // reset touch state
-        // console.log(Date.now() - (powerupjs.Game.savedDate + delta))
-        // powerupjs.Game.savedDate = Date.now()
-        window.setTimeout(powerupjs.Game.mainLoop, delta * 1000); // schedule next frame in ms
+        window.setTimeout(function () {
+            powerupjs.Game.mainLoop();
+        }, delta * 1000); // schedule next frame in ms
     };
 
     powerupjs.Game = new Game_Singleton();

@@ -2,8 +2,7 @@
 
 var powerupjs = (function (powerupjs) {
 
-    function IGameLoopObject() {
-    }
+    function IGameLoopObject() {};
 
     IGameLoopObject.prototype.initialize = function () { // initialize the object
     };

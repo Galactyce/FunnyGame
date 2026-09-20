@@ -1,6 +1,6 @@
 // Creates the player object and initializes movement and collision state.
 function Player(layer, id) {
-    powerupjs.PhysicsGameObject.call(this, layer, id);
+    CharacterController.call(this, layer, id);
     this.spawnPosition = new powerupjs.Vector2(0, 0);
     this.circleHitbox = new powerupjs.Circle();
     this.stableBox = new powerupjs.Rectangle(0, 0, 1, 1);
@@ -13,7 +13,8 @@ function Player(layer, id) {
     this.initialize();
 }
 
-Player.prototype = Object.create(powerupjs.PhysicsGameObject.prototype);
+Player.prototype = Object.create(CharacterController.prototype);
+Player.prototype.constructor = Player;
 
 
 
@@ -99,34 +100,15 @@ Player.prototype.handleMoving = function(delta) {
     this.tileRight = this.hasTileToRight();
 
     if (keyLeft) {
-        var speed = this.moveSpeed;
         this.directionFacing = "left";
-        if (this.previousWallJumpDir == "right") speed /= 2;
-        if (this.velocity.x > 0 && this.grounded) this.velocity.x = 0;
-        if (this.velocity.x > -speed) this.velocity.x -= speed * (delta * this.accelerationMultiplier);
-        this.mirror = true;
-        if (!this.grounded && (this.tileLeft || this.tileRight)) {
-            this.detachFromWall();
-        }
+        this.move(-1, delta);
     }
     else if (keyRight) {
-        var speed = this.moveSpeed;
         this.directionFacing = "right";
-        if (this.previousWallJumpDir == "left") speed /= 2;
-        if (this.velocity.x < 0 && this.grounded) this.velocity.x = 0;
-        if (this.velocity.x < speed) this.velocity.x += speed * (delta * this.accelerationMultiplier);
-        this.mirror = false;
-        if (!this.grounded && (this.tileLeft || this.tileRight)) {
-            this.detachFromWall();
-        }
+        this.move(1, delta);
     }
     else {
-        if ((this.grounded || this.timeAfterWallJump > this.neutralJumpTime) && Math.abs(this.baseVelocity) < 1 && this.airDrag)
-            this.velocity.x = this.baseVelocity;
-        else
-            this.velocity.x *= this.airResistance;
-        this.tileLeft = false;
-        this.tileRight = false;
+        this.stopMoving();
     }
 
     if (this.grounded) {
@@ -184,17 +166,7 @@ Player.prototype.handleJumps = function() {
             return;
         }
         if ((this.tileLeft || this.tileRight) && this.jumpAvailable && !this.grounded) {
-            this.jump();
-
-            if (this.tileLeft) {
-                this.velocity.x = this.wallJumpForce;
-                this.previousWallJumpDir = "right";
-            }
-            if (this.tileRight) {
-                this.velocity.x = -this.wallJumpForce;
-                this.previousWallJumpDir = "left";
-            }
-            this.detachFromWall();
+            this.wallJump(this.tileLeft ? "left" : "right");
         }
     }
     else {
