@@ -48,6 +48,14 @@ TileField.prototype.getTileByMouse = function (position) {
     );
 }
 
+TileField.prototype.getIndexAtLocalPosition = function (position) {
+    if (!position) return null;
+    return new powerupjs.Vector2(
+        Math.floor(position.x / (this.cellWidth * this.scale)),
+        Math.floor(position.y / (this.cellHeight * this.scale))
+    );
+}
+
 TileField.prototype.snapPositionToSubTile = function(position) {
     if (!position) return null;
 
@@ -209,12 +217,22 @@ TileField.prototype.hasTileAt = function (position) {
 }
 
 TileField.prototype.removeTileAt = function (position) {
-    var index = this.getTileByMouse(position);
-    this.removeTilesAtIndex(index);
+    var tile = this.getTileAt(position);
+    if (tile) this.remove(tile);
 }
 
 TileField.prototype.getTileAt = function (position) {
-    var index = this.getTileByMouse(position);
+    var mousePosition = typeof position !== 'undefined' ? position : powerupjs.Mouse.position;
+
+    // Nudged tiles can drift off their grid cell, so hit-test against the actual sprite first.
+    for (var i = 0; i < this.length; i++) {
+        var tile = this.at(i);
+        if (tile && tile.boundingBox && tile.boundingBox.contains(mousePosition)) {
+            return tile;
+        }
+    }
+
+    var index = this.getTileByMouse(mousePosition);
     return this.getTileAtIndex(index);
 }
 

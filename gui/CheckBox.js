@@ -2,15 +2,15 @@ function CheckBox(text, font, fontSize, layer) {
     // Support constructor overload: new CheckBox(text, layer)
     if (typeof font === "number" && typeof fontSize === "undefined" && typeof layer === "undefined") {
         layer = font;
-        font = "Arial";
+        font = "Pixel";
         fontSize = "20px";
     }
 
-    font = (typeof font === "string" && font.length > 0) ? font : "Arial";
+    font = (typeof font === "string" && font.length > 0) ? font : "Pixel";
     fontSize = (typeof fontSize === "string" && fontSize.length > 0) ? fontSize : "20px";
     layer = (typeof layer === "number") ? layer : ID.layer_overlays;
 
-    powerupjs.Button.call(this, sprites.checkBox, layer);
+    powerupjs.Button.call(this, sprites.window_ui.toggle.default, layer);
     this.text = text;
     this.font = font;
     this.fontSize = fontSize;
@@ -38,11 +38,7 @@ CheckBox.prototype.handleInput = function (delta) {
     powerupjs.Button.prototype.handleInput.call(this, delta);
     if (this.pressed) {
         this.checked = !this.checked;
-        if (this.checked) {
-            this.sheetIndex = 1; // checked state
-        }
-        else {
-            this.sheetIndex = 0; // unchecked state
-        }
     }
+    // update the base sprite so Button's hover/pressed logic keeps reflecting the checked state
+    this.normalSprite = this.checked ? sprites.window_ui.toggle.selected : sprites.window_ui.toggle.default;
 }

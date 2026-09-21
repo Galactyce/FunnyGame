@@ -4,6 +4,11 @@ function GameplayEditorState(layer) {
   this.previousMousePosition = powerupjs.Vector2.zero;
   this.modes = ["Drawing", "Erasing", "Editing"];
   this.mode = this.modes[0];
+  this.enabledModes = {
+    Drawing: true,
+    Erasing: true,
+    Editing: true,
+  };
   this.editorLayers = new powerupjs.GameObjectList();
   this.editorPlacedEnemies = new powerupjs.GameObjectList();
   this.editingTiles = false;
@@ -21,83 +26,27 @@ function GameplayEditorState(layer) {
   this.add(this.playerStartPos);
 
   this.currentRoomDisplay = new powerupjs.Label(
-    "Arial",
+    "Pixel",
     "20px",
     ID.layer_overlays_2,
     ID.player_spawn + 1,
   );
   this.add(this.currentRoomDisplay);
 
-  this.saveButton = new LabelledButton(
-    sprites.button_default,
-    "Save",
-    "Arial",
-    "20px",
-    ID.layer_overlays,
-  );
-  this.saveButton.position = new powerupjs.Vector2(120, 40);
-  this.saveButton.ui = true;
-  this.add(this.saveButton);
-
-  this.playButton = new LabelledButton(
-    sprites.button_default,
-    "Return",
-    "Arial",
-    "20px",
-    ID.layer_overlays,
-  );
-  this.playButton.position = new powerupjs.Vector2(900, 40);
-  this.playButton.ui = true;
-  this.add(this.playButton);
-
-  this.swipeCheckBox = new CheckBox("Swipe", ID.layer_overlays);
-  this.swipeCheckBox.position = new powerupjs.Vector2(120, 150);
-  this.swipeCheckBox.ui = true;
-  this.add(this.swipeCheckBox);
-
   this.currentEditorLayerDisplay = new powerupjs.Label(
-    "Arial",
+    "Pixel",
     "20px",
     ID.layer_overlays,
     0,
     powerupjs.Color.white,
   );
-  this.currentEditorLayerDisplay.position = new powerupjs.Vector2(120, 200);
+  this.currentEditorLayerDisplay.position = new powerupjs.Vector2(95, 140);
   this.currentEditorLayerDisplay.ui = true;
+  this.currentEditorLayerDisplay.text = "Layer: 1/1"; // seed a representative value so its width is measured before layout uses it
   this.add(this.currentEditorLayerDisplay);
-
-  this.nextLayerButton = new powerupjs.Button(
-    sprites.arrowButtons,
-    ID.layer_overlays,
-  );
-  this.nextLayerButton.position = new powerupjs.Vector2(200, 200);
-  this.nextLayerButton.sheetIndex = 1;
-  this.nextLayerButton.ui = true;
-  this.add(this.nextLayerButton);
-
-  this.previousLayerButton = new powerupjs.Button(
-    sprites.arrowButtons,
-    ID.layer_overlays,
-  );
-  this.previousLayerButton.position = new powerupjs.Vector2(50, 200);
-  this.previousLayerButton.sheetIndex = 0;
-  this.previousLayerButton.ui = true;
-  this.add(this.previousLayerButton);
-
-  this.musicButton = new LabelledButton(
-      sprites.button_default,
-      "Music",
-      "Arial",
-      "20px",
-      ID.layer_overlays,
-  );
-  this.musicButton.position = new powerupjs.Vector2(900, 115);
-  this.musicButton.ui = true;
-  this.add(this.musicButton);
 
   this.swiping = false;
 
-  this.loadModeButtons(); // load mode buttons
   this.menuManager = new EditorMenuManager(ID.layer_overlays);
   this.objectMenu = this.menuManager.objectMenu;
   this.editingMenu = this.menuManager.editingMenu;
@@ -195,20 +144,6 @@ GameplayEditorState.prototype.loadLayers = function () {
   }
 };
 
-GameplayEditorState.prototype.loadModeButtons = function () {
-  for (var i = 0; i < this.modes.length; i++) {
-    var button = new LabelledButton(
-      sprites.button_default,
-      this.modes[i],
-      "Arial",
-      "20px",
-      ID.layer_overlays,
-    ); // create button for each mode
-    button.position = new powerupjs.Vector2(250, 650 + i * 60);
-    button.ui = true;
-    this.modeButtons.add(button);
-  }
-};
 
 GameplayEditorState.prototype.update = function (delta) {
   if (!WorldSettings.currentLevel || !WorldSettings.currentLevel.rooms) return;
@@ -220,12 +155,13 @@ GameplayEditorState.prototype.update = function (delta) {
   }
   WorldSettings.currentLevel.update(delta);
   powerupjs.GameObjectList.prototype.update.call(this, delta);
+  this.buttonManager.update(delta);
 
   this.currentEditorLayerDisplay.text =
     "Layer: " + (this.currentEditorLayer + 1) + "/" + this.editorLayers.length;
   this.updateEnemyPreview();
 
-  this.menuManager.update(this.mode);
+  this.menuManager.update(this.enabledModes);
 
   if (!this.isDraggingCameraBoundsHandle()) {
     this.syncCameraBoundsHandles();
@@ -238,10 +174,35 @@ GameplayEditorState.prototype.update = function (delta) {
     WorldSettings.currentLevel.rooms.length;
 };
 
+GameplayEditorState.prototype.isModeEnabled = function (modeName) {
+  if (!this.enabledModes) return true;
+  if (typeof modeName !== "string") return true;
+  return this.enabledModes[modeName] !== false;
+};
+
+GameplayEditorState.prototype.toggleMode = function (modeName) {
+  if (!this.enabledModes) this.enabledModes = {};
+  if (typeof modeName !== "string") return;
+  this.enabledModes[modeName] = !this.isModeEnabled(modeName);
+  if (this.enabledModes[modeName]) {
+    this.mode = modeName;
+  }
+};
+
+GameplayEditorState.prototype.setMode = function (modeName) {
+  if (typeof modeName !== "string") return;
+  this.mode = modeName;
+  this.enabledModes = {
+    Drawing: modeName === "Drawing",
+    Erasing: modeName === "Erasing",
+    Editing: modeName === "Editing",
+  };
+};
+
 GameplayEditorState.prototype.updateEnemyPreview = function () {
   var selectedBlock = WorldSettings.currentBlock;
   var shouldShowPreview =
-    this.mode === "Drawing" &&
+    this.isModeEnabled("Drawing") &&
     selectedBlock &&
     selectedBlock.tab === "enemies" &&
     this.editingTiles;
@@ -519,21 +480,24 @@ GameplayEditorState.prototype.isMouseOverEditorButton = function () {
   var mouseWorld = powerupjs.Mouse.position;
 
   var directButtons = [
-    this.nextRoomButton,
-    this.previousRoomButton,
-    this.addRoomButton,
-    this.playButton,
-    this.saveButton,
-    this.swipeCheckBox,
+    this.buttonManager.nextRoomButton,
+    this.buttonManager.previousRoomButton,
+    this.buttonManager.addRoomButton,
+    this.buttonManager.playButton,
+    this.buttonManager.saveButton,
+    this.buttonManager.swipeCheckBox,
     this.movePageLeftButton,
     this.movePageRightButton,
-    this.nextLayerButton,
-    this.previousLayerButton,
+    this.buttonManager.nextLayerButton,
+    this.buttonManager.previousLayerButton,
     this.extendCamBoundsLeft,
     this.extendCamBoundsRight,
     this.extendCamBoundsUp,
     this.extendCamBoundsDown,
-    this.musicButton
+    this.buttonManager.musicButton,
+    this.buttonManager.drawingButton,
+    this.buttonManager.editingButton,
+    this.buttonManager.removeButton
   ];
 
   for (var i = 0; i < directButtons.length; i++) {
@@ -595,13 +559,13 @@ GameplayEditorState.prototype.handleDrawingClick = function () {
       this.editorPlacedEnemies.add(Enemy.create(selectedBlock.sprite, enemySpawnPosition));
       if (this.previewEnemy) this.previewEnemy.visible = false;
     }
-    if (keepObjectMenuOpen) this.objectMenu.menu.open();
+    if (keepObjectMenuOpen) this.reopenObjectMenu();
     return true;
   }
 
   if (isTravelPointPlacement) {
     this.objectMenu.placeTravelPointFromMenu(powerupjs.Mouse.position);
-    if (keepObjectMenuOpen) this.objectMenu.menu.open();
+    if (keepObjectMenuOpen) this.reopenObjectMenu();
     return true;
   }
 
@@ -610,8 +574,13 @@ GameplayEditorState.prototype.handleDrawingClick = function () {
     field.removeTileAt(powerupjs.Mouse.position);
   }
   field.addTileAt(field.getTileByMouse(powerupjs.Mouse.position), "#", selectedBlock);
-  if (keepObjectMenuOpen) this.objectMenu.menu.open();
+  if (keepObjectMenuOpen) this.reopenObjectMenu();
   return false;
+};
+
+GameplayEditorState.prototype.reopenObjectMenu = function () {
+  this.objectMenu.menu.open();
+  this.bringToFront(this.objectMenu); // keep it above any other open menu while placing objects
 };
 
 GameplayEditorState.prototype.handleErasingClick = function () {
@@ -664,12 +633,12 @@ GameplayEditorState.prototype.handleEditingClick = function () {
 };
 
 GameplayEditorState.prototype.handleWorldEditClick = function () {
-  if (this.mode === "Drawing") return this.handleDrawingClick();
-  if (this.mode === "Erasing") {
+  if (this.isModeEnabled("Drawing")) return this.handleDrawingClick();
+  if (this.isModeEnabled("Erasing")) {
     this.handleErasingClick();
     return false;
   }
-  if (this.mode === "Editing") this.handleEditingClick();
+  if (this.isModeEnabled("Editing")) this.handleEditingClick();
   return false;
 };
 
@@ -700,8 +669,8 @@ GameplayEditorState.prototype.handleInput = function (delta) {
   }
   this.wasDraggingCameraBoundsHandle = draggingBoundsHandle;
 
-  this.swiping = this.swipeCheckBox.checked;
-  if (this.swipeCheckBox.pressed) {
+  this.swiping = this.buttonManager.swipeCheckBox.checked;
+  if (this.buttonManager.swipeCheckBox.pressed) {
     return;
   }
 

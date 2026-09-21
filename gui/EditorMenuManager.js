@@ -14,9 +14,15 @@ EditorMenuManager.prototype.configureLayout = function () {
     );
     this.objectMenu.ui = true;
 
-    this.editingMenu.position = new powerupjs.Vector2(400, 600);
+    this.editingMenu.position = new powerupjs.Vector2(
+        Math.max(0, (powerupjs.Game.size.x - this.editingMenu.menu.base.width) / 2),
+        Math.max(0, (powerupjs.Game.size.y - this.editingMenu.menu.base.height) / 2)
+    );
 
-    this.musicMenu.position = new powerupjs.Vector2(400, 600);
+    this.musicMenu.position = new powerupjs.Vector2(
+        Math.max(0, (powerupjs.Game.size.x - this.musicMenu.menu.base.width) / 2),
+        Math.max(0, (powerupjs.Game.size.y - this.musicMenu.menu.base.height) / 2)
+    );
     this.musicMenu.visible = false;
 
 };
@@ -27,10 +33,19 @@ EditorMenuManager.prototype.addTo = function (editorState) {
     editorState.add(this.musicMenu);
 };
 
-EditorMenuManager.prototype.update = function (mode) {
-    this.musicMenu.visible = this.musicMenu.menu.isOpen;
-    this.objectMenu.visible = mode === "Drawing" && this.objectMenu.menu.isOpen;
-    this.editingMenu.visible = mode === "Erasing" || mode === "Editing";
+EditorMenuManager.prototype.update = function (enabledModes) {
+    if (this.musicMenu && this.musicMenu.menu) {
+        this.musicMenu.visible = !!this.musicMenu.menu.isOpen;
+    }
+
+    if (this.objectMenu && this.objectMenu.menu) {
+        var objectMenuOpen = !!this.objectMenu.menu.isOpen;
+        this.objectMenu.visible = objectMenuOpen && (!enabledModes || enabledModes.Drawing !== false);
+    }
+
+    if (this.editingMenu && this.editingMenu.menu) {
+        this.editingMenu.visible = !!this.editingMenu.menu.isOpen;
+    }
 };
 
 EditorMenuManager.prototype.handleInput = function () {
@@ -41,6 +56,8 @@ EditorMenuManager.prototype.isMouseOver = function (mouseScreen) {
     if (this.musicButton && this.musicButton.visible && this.musicButton.boundingBox && this.musicButton.boundingBox.contains(mouseScreen)) {
         return true;
     }
+
+    if (this.musicMenu.menu.consumedInput) return true;
 
     if (this.musicMenu.visible) {
         if (this.musicMenu.menu.boundingBox.contains(mouseScreen)) return true;
@@ -63,7 +80,9 @@ EditorMenuManager.prototype.isMouseOver = function (mouseScreen) {
         }
     }
 
-    if (this.editingMenu.visible && this.editingMenu.frame && this.editingMenu.frame.boundingBox.contains(mouseScreen)) {
+    if (this.editingMenu.menu.consumedInput) return true;
+
+    if (this.editingMenu.visible && this.editingMenu.menu.boundingBox.contains(mouseScreen)) {
         return true;
     }
 

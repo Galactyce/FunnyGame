@@ -377,6 +377,35 @@ test('GameObjectList and GameObject hierarchy behave predictably', async () => {
   assert.equal(childA.parent, null);
 });
 
+test('EditingMenuGUI initializes its button list without crashing', async () => {
+  await quizBefore('EditingMenuGUI initialization',
+    'Tests that EditingMenuGUI exposes a valid button collection and can construct without undefined parent operations');
+
+  const root = path.join(__dirname, '..');
+  const powerupjs = loadEngine();
+  const ctx = vm.createContext({
+    console,
+    powerupjs,
+    ID: { layer_overlays: 30, layer_overlays_1: 31, layer_overlays_2: 32 },
+    sprites: {
+      window_ui: { base: {}, header: {} },
+      editingButtons: { nrSheetElements: 1 },
+      button_default: {}
+    },
+    MenuObject: undefined,
+    LabelledButton: undefined,
+    window: { powerupjs }
+  });
+
+  vm.runInContext(fs.readFileSync(path.join(root, 'gui', 'LabelledButton.js'), 'utf8'), ctx, { filename: 'gui/LabelledButton.js' });
+  vm.runInContext(fs.readFileSync(path.join(root, 'gui', 'MenuObject.js'), 'utf8'), ctx, { filename: 'gui/MenuObject.js' });
+  vm.runInContext(fs.readFileSync(path.join(root, 'gui', 'EditingMenuGUI.js'), 'utf8'), ctx, { filename: 'gui/EditingMenuGUI.js' });
+
+  const editingMenu = new ctx.EditingMenuGUI();
+  assert.ok(editingMenu.buttons);
+  assert.equal(editingMenu.buttons, editingMenu.menu.buttons);
+});
+
 test('GameStateManager transitions active game states', async () => {
   await quizBefore('GameStateManager transitions',
     'Tests that the state manager can add states, retrieve them, and switch between active states');

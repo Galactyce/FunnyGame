@@ -208,7 +208,6 @@ Object.defineProperties(ObjectMenuGUI.prototype, {
 
 ObjectMenuGUI.prototype.draw = function() {
     powerupjs.GameObjectList.prototype.draw.call(this);
-    console.log(this.menu.isOpen);
     if (powerupjs.Keyboard.down(powerupjs.Keys.P))
         for (var i = 0; i < this.blockIcons.length; i++) {
             this.blockIcons.at(i).boundingBox.draw()
@@ -288,6 +287,7 @@ ObjectMenuGUI.prototype.handleInput = function (delta) {
         if (this.visible && powerupjs.Mouse.containsMousePress(boundingBox)) { // if block is clicked
             var sourceBlock = this.blockIcons.at(j).sourceBlock;
             WorldSettings.currentBlock = sourceBlock; // set current block selection object
+            if (this.parent && typeof this.parent.setMode === "function") this.parent.setMode("Drawing"); // picking a block returns the editor to Drawing mode
             this.blockSelector.visible = true; // show block selector
             this.blockSelector.scale = (this.cellWidth + 10) / this.blockSelector.width;
             this.blockSelector.position = this.blockIcons.at(j).position.copy().addTo(this.blockIcons.position); // position selector over block
