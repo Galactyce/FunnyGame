@@ -7,11 +7,30 @@ CharacterController.prototype.constructor = CharacterController;
 
 CharacterController.prototype.initialize = function () {
 	powerupjs.PhysicsGameObject.prototype.initialize.call(this);
+	this.detaching = false;
+	this.detachTime = 0;
+	this.detachBufferTime = 0.2;
+	this.previousWallJumpDir = "";
+	this.jumpAvailable = true;
+	this.timeAfterWallJump = 0;
+	this.resetJumpVelo = false;
+	this.neutralJumpTime = 0.4;
+	this.jumpKey = [
+		powerupjs.Keys && powerupjs.Keys.space,
+		powerupjs.Keys && powerupjs.Keys.up,
+		powerupjs.Keys && powerupjs.Keys.W,
+		powerupjs.Keys && powerupjs.Keys.C
+	].filter(function(key) { return typeof key === "number"; });
 	this.moveSpeed = 225;
 	this.jumpForce = -460;
 	this.wallJumpForce = 300;
 	this.wallSlideDirection = 0;
 	this.wallSlideRequested = false;
+};
+
+CharacterController.prototype.update = function (delta) {
+	powerupjs.PhysicsGameObject.prototype.update.call(this, delta);
+	this.updateDetachState(delta);
 };
 
 CharacterController.prototype.move = function (direction, delta) {
@@ -74,7 +93,11 @@ CharacterController.prototype.simulateGravity = function () {
 CharacterController.prototype.jump = function () {
 	if (!this.jumpAvailable) return false;
 
-	powerupjs.PhysicsGameObject.prototype.jump.call(this);
+	this.velocity.y = 0;
+	this.applyForce(new powerupjs.Vector2(0, this.jumpForce), true);
+	this.jumpAvailable = false;
+	this.timeAfterWallJump = 0;
+	this.resetJumpVelo = true;
 	return true;
 };
 
@@ -88,7 +111,7 @@ CharacterController.prototype.wallJump = function (wall) {
 	}
 	if (wall === 0) return false;
 
-	powerupjs.PhysicsGameObject.prototype.jump.call(this);
+	if (!this.jump()) return false;
 	this.velocity.x = wall < 0 ? this.wallJumpForce : -this.wallJumpForce;
 	this.previousWallJumpDir = wall < 0 ? "right" : "left";
 	this.detachFromWall();
@@ -103,6 +126,26 @@ CharacterController.prototype.slide = function () {
 
 	this.velocity.y = WorldSettings.wallSlideSpeed * this.scale;
 	return true;
+};
+
+CharacterController.prototype.resolveVerticalTileCollision = function (tile, tileBounds, boundingBox, depth) {
+	var hitTileFromBelow = depth.y > 0 && this.velocity.y < 0;
+	var landed = powerupjs.PhysicsGameObject.prototype.resolveVerticalTileCollision.call(
+		this,
+		tile,
+		tileBounds,
+		boundingBox,
+		depth
+	);
+	if (hitTileFromBelow) this.jumpAvailable = false;
+	this.detachFromWall();
+	return landed;
+};
+
+CharacterController.prototype.resolveHorizontalTileCollision = function (depth, tileBounds) {
+	var resolved = powerupjs.PhysicsGameObject.prototype.resolveHorizontalTileCollision.call(this, depth, tileBounds);
+	if (resolved) this.detaching = false;
+	return resolved;
 };
 
 CharacterController.prototype.updateDetachState = function (delta) {
@@ -122,3 +165,68 @@ CharacterController.prototype.detachFromWall = function () {
 	this.detaching = true;
 	this.detachTime = this.detachBufferTime;
 };
+
+Object.defineProperty(CharacterController.prototype, "isDetaching", {
+	get: function() {
+		return this.detaching;
+	}
+});
+
+Object.defineProperty(CharacterController.prototype, "isWallJumping", {
+	get: function() {
+		return this.previousWallJumpDir != "";
+	}
+});
+
+Object.defineProperty(CharacterController.prototype, "isOnWall", {
+	get: function() {
+		return this.tileLeft || this.tileRight;
+	}
+});
+
+Object.defineProperty(CharacterController.prototype, "isWallSliding", {
+	get: function() {
+		return (this.tileLeft || this.tileRight) && !this.grounded;
+	}
+});
+
+Object.defineProperty(CharacterController.prototype, "isJumping", {
+	get: function() {
+		return this.velocity.y < 0;
+	}
+});
+
+Object.defineProperty(CharacterController.prototype, "isJumpCutting", {
+	get: function() {
+		return this.resetJumpVelo;
+	}
+});
+
+Object.defineProperty(CharacterController.prototype, "neutralJumpTime", {
+	get: function() {
+		return this._neutralJumpTime;
+	},
+	set: function(value) {
+		this._neutralJumpTime = value;
+	}
+});
+
+Object.defineProperty(CharacterController.prototype, "jumpForce", {
+	get: function() {
+		return this._jumpForce;
+	},
+	set: function(value) {
+		this._jumpForce = value * this.scale;
+	}
+});
+
+Object.defineProperty(CharacterController.prototype, "onWall", {
+	get: function() {
+		if (this.tileLeft)
+			return "left";
+		else if (this.tileRight)
+			return "right";
+		else
+			return null;
+	}
+});

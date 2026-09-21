@@ -31,9 +31,12 @@ Player.prototype.adjustHitbox = function () {
 };
 
 Player.prototype.update = function (delta) {
-    powerupjs.PhysicsGameObject.prototype.update.call(this, delta);
+    CharacterController.prototype.update.call(this, delta);
     this.handleCameraPos(delta);
     this.manageWeapon(delta);
+    if (this.position.y > WorldSettings.mapBottom) {
+        this.die();
+    }
 };
 
 Player.prototype.manageWeapon = function(delta) {
@@ -72,23 +75,6 @@ Object.defineProperty(Player.prototype, "centerOfCamera", {
         );
     }
 });
-
-Player.prototype.updateDetachState = function(delta) {
-    if (!this.detaching) return;
-
-    this.detachTime -= delta;
-    if (this.detachTime > 0) return;
-
-    this.tileLeft = false;
-    this.tileRight = false;
-    this.detaching = false;
-};
-
-Player.prototype.detachFromWall = function () {
-    if (this.detaching) return;
-    this.detaching = true;
-    this.detachTime = this.detachBufferTime;
-};
 
 Player.prototype.handleMoving = function(delta) {
     if (!powerupjs.Keyboard || !powerupjs.Keyboard.down || !powerupjs.Keys) return;

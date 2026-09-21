@@ -9,28 +9,14 @@ var powerupjs = (function (powerupjs) {
         this.previousYPosition;
         this.tileLeft = false;
         this.tileRight = false;
-        this.previousWallJumpDir = "";
-        this.jumpAvailable = true;
         this.airDrag = true;
-        this.timeAfterWallJump = 0;
         this.directionFacing = "right";
-        this.detaching = false;
-        this.detachTime = 0;
-        this.detachBufferTime = 0.2;
         this.accelerationMultiplier = 10;
-        this.resetJumpVelo = false;
-        this.neutralJumpTime = 0.4;
         this.baseVelocity = 0;
         this.hitbox = new powerupjs.Rectangle(0, 0, 1, 1);
         this.circleHitbox = null;
         this.stableBox = null;
         this.collidingTiles = new powerupjs.GameObjectList();
-        this.jumpKey = [
-            powerupjs.Keys && powerupjs.Keys.space,
-            powerupjs.Keys && powerupjs.Keys.up,
-            powerupjs.Keys && powerupjs.Keys.W,
-            powerupjs.Keys && powerupjs.Keys.C
-        ].filter(function(key) { return typeof key === "number"; });
         this.initialize();
     }
 
@@ -38,8 +24,7 @@ var powerupjs = (function (powerupjs) {
 
     PhysicsGameObject.prototype.wellFormed = function () {
         return powerupjs.GameObject.prototype.wellFormed.call(this) &&
-            typeof this.mass === "number" && isFinite(this.mass) && this.mass > 0 &&
-            Array.isArray(this.jumpKey);
+            typeof this.mass === "number" && isFinite(this.mass) && this.mass > 0;
     };
 
     PhysicsGameObject.prototype.wellFormedAssertions = function () {
@@ -51,11 +36,8 @@ var powerupjs = (function (powerupjs) {
     };
 
     PhysicsGameObject.prototype.initialize = function () {
-        this.detachBufferTime = 0.2;
         this.accelerationMultiplier = 10;
-        this.neutralJumpTime = 0.4;
         this.airResistance = 0.65;
-        this.wallJumpForce = 300;
     };
 
     PhysicsGameObject.prototype.getCollisionBounds = function(tile) {
@@ -95,7 +77,6 @@ var powerupjs = (function (powerupjs) {
 
         this.tileLeft = (depth.x > 0);
         this.tileRight = (depth.x < 0);
-        this.detaching = false;
         this.velocity.x = 0;
         return true;
     };
@@ -111,18 +92,15 @@ var powerupjs = (function (powerupjs) {
             this.baseVelocity = tile.velocity.x;
             this.position.y += (depth.y * 1.1);
             this.adjustHitbox();
-            this.detachFromWall();
             return true;
         }
         else if (hitTileFromBelow) {
             if (this.velocity.y < 0) this.velocity.y *= -0.1;
             this.capMoveSpeed(1.5);
-            this.jumpAvailable = false;
         }
 
         this.position.y += (depth.y * 1.1);
         this.adjustHitbox();
-        this.detachFromWall();
         return false;
     };
 
@@ -180,16 +158,10 @@ var powerupjs = (function (powerupjs) {
         this.adjustHitbox();
         this.simulateGravity();
         this.handleCollisions();
-        this.handleCameraPos(delta);
-        if (this.position.y > WorldSettings.mapBottom) {
-            this.die();
-        }
-
         if (!this.airDrag && this.velocity.x == 0) {
             this.airDrag = true;
         }
 
-        this.updateDetachState(delta);
     };
 
     PhysicsGameObject.prototype.adjustHitbox = function () {
@@ -207,12 +179,7 @@ var powerupjs = (function (powerupjs) {
     };
 
     PhysicsGameObject.prototype.simulateGravity = function () {
-        if ((this.tileLeft || this.tileRight) && this.velocity.y > 10 && !this.grounded) {
-            this.velocity.y = WorldSettings.wallSlideSpeed * this.scale;
-        }
-        else {
-            this.velocity.y += WorldSettings.gravity * this.scale;
-        }
+        this.velocity.y += WorldSettings.gravity * this.scale;
 
         if (this.velocity.y > WorldSettings.terminalVelocity * this.scale) this.velocity.y = WorldSettings.terminalVelocity * this.scale;
     };
@@ -332,14 +299,6 @@ var powerupjs = (function (powerupjs) {
         if (this.velocity.x > (this.baseVelocity + this.moveSpeed) * modifier) this.velocity.x = (this.baseVelocity + this.moveSpeed) * modifier;
     };
 
-    PhysicsGameObject.prototype.jump = function() {
-        this.velocity.y = 0;
-        this.applyForce(new powerupjs.Vector2(0, this.jumpForce), true);
-        this.jumpAvailable = false;
-        this.timeAfterWallJump = 0;
-        this.resetJumpVelo = true;
-    };
-
     PhysicsGameObject.prototype.applyForce = function(force, impulse) {
         var impulse = typeof impulse != 'undefined' ? impulse : false;
         if (impulse) {
@@ -357,33 +316,9 @@ var powerupjs = (function (powerupjs) {
         }
     });
 
-    Object.defineProperty(PhysicsGameObject.prototype, "isOnWall", {
-        get: function() {
-            return this.tileLeft || this.tileRight;
-        }
-    });
-
-    Object.defineProperty(PhysicsGameObject.prototype, "isWallSliding", {
-        get: function() {
-            return (this.tileLeft || this.tileRight) && !this.grounded;
-        }
-    });
-
-    Object.defineProperty(PhysicsGameObject.prototype, "isWallJumping", {
-        get: function() {
-            return this.previousWallJumpDir != "";
-        }
-    });
-
     Object.defineProperty(PhysicsGameObject.prototype, "isFalling", {
         get: function() {
             return this.velocity.y > 0;
-        }
-    });
-
-    Object.defineProperty(PhysicsGameObject.prototype, "isJumping", {
-        get: function() {
-            return this.velocity.y < 0;
         }
     });
 
@@ -399,33 +334,12 @@ var powerupjs = (function (powerupjs) {
         }
     });
 
-    Object.defineProperty(PhysicsGameObject.prototype, "isDetaching", {
-        get: function() {
-            return this.detaching;
-        }
-    });
-
-    Object.defineProperty(PhysicsGameObject.prototype, "isJumpCutting", {
-        get: function() {
-            return this.resetJumpVelo;
-        }
-    });
-
     Object.defineProperty(PhysicsGameObject.prototype, "moveSpeed", {
         get: function() {
             return this._moveSpeed;
         },
         set: function(value) {
             this._moveSpeed = value * this.scale;
-        }
-    });
-
-    Object.defineProperty(PhysicsGameObject.prototype, "jumpForce", {
-        get: function() {
-            return this._jumpForce;
-        },
-        set: function(value) {
-            this._jumpForce = value * this.scale;
         }
     });
 
@@ -453,26 +367,6 @@ var powerupjs = (function (powerupjs) {
         },
         set: function(value) {
             this._grounded = value;
-        }
-    });
-
-    Object.defineProperty(PhysicsGameObject.prototype, "onWall", {
-        get: function() {
-            if (this.tileLeft)
-                return "left";
-            else if (this.tileRight)
-                return "right";
-            else
-                return null;
-        }
-    });
-
-    Object.defineProperty(PhysicsGameObject.prototype, "neutralJumpTime", {
-        get: function() {
-            return this._neutralJumpTime;
-        },
-        set: function(value) {
-            this._neutralJumpTime = value;
         }
     });
 

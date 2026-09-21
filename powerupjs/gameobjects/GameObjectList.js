@@ -7,6 +7,7 @@ var powerupjs = (function (powerupjs) {
     function GameObjectList(layer, id) { // game object list constructor
         powerupjs.GameObject.call(this, layer, id); // call GameObject constructor
         this.scale = 1;
+        this._ui = false;
         this._gameObjects = []; // internal array of game objects
         this.length = 0; // number of game objects
     }
@@ -29,6 +30,7 @@ var powerupjs = (function (powerupjs) {
  
 
     GameObjectList.prototype.add = function (gameobject) { // add game object to list
+        if (this._ui && gameobject) gameobject.ui = true;
         this._gameObjects.push(gameobject); // add to internal array
         gameobject.parent = this; // set parent to this list
         this.length = this._gameObjects.length; // keep length in sync with backing array
@@ -36,6 +38,18 @@ var powerupjs = (function (powerupjs) {
             return a.layer - b.layer; // ascending order
         });
     };
+
+    Object.defineProperty(GameObjectList.prototype, "ui", {
+        get: function () {
+            return this._ui;
+        },
+        set: function (value) {
+            this._ui = value === true;
+            for (var i = 0; i < this._gameObjects.length; i++) {
+                if (this._gameObjects[i]) this._gameObjects[i].ui = this._ui;
+            }
+        }
+    });
 
     GameObjectList.prototype.remove = function (gameobject) { // remove game object from list
         for (var i = 0, l = this._gameObjects.length; i < l; ++i) { // iterate through backing array
@@ -46,6 +60,13 @@ var powerupjs = (function (powerupjs) {
             this.length = this._gameObjects.length; // keep length in sync after removal
             return; // exit after removal
         }
+    };
+
+    GameObjectList.prototype.bringToFront = function (gameobject) {
+        var index = this._gameObjects.indexOf(gameobject);
+        if (index < 0 || index === this._gameObjects.length - 1) return;
+        this._gameObjects.splice(index, 1);
+        this._gameObjects.push(gameobject);
     };
 
     GameObjectList.prototype.at = function (index) { // get game object at index

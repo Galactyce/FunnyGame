@@ -2,52 +2,29 @@
 function MusicMenuGUI(layer) {
     powerupjs.GameObjectList.call(this, typeof layer !== 'undefined' ? layer : ID.layer_overlays);
 
-    this.frame = new powerupjs.SpriteGameObject(sprites.woodenFrame);
-    this.frame.ui = true;
-    this.add(this.frame);
+    this.menu = new MenuObject(600, 180, "Music");
+    this.add(this.menu);
 
-    this.songLabel = new powerupjs.Label("Arial", "18px", ID.layer_overlays_2, 0, powerupjs.Color.white);
-    this.songLabel.position = new powerupjs.Vector2(30, 15);
-    this.songLabel.ui = true;
-    this.add(this.songLabel);
+    this.songText = this.menu.createTextObject("Song:", 30, 62, "Pixel", "18px", powerupjs.Color.white);
+    this.nodeText = this.menu.createTextObject("Node:", 30, 88, "Pixel", "18px", powerupjs.Color.white);
 
-    this.nodeLabel = new powerupjs.Label("Arial", "18px", ID.layer_overlays_2, 0, powerupjs.Color.white);
-    this.nodeLabel.position = new powerupjs.Vector2(30, 40);
-    this.nodeLabel.ui = true;
-    this.add(this.nodeLabel);
+    this.songButton = this.menu.createButton("Song", 70, 130);
+    this.addNodeButton = this.menu.createButton("Add", 170, 130);
+    this.editNodeButton = this.menu.createButton("Edit", 270, 130);
+    this.deleteNodeButton = this.menu.createButton("Delete", 370, 130);
 
-    this.songButton = this.createButton("Song", 70, 95);
-    this.addNodeButton = this.createButton("Add", 170, 95);
-    this.editNodeButton = this.createButton("Edit", 270, 95);
-    this.deleteNodeButton = this.createButton("Delete", 370, 95);
-
-    this.previousNodeButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays_2);
-    this.previousNodeButton.position = new powerupjs.Vector2(450, 85);
+    this.previousNodeButton = this.menu.createButton(null, 450, 120, sprites.arrowButtons);
     this.previousNodeButton.sheetIndex = 0;
-    this.previousNodeButton.scale = 0.6;
-    this.previousNodeButton.ui = true;
-    this.add(this.previousNodeButton);
-
-    this.nextNodeButton = new powerupjs.Button(sprites.arrowButtons, ID.layer_overlays_2);
-    this.nextNodeButton.position = new powerupjs.Vector2(500, 85);
+    this.nextNodeButton = this.menu.createButton(null, 500, 120, sprites.arrowButtons);
     this.nextNodeButton.sheetIndex = 1;
-    this.nextNodeButton.scale = 0.6;
-    this.nextNodeButton.ui = true;
-    this.add(this.nextNodeButton);
+
+    this.menu.addCloseButton(new powerupjs.Vector2(565, 7));
 
     this.selectedNodeIndex = 0;
 }
 
 MusicMenuGUI.prototype = Object.create(powerupjs.GameObjectList.prototype);
 
-MusicMenuGUI.prototype.createButton = function (text, x, y) {
-    var button = new LabelledButton(sprites.button_default, text, "Arial", "14px", ID.layer_overlays_2);
-    button.position = new powerupjs.Vector2(x, y);
-    button.scale = 0.6;
-    button.ui = true;
-    this.add(button);
-    return button;
-};
 
 MusicMenuGUI.prototype.getRoom = function () {
     var level = WorldSettings.currentLevel;
@@ -94,7 +71,7 @@ MusicMenuGUI.prototype.handleInput = function (delta) {
     if (!room) return;
     var nodes = this.getNodes();
 
-    if (this.frame.boundingBox.contains(powerupjs.Mouse.screenPosition) && this.parent) {
+    if (this.menu.boundingBox.contains(powerupjs.Mouse.screenPosition) && this.parent) {
         this.parent.editingTiles = false; // stop tile placement while the menu is in the way
     }
 
@@ -142,13 +119,13 @@ MusicMenuGUI.prototype.update = function (delta) {
     var nodes = this.getNodes();
     if (this.selectedNodeIndex < 0) this.selectedNodeIndex = 0;
 
-    this.songLabel.text = "Song: " + (room.song ? room.song : "(none)");
+    this.songText.text = "Song: " + (room.song ? room.song : "(none)");
 
     var node = this.getSelectedNode();
     if (!node) {
-        this.nodeLabel.text = "Event nodes: none";
+        this.nodeText.text = "Event nodes: none";
         return;
     }
-    this.nodeLabel.text = "Node " + (this.selectedNodeIndex + 1) + "/" + nodes.length +
+    this.nodeText.text = "Node " + (this.selectedNodeIndex + 1) + "/" + nodes.length +
         "  id: " + node.id + "  " + node.start + "s-" + node.end + "s  every " + node.rhythm + "s";
 };

@@ -9,14 +9,31 @@ function EditorButtonManager(editorState) {
     this.swipeCheckBox = editorState.swipeCheckBox;
     this.nextLayerButton = editorState.nextLayerButton;
     this.previousLayerButton = editorState.previousLayerButton;
+    this.musicButton = editorState.musicButton;
+    editorState.menuManager.musicButton = this.musicButton;
 }
 
 EditorButtonManager.prototype.handleInput = function () {
     this.handleModeButtons();
+    this.handleDrawingButton();
     this.handleRoomButtons();
     this.handleSessionButtons();
     this.handleLayerButtons();
+    this.handleMusicButton();
     this.editorState.swiping = this.swipeCheckBox.checked;
+};
+
+EditorButtonManager.prototype.handleDrawingButton = function () {
+    var drawingButton = this.modeButtons.at(0);
+    if (drawingButton && drawingButton.pressed) {
+        this.editorState.menuManager.objectMenu.menu.toggle();
+    }
+};
+
+EditorButtonManager.prototype.handleMusicButton = function () {
+    if (this.musicButton && this.musicButton.pressed) {
+        this.editorState.menuManager.musicMenu.menu.toggle();
+    }
 };
 
 EditorButtonManager.prototype.handleModeButtons = function () {
@@ -28,7 +45,7 @@ EditorButtonManager.prototype.handleModeButtons = function () {
 };
 
 EditorButtonManager.prototype.handleRoomButtons = function () {
-    if (this.addRoomButton.pressed) {
+    if (this.addRoomButton && this.addRoomButton.pressed) {
         WorldSettings.currentLevel.addRoom();
         WorldSettings.currentLevel.currentRoomIndex = WorldSettings.currentLevel.rooms.length - 1;
         var roomData = this.editorState.getActiveRoomData();
@@ -39,7 +56,7 @@ EditorButtonManager.prototype.handleRoomButtons = function () {
         this.editorState.loadLayers();
     }
 
-    if (this.nextRoomButton.pressed) {
+    if (this.nextRoomButton && this.nextRoomButton.pressed) {
         var nextRoomIndex = (WorldSettings.currentLevel.currentRoomIndex + 1) % WorldSettings.currentLevel.rooms.length;
         WorldSettings.currentLevel.currentRoomIndex = nextRoomIndex;
         this.editorState.getActiveRoomData();
@@ -47,7 +64,7 @@ EditorButtonManager.prototype.handleRoomButtons = function () {
         this.editorState.loadLayers();
     }
 
-    if (this.previousRoomButton.pressed) {
+    if (this.previousRoomButton && this.previousRoomButton.pressed) {
         var previousRoomIndex = (WorldSettings.currentLevel.currentRoomIndex - 1 + WorldSettings.currentLevel.rooms.length) % WorldSettings.currentLevel.rooms.length;
         WorldSettings.currentLevel.currentRoomIndex = previousRoomIndex;
         this.editorState.getActiveRoomData();
@@ -62,7 +79,7 @@ EditorButtonManager.prototype.handleSessionButtons = function () {
         this.saveButton.text = "Saved!";
     }
 
-    if (this.playButton.pressed) {
+    if (this.playButton && this.playButton.pressed) {
         powerupjs.GameStateManager.switchTo(ID.game_state_title);
         WorldSettings.currentState = "title";
         powerupjs.Camera.position = powerupjs.Vector2.zero;

@@ -1,30 +1,40 @@
 function ObjectMenuGUI(layer) {
     powerupjs.GameObjectList.call(this, layer);
-    this.frame = new powerupjs.SpriteGameObject(sprites.woodenFrame);
-    this.frame.ui = true;
-    this.add(this.frame);
+    this.menu = new MenuObject(600, 300, "Object Menu");
+    this.menu.position = new powerupjs.Vector2(-25, 0); // menu offset
+    this.add(this.menu);
+    this.menu.addCloseButton(new powerupjs.Vector2(565, 7));
+
     this.blocks = new powerupjs.GameObjectList();
-    this.blocks.position = new powerupjs.Vector2(40, 40); // position inside frame
-    this.cellWidth = 48; // cell size for block arrangement
-    this.cellHeight = 50; // cell size for block arrangement
-    this.cellPadding = 15;
+    this.cellWidth = 48;
+    this.cellHeight = 48;
+    this.cellPadding = 4;
+    this.contentPadding = 12;
+    this.contentTop = 60;
+
     this.blockSelector = new powerupjs.SpriteGameObject(sprites.editorBlockSelector); // selector sprite
     this.blockSelector.visible = false; // initially hidden
     this.blockSelector.origin = this.blockSelector.center;
     this.blockSelector.ui = true; // set as UI element
-    this.add(this.blockSelector);
+    this.menu.objects.add(this.blockSelector);
 
     this.blockIcons = new powerupjs.GameObjectList(ID.layer_overlays_1);
-    this.blockIcons.position = new powerupjs.Vector2(5, 5)
-    this.add(this.blockIcons);
+    this.blockIcons.position = new powerupjs.Vector2(this.contentPadding, this.contentTop);
+    this.menu.objects.add(this.blockIcons);
 
     this.tabButtons = [];
     this.tabs = [
         { key: "tiles", label: "Tiles" },
         { key: "enemies", label: "Enemies" }
     ];
+    
     this.activeTab = "tiles";
     this.buildTabs();
+
+    this.pageLeftButton = this.menu.createButton(null, this.menu.area.left, this.menu.area.top + this.menu.area.height / 2 + 25, sprites.arrowButtons);
+    this.pageLeftButton.sheetIndex = 0;
+    this.pageRightButton = this.menu.createButton(null, this.menu.area.right - 30, this.menu.area.top + this.menu.area.height / 2 + 25, sprites.arrowButtons);
+    this.pageRightButton.sheetIndex = 1;
 
     this.gridWidth = 9; // number of columns in block menu
     this.gridHeight = 3; // number of rows in block menu
@@ -55,6 +65,34 @@ ObjectMenuGUI.prototype.getVisibleBlocks = function () {
     return visibleBlocks;
 };
 
+ObjectMenuGUI.prototype.updateGridMetrics = function (visibleBlocks) {
+    var menuWidth = this.menu.base.width;
+    var menuHeight = this.menu.base.height;
+    var availableWidth = Math.max(1, menuWidth - (this.contentPadding * 2));
+    var availableHeight = Math.max(1, menuHeight - this.contentTop - this.contentPadding);
+    var maxBlockWidth = 32;
+    var maxBlockHeight = 32;
+
+    for (var i = 0; i < visibleBlocks.length; i++) {
+        var block = visibleBlocks[i];
+        if (!block) continue;
+        maxBlockWidth = Math.max(maxBlockWidth, block.width || 0);
+        maxBlockHeight = Math.max(maxBlockHeight, block.height || 0);
+    }
+
+    this.cellWidth = Math.max(40, Math.min(72, maxBlockWidth + 20));
+    this.cellHeight = Math.max(40, Math.min(72, maxBlockHeight + 20));
+    this.gridWidth = Math.max(1, Math.floor((availableWidth + this.cellPadding) / (this.cellWidth + this.cellPadding)));
+    this.gridHeight = Math.max(1, Math.floor((availableHeight + this.cellPadding) / (this.cellHeight + this.cellPadding)));
+
+    var gridWidth = this.gridWidth * this.cellWidth + (this.gridWidth - 1) * this.cellPadding;
+    var gridHeight = this.gridHeight * this.cellHeight + (this.gridHeight - 1) * this.cellPadding;
+    this.blockIcons.position = new powerupjs.Vector2(
+        this.contentPadding + (availableWidth - gridWidth) / 2,
+        this.contentTop + (availableHeight - gridHeight) / 2
+    );
+};
+
 ObjectMenuGUI.prototype.buildTabs = function () {
     for (var i = 0; i < this.tabs.length; i++) {
         var tabInfo = this.tabs[i];
@@ -63,11 +101,11 @@ ObjectMenuGUI.prototype.buildTabs = function () {
         tabButton.tabKey = tabInfo.key;
         tabButton.loadAnimation(sprites.tab, "tab", true, 150);
         tabButton.playAnimation("tab");
-        tabButton.position = new powerupjs.Vector2(40 + (i * 110), 10);
+        tabButton.position = new powerupjs.Vector2(40 + (i * 110), 12);
         tabButton.origin = tabButton.center;
         tabButton.scale = 1.2;
         tabButton.sheetIndex = 0;
-        this.add(tabButton);
+        this.menu.objects.add(tabButton);
         this.tabButtons.push(tabButton);
     }
     this.updateTabVisualState();
@@ -116,6 +154,7 @@ ObjectMenuGUI.prototype.populateBlocks = function () {
 
 ObjectMenuGUI.prototype.rebuildPageIcons = function () {
     var visibleBlocks = this.getVisibleBlocks();
+    this.updateGridMetrics(visibleBlocks);
     var pageSize = this.gridWidth * this.gridHeight;
     var pageStart = this._pageNumber * pageSize;
 
@@ -127,13 +166,18 @@ ObjectMenuGUI.prototype.rebuildPageIcons = function () {
 
         var piece = new powerupjs.SpriteGameObject(source.sprite);
         piece.sheetIndex = source.sheetIndex; // keep the correct sprite from the sheet
-        piece.scale = this.cellWidth / piece.width;
-        piece.position = new powerupjs.Vector2(
-            40 + ((slot % this.gridWidth) * (this.cellWidth + this.cellPadding)),
-            40 + Math.floor(slot / this.gridWidth) * (this.cellHeight + this.cellPadding)
+        var iconScale = Math.min(
+            (this.cellWidth - 4) / piece.width,
+            (this.cellHeight - 4) / piece.height
         );
+        piece.position = new powerupjs.Vector2(
+            (slot % this.gridWidth) * (this.cellWidth + this.cellPadding) + this.cellWidth / 2,
+            Math.floor(slot / this.gridWidth) * (this.cellHeight + this.cellPadding) + this.cellHeight / 2
+        );
+        piece.scale = iconScale;
         piece.origin = piece.center;
         piece.ui = true;
+        piece.pixelSnap = false;
         piece.sourceBlock = source;
         this.blockIcons.add(piece);
     }
@@ -151,6 +195,7 @@ Object.defineProperties(ObjectMenuGUI.prototype, {
         },
         set: function(value) {
             var visibleBlocks = this.getVisibleBlocks();
+            this.updateGridMetrics(visibleBlocks);
             var pageSize = this.gridWidth * this.gridHeight;
             var maxPage = Math.max(0, Math.ceil(visibleBlocks.length / pageSize) - 1);
             if (value < 0) value = 0;
@@ -163,8 +208,9 @@ Object.defineProperties(ObjectMenuGUI.prototype, {
 
 ObjectMenuGUI.prototype.draw = function() {
     powerupjs.GameObjectList.prototype.draw.call(this);
+    console.log(this.menu.isOpen);
     if (powerupjs.Keyboard.down(powerupjs.Keys.P))
-        for (var i = 0; i < this.length; i++) {
+        for (var i = 0; i < this.blockIcons.length; i++) {
             this.blockIcons.at(i).boundingBox.draw()
         }
 };
@@ -197,7 +243,12 @@ ObjectMenuGUI.prototype.placeTravelPointFromMenu = function (position) {
 
 ObjectMenuGUI.prototype.handleInput = function (delta) {
     powerupjs.GameObjectList.prototype.handleInput.call(this, delta);
-    if (this.frame.boundingBox.contains(powerupjs.Mouse.screenPosition)) {
+    if (!this.menu.visible) return;
+
+    if (this.pageLeftButton.pressed) this.pageNumber--;
+    if (this.pageRightButton.pressed) this.pageNumber++;
+
+    if (this.menu.boundingBox.contains(powerupjs.Mouse.screenPosition)) {
         this.parent.editingTiles = false;
     }
 

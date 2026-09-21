@@ -30,6 +30,11 @@ powerupjs.Game.loadAssets = function () {
         "jump" : loadSprite("MainCharacterSprites/Jump.png", true),
         "fall" : loadSprite("MainCharacterSprites/Fall.png", true)
     };
+    sprites.window_ui = {
+        "base" : loadSprite("Window_Base.png"),
+        "header" : loadSprite("Window_Header_Resizable.png"),
+        "buttons" : loadSprite("Windows_Buttons@7.png")
+    };
     sprites.frame = loadSprite("frame.jpeg")
     sprites.woodenFrame = loadSprite("wooden_frame5x2.png")
     sprites.editorBlockSelector = loadSprite("editorBlockSelectFrame.png")
@@ -49,7 +54,6 @@ powerupjs.Game.loadAssets = function () {
     sprites.projectile = loadSprite("projectile.png");
     sprites.enemy = loadSprite("enemy.png");
     sprites.tab = loadSprite("tab.png");
-
 
     sounds.song1 = loadSound("music/Iris of a Puppeteer.mp3", true);
     sounds.reassurance = loadSound("music/reassurance.mp3", true);

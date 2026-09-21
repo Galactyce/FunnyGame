@@ -1,18 +1,10 @@
 if (typeof Player !== "undefined") {
     Player.prototype.initialize = function() {
-        this.detachBufferTime = 0.2;    // Time in takes to fall off wall after letting go 
-        this.jumpKey = [
-            powerupjs.Keys && powerupjs.Keys.space,
-            powerupjs.Keys && powerupjs.Keys.up,
-            powerupjs.Keys && powerupjs.Keys.W,
-            powerupjs.Keys && powerupjs.Keys.C
-        ].filter(function(key) { return typeof key === 'number'; });
+        CharacterController.prototype.initialize.call(this);
         this.moveSpeed = 225;
         this.jumpForce = -460;
         this.accelerationMultiplier = 10;
-        this.neutralJumpTime = 0.4;
         this.airResistance = 0.65;
-        this.wallJumpForce = 300;
     };
 
     Object.defineProperty(Player.prototype, "moveSpeed", { // get/set move speed
@@ -21,15 +13,6 @@ if (typeof Player !== "undefined") {
         },
         set: function(value) {
             this._moveSpeed = value * this.scale;
-        }
-    });
-
-    Object.defineProperty(Player.prototype, "jumpForce", { // get/set jump force
-        get: function() {
-            return this._jumpForce;
-        },
-        set: function(value) {
-            this._jumpForce = value * this.scale;
         }
     });
 
@@ -57,26 +40,6 @@ if (typeof Player !== "undefined") {
         },
         set: function(value) {
             this._grounded = value;
-        }
-    });
-
-    Object.defineProperty(Player.prototype, "onWall", { // get on wall state
-        get: function() {
-            if (this.tileLeft)
-            return "left";
-            else if (this.tileRight)
-            return "right";
-            else
-            return null;
-        }
-    });
-
-    Object.defineProperty(Player.prototype, "neutralJumpTime", { // get/set neutral jump time
-        get: function() {
-            return this._neutralJumpTime;
-        },
-        set: function(value) {
-            this._neutralJumpTime = value;
         }
     });
 

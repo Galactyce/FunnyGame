@@ -187,12 +187,18 @@ var powerupjs = (function (powerupjs) {
     };
 
     // Draw an outlined rectangle, mainly for debugging and editor overlays.
-    Canvas2D_Singleton.prototype.drawRectangle = function (x, y, width, height, color) {
+    Canvas2D_Singleton.prototype.drawRectangle = function (x, y, width, height, color, fill) {
         var canvasScale = this.scale;
         this._canvasContext.save();
         this._canvasContext.scale(canvasScale.x, canvasScale.y);
-        this._canvasContext.strokeStyle = typeof color !== 'undefined' ? color : "blue";
-        this._canvasContext.strokeRect(x, y, width, height);
+        fill = typeof fill !== 'undefined' ? fill : false;
+        if (fill) {
+            this._canvasContext.fillStyle = typeof color !== 'undefined' ? color : "blue";
+            this._canvasContext.fillRect(x, y, width, height);
+        } else {
+            this._canvasContext.strokeStyle = typeof color !== 'undefined' ? color : "blue";
+            this._canvasContext.strokeRect(x, y, width, height);
+        }
         this._canvasContext.restore();
     };
 

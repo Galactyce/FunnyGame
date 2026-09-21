@@ -15,6 +15,7 @@ var powerupjs = (function (powerupjs) {
         this.ui = false; // not a UI element by default
         this.rotation = 0;
         this.scale = 1;
+        this.pixelSnap = true;
     }
 
     SpriteGameObject.prototype = Object.create(powerupjs.GameObject.prototype); // inherit from GameObject
@@ -97,9 +98,23 @@ var powerupjs = (function (powerupjs) {
                 drawPosition.y = Math.round(drawPosition.y);
             }
 
-            this.sprite.draw(drawPosition, this.origin, this.scale, this.rotation, this._sheetIndex, this.mirror, true); // draw sprite at snapped screen position
+            this.sprite.draw(
+                drawPosition,
+                this.origin,
+                this.scale,
+                this.rotation,
+                this._sheetIndex,
+                this.mirror,
+                this.ui ? false : this.pixelSnap
+            );
         }
     };
+
+    SpriteGameObject.prototype.fitToRect = function (rect) {
+        this.scale = Math.min(rect.width / this.width, rect.height / this.height);
+    };
+
+   
 
     SpriteGameObject.prototype.collidesWith = function (obj) { // pixel-perfect collision detection
         if (!this.visible || !obj.visible || !this.boundingBox.intersects(obj.boundingBox)) // bounding boxes do not intersect

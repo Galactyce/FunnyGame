@@ -4,17 +4,29 @@ function GameplayEditorState(layer) {
   this.previousMousePosition = powerupjs.Vector2.zero;
   this.modes = ["Drawing", "Erasing", "Editing"];
   this.mode = this.modes[0];
+  this.editorLayers = new powerupjs.GameObjectList();
+  this.editorPlacedEnemies = new powerupjs.GameObjectList();
+  this.editingTiles = false;
+  this.add(this.editorLayers);
+  this.add(this.editorPlacedEnemies);
   this.modeButtons = new powerupjs.GameObjectList();
   this.add(this.modeButtons);
 
-  this.currentRoomDisplay = new powerupjs.Label(
-    "Arial",
+  this.playerStartPos = new powerupjs.SpriteGameObject(
     sprites.portal,
-    ID.layer_overlays_2,
+    ID.layer_objects,
     ID.player_spawn,
   ); // draggable player start position marker
   this.playerStartPos.position = new powerupjs.Vector2(400, 400);
   this.add(this.playerStartPos);
+
+  this.currentRoomDisplay = new powerupjs.Label(
+    "Arial",
+    "20px",
+    ID.layer_overlays_2,
+    ID.player_spawn + 1,
+  );
+  this.add(this.currentRoomDisplay);
 
   this.saveButton = new LabelledButton(
     sprites.button_default,
@@ -26,6 +38,17 @@ function GameplayEditorState(layer) {
   this.saveButton.position = new powerupjs.Vector2(120, 40);
   this.saveButton.ui = true;
   this.add(this.saveButton);
+
+  this.playButton = new LabelledButton(
+    sprites.button_default,
+    "Return",
+    "Arial",
+    "20px",
+    ID.layer_overlays,
+  );
+  this.playButton.position = new powerupjs.Vector2(900, 40);
+  this.playButton.ui = true;
+  this.add(this.playButton);
 
   this.swipeCheckBox = new CheckBox("Swipe", ID.layer_overlays);
   this.swipeCheckBox.position = new powerupjs.Vector2(120, 150);
@@ -61,9 +84,24 @@ function GameplayEditorState(layer) {
   this.previousLayerButton.ui = true;
   this.add(this.previousLayerButton);
 
+  this.musicButton = new LabelledButton(
+      sprites.button_default,
+      "Music",
+      "Arial",
+      "20px",
+      ID.layer_overlays,
+  );
+  this.musicButton.position = new powerupjs.Vector2(900, 115);
+  this.musicButton.ui = true;
+  this.add(this.musicButton);
+
   this.swiping = false;
 
   this.loadModeButtons(); // load mode buttons
+  this.menuManager = new EditorMenuManager(ID.layer_overlays);
+  this.objectMenu = this.menuManager.objectMenu;
+  this.editingMenu = this.menuManager.editingMenu;
+  this.menuManager.addTo(this);
   this.buttonManager = new EditorButtonManager(this);
 }
 
@@ -318,6 +356,9 @@ GameplayEditorState.prototype.getScaledCameraBounds = function () {
 };
 
 GameplayEditorState.prototype.syncCameraBoundsHandles = function () {
+  if (!this.extendCamBoundsLeft || !this.extendCamBoundsRight ||
+      !this.extendCamBoundsUp || !this.extendCamBoundsDown) return;
+
   // Sync the positions of the camera bounds handles with the current scaled camera bounds
   var scaled = this.getScaledCameraBounds();
   if (!scaled) return;
@@ -339,6 +380,9 @@ GameplayEditorState.prototype.syncCameraBoundsHandles = function () {
 
 GameplayEditorState.prototype.isDraggingCameraBoundsHandle = function () {
   // Check if any camera bounds handle is currently being dragged
+  if (!this.extendCamBoundsLeft || !this.extendCamBoundsRight ||
+      !this.extendCamBoundsUp || !this.extendCamBoundsDown) return false;
+
   return !!(
     this.extendCamBoundsLeft.dragging ||
     this.extendCamBoundsRight.dragging ||
@@ -483,6 +527,13 @@ GameplayEditorState.prototype.isMouseOverEditorButton = function () {
     this.swipeCheckBox,
     this.movePageLeftButton,
     this.movePageRightButton,
+    this.nextLayerButton,
+    this.previousLayerButton,
+    this.extendCamBoundsLeft,
+    this.extendCamBoundsRight,
+    this.extendCamBoundsUp,
+    this.extendCamBoundsDown,
+    this.musicButton
   ];
 
   for (var i = 0; i < directButtons.length; i++) {
@@ -532,6 +583,7 @@ GameplayEditorState.prototype.isMouseOverEditorButton = function () {
 
 GameplayEditorState.prototype.handleDrawingClick = function () {
   var selectedBlock = WorldSettings.currentBlock;
+  var keepObjectMenuOpen = this.objectMenu && (this.objectMenu.visible || this.objectMenu.menu.isOpen);
   var isEnemyPlacement = selectedBlock && selectedBlock.tab === "enemies";
   var isTravelPointPlacement = selectedBlock && selectedBlock.objectType === "travelPoint";
 
@@ -543,11 +595,13 @@ GameplayEditorState.prototype.handleDrawingClick = function () {
       this.editorPlacedEnemies.add(Enemy.create(selectedBlock.sprite, enemySpawnPosition));
       if (this.previewEnemy) this.previewEnemy.visible = false;
     }
+    if (keepObjectMenuOpen) this.objectMenu.menu.open();
     return true;
   }
 
   if (isTravelPointPlacement) {
     this.objectMenu.placeTravelPointFromMenu(powerupjs.Mouse.position);
+    if (keepObjectMenuOpen) this.objectMenu.menu.open();
     return true;
   }
 
@@ -556,6 +610,7 @@ GameplayEditorState.prototype.handleDrawingClick = function () {
     field.removeTileAt(powerupjs.Mouse.position);
   }
   field.addTileAt(field.getTileByMouse(powerupjs.Mouse.position), "#", selectedBlock);
+  if (keepObjectMenuOpen) this.objectMenu.menu.open();
   return false;
 };
 
@@ -658,9 +713,7 @@ GameplayEditorState.prototype.handleInput = function (delta) {
   this.buttonManager.handleInput();
   this.menuManager.handleInput();
 
-  if (this.isMouseOverEditorButton()) {
-    this.editingTiles = false;
-  }
+  this.editingTiles = !this.isMouseOverEditorButton();
 
   if (
     (powerupjs.Mouse.left.pressed ||
