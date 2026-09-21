@@ -35,8 +35,10 @@ TileField.prototype.normalizeIndex = function(index) {
 TileField.prototype.getIndexKey = function(index) {
     var normalized = this.normalizeIndex(index);
     if (!normalized) return null;
-    // Use fixed precision to avoid float noise without snapping positions.
-    return normalized.x.toFixed(4) + ":" + normalized.y.toFixed(4);
+    // Nudged tiles carry fractional indices (index = center/cell - 0.5) so their
+    // offset survives save/load and rescaling. Rounding maps that back to the cell
+    // containing the tile's center, matching getTileByMouse's integer indices.
+    return Math.round(normalized.x) + ":" + Math.round(normalized.y);
 }
 
 TileField.prototype.getTileByMouse = function (position) {
@@ -217,22 +219,12 @@ TileField.prototype.hasTileAt = function (position) {
 }
 
 TileField.prototype.removeTileAt = function (position) {
-    var tile = this.getTileAt(position);
-    if (tile) this.remove(tile);
+    var index = this.getTileByMouse(position);
+    this.removeTilesAtIndex(index);
 }
 
 TileField.prototype.getTileAt = function (position) {
-    var mousePosition = typeof position !== 'undefined' ? position : powerupjs.Mouse.position;
-
-    // Nudged tiles can drift off their grid cell, so hit-test against the actual sprite first.
-    for (var i = 0; i < this.length; i++) {
-        var tile = this.at(i);
-        if (tile && tile.boundingBox && tile.boundingBox.contains(mousePosition)) {
-            return tile;
-        }
-    }
-
-    var index = this.getTileByMouse(mousePosition);
+    var index = this.getTileByMouse(position);
     return this.getTileAtIndex(index);
 }
 

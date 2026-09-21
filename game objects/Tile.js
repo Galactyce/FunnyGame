@@ -54,7 +54,7 @@ Tile.prototype.manageHitboxes = function (sprite) {
         return;
     }
 
-    this.index = new powerupjs.Vector2(((this.position.x-((field.cellWidth * field.scale) / 2)) / field.cellWidth / field.scale), 
+    this.index = new powerupjs.Vector2(((this.position.x-((field.cellWidth * field.scale) / 2)) / field.cellWidth / field.scale),
             ((this.position.y-((field.cellHeight * field.scale) / 2)) / field.cellHeight / field.scale))
     if (sprite.image.src == sprites.spike.image.src) {
         if (this.rotation == Math.PI/2) {

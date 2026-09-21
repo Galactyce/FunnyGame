@@ -86,12 +86,8 @@ EditingMenuGUI.prototype.handleButtonFunction = function (buttonIndex) {
             this.selectedObj.parent.snapTileToSubTile(this.selectedObj);
         }
 
-        // Nudging only moves position; re-derive the grid index so removal/lookup by index still finds this tile.
-        if (this.selectedObj.parent && typeof this.selectedObj.parent.getIndexAtLocalPosition === 'function') {
-            var newIndex = this.selectedObj.parent.getIndexAtLocalPosition(this.selectedObj.position);
-            if (newIndex) this.selectedObj.index = newIndex;
-        }
-
+        // manageHitboxes re-derives the (fractional) grid index from the new position,
+        // so nudged tiles stay targetable and their offset survives save/load.
         this.selectedObj.manageHitboxes();
     }
 }

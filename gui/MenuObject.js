@@ -196,6 +196,12 @@ MenuObject.prototype.handleInput = function (input) {
 
 MenuObject.prototype.handleDrag = function (input) {
   if (!this.draggable) return;
+  // Closed menus still receive handleInput through the scene graph; without this
+  // guard their invisible header can start a "drag", consuming world-edit clicks.
+  if (!this.visible || !this.isOpen) {
+    this.dragging = false;
+    return;
+  }
 
   var mousePosition = powerupjs.Mouse.screenPosition;
   var parentPosition = this.parent

@@ -546,6 +546,7 @@ GameplayEditorState.prototype.isMouseOverEditorButton = function () {
 };
 
 GameplayEditorState.prototype.handleDrawingClick = function () {
+  console.log("Mouse clicked at: ", powerupjs.Mouse.position);
   var selectedBlock = WorldSettings.currentBlock;
   var keepObjectMenuOpen = this.objectMenu && (this.objectMenu.visible || this.objectMenu.menu.isOpen);
   var isEnemyPlacement = selectedBlock && selectedBlock.tab === "enemies";
@@ -689,7 +690,7 @@ GameplayEditorState.prototype.handleInput = function (delta) {
       (this.swiping && powerupjs.Mouse.left.down)) &&
     this.editingTiles
   ) {
-    if (this.handleWorldEditClick()) return;
+    this.handleWorldEditClick();
     /*
     if (this.mode == "Drawing") {
       var selectedBlock = WorldSettings.currentBlock;
