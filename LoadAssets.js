@@ -33,7 +33,8 @@ powerupjs.Game.loadAssets = function () {
     sprites.window_ui = {
         "base" : loadSprite("Window_Base.png"),
         "header" : loadSprite("Window_Header_Resizable.png"),
-        "buttons" : loadSprite("Windows_Buttons@7.png")
+        "buttons" : { "default" : loadSprite("Windows_Buttons@7.png"), "hover" : loadSprite("Window_Buttons_Focused@7.png"),
+             "pressed" : loadSprite("Windows_Buttons_Pressed@7.png")   }
     };
     sprites.frame = loadSprite("frame.jpeg")
     sprites.woodenFrame = loadSprite("wooden_frame5x2.png")

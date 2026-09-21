@@ -94,8 +94,8 @@ var powerupjs = (function (powerupjs) {
         if (this._visible) {
             var drawPosition = this.ui ? this.worldPosition.copy() : this.screenPosition.copy();
             if (!this.ui) {
-                drawPosition.x = Math.round(drawPosition.x);
-                drawPosition.y = Math.round(drawPosition.y);
+                drawPosition.x = Math.floor(drawPosition.x);
+                drawPosition.y = Math.floor(drawPosition.y);
             }
 
             this.sprite.draw(

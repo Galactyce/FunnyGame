@@ -67,7 +67,8 @@ MenuObject.prototype.createTextObject = function(text, x, y, font, fontSize, col
 };
 
 MenuObject.prototype.addCloseButton = function(position) {
-    this.closeButton = new powerupjs.Button(sprites.window_ui.buttons, 0);
+    this.closeButton = new powerupjs.Button(sprites.window_ui.buttons.default, 0, 0,
+        sprites.window_ui.buttons.hover, sprites.window_ui.buttons.pressed);
     this.closeButton.frame = 0; // Assuming the close button is the first frame in the buttons sprite sheet
     this.closeButton.ui = true;
     this.closeButton.position = position;
@@ -151,11 +152,13 @@ MenuObject.prototype.toggle = function() {
 MenuObject.prototype.draw = function(renderer) {
     if (!this.visible) return;
     powerupjs.GameObjectList.prototype.draw.call(this, renderer);
-    powerupjs.Canvas2D.drawRectangle(
-        this.area.x,
-        this.area.y,
-        this.area.width,
-        this.area.height,
-        powerupjs.Color.blue
-    );
-};
+    if (WorldSettings.debugMode) {
+        powerupjs.Canvas2D.drawRectangle(
+            this.area.x,
+            this.area.y,
+            this.area.width,
+            this.area.height,
+            powerupjs.Color.blue
+        );
+    }
+};  

@@ -598,6 +598,12 @@ WorldSettingsSingleton.prototype.setPlayerSpawn = function(position, levelIndex)
 }
 
 
+WorldSettingsSingleton.prototype.debugHandling = function() { 
+    console.log("Current World Settings:", window.LEVELS);
+    console.log("Current Game State:", this.currentState);
+    console.log("Current Editor State:", powerupjs.GameStateManager.get(ID.game_state_editor));
+}
+
 
 
 var WorldSettings = new WorldSettingsSingleton();
