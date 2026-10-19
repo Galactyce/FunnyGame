@@ -139,13 +139,17 @@ TileField.prototype.mergeAdjacentTravelTileCluster = function(seedTile) {
 }
 
 TileField.prototype.removeTilesAtIndex = function(index) {
-    var targetKey = this.getIndexKey(index);
-    if (targetKey === null) return;
+    index = this.normalizeIndex(index);
+    if (!index) return;
 
+    // Only replace tiles still aligned to this exact grid cell. Edited (nudged)
+    // tiles carry fractional indices — placing a block nearby must not delete them.
+    var epsilon = 0.001;
     for (var i = this.length - 1; i >= 0; i--) {
         var tile = this.at(i);
-        if (!tile) continue;
-        if (this.getIndexKey(tile.index) === targetKey) {
+        if (!tile || !tile.index) continue;
+        if (Math.abs(tile.index.x - index.x) < epsilon &&
+            Math.abs(tile.index.y - index.y) < epsilon) {
             this.remove(tile);
         }
     }
@@ -204,7 +208,9 @@ TileField.prototype.normalizeTiles = function () {
             this.remove(tile);
             continue;
         }
-        var key = this.getIndexKey(tile.index);
+        // Dedupe by exact index so truly stacked duplicates collapse, while
+        // edited (nudged) tiles sharing a cell with an aligned one are kept.
+        var key = tile.index.x.toFixed(4) + ":" + tile.index.y.toFixed(4);
         if (seen[key]) {
             this.remove(tile);
         }
@@ -219,12 +225,22 @@ TileField.prototype.hasTileAt = function (position) {
 }
 
 TileField.prototype.removeTileAt = function (position) {
-    var index = this.getTileByMouse(position);
-    this.removeTilesAtIndex(index);
+    var tile = this.getTileAt(position);
+    if (tile) this.remove(tile);
 }
 
 TileField.prototype.getTileAt = function (position) {
-    var index = this.getTileByMouse(position);
+    var mousePosition = typeof position !== 'undefined' ? position : powerupjs.Mouse.position;
+
+    // Nudged tiles can drift off their grid cell, so hit-test against the actual sprite first.
+    for (var i = 0; i < this.length; i++) {
+        var tile = this.at(i);
+        if (tile && tile.boundingBox && tile.boundingBox.contains(mousePosition)) {
+            return tile;
+        }
+    }
+
+    var index = this.getTileByMouse(mousePosition);
     return this.getTileAtIndex(index);
 }
 

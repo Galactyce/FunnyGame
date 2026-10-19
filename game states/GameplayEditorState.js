@@ -571,9 +571,8 @@ GameplayEditorState.prototype.handleDrawingClick = function () {
   }
 
   var field = this.editorLayers.at(this.currentEditorLayer);
-  if (field.hasTileAt(powerupjs.Mouse.position)) {
-    field.removeTileAt(powerupjs.Mouse.position);
-  }
+  // addTileAt already replaces any tile occupying the target cell (removeTilesAtIndex);
+  // don't use the bounding-box lookup here or neighbors overlapping this cell get deleted.
   field.addTileAt(field.getTileByMouse(powerupjs.Mouse.position), "#", selectedBlock);
   if (keepObjectMenuOpen) this.reopenObjectMenu();
   return false;
