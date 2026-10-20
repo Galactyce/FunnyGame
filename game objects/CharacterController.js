@@ -153,6 +153,16 @@ CharacterController.prototype.slide = function () {
 	return true;
 };
 
+CharacterController.prototype.resolveRoundedTileCollision = function (tileBounds, bounds) {
+	var movingUp = this.velocity.y < 0;
+	var contact = powerupjs.PhysicsGameObject.prototype.resolveRoundedTileCollision.call(this, tileBounds, bounds);
+	if (!contact) return;
+	if (contact.normal.y > 0.5 && movingUp) this.jumpAvailable = false;
+	if (Math.abs(contact.normal.x) > 0.5) this.detaching = false;
+	else this.detachFromWall();
+	return contact;
+};
+
 CharacterController.prototype.resolveVerticalTileCollision = function (tile, tileBounds, boundingBox, depth) {
 	var hitTileFromBelow = depth.y > 0 && this.velocity.y < 0;
 	var landed = powerupjs.PhysicsGameObject.prototype.resolveVerticalTileCollision.call(

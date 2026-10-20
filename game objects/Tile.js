@@ -60,7 +60,7 @@ Tile.prototype.manageHitboxes = function (sprite) {
     var field = this.parent;
     if (!field || typeof field.cellWidth !== 'number' || typeof field.cellHeight !== 'number' || typeof field.scale !== 'number') {
         // Tile can be temporarily detached during editor operations; keep hitbox valid without grid index math.
-        this.hitbox = this.boundingBox;
+        this.hitbox = this.createHitbox(this.boundingBox);
         if (this.hitboxType !== "hurt") this.hitboxType = "solid";
         return;
     }
@@ -99,11 +99,12 @@ Tile.prototype.manageHitboxes = function (sprite) {
         this.hitboxType = "hurt"
     }
     else if (sprite.image.src == sprites.saw.image.src) {
-        this.hitbox = new powerupjs.Circle(this.position.x, this.position.y, this.width / 2.4)
+        var bounds = this.boundingBox;
+        this.hitbox = new powerupjs.Circle(bounds.center.x, bounds.center.y, Math.max(bounds.width, bounds.height) / 2.4)
         this.hitboxType = "hurt"
     }
     else { // default solid hitbox
-        this.hitbox = this.boundingBox;
+        this.hitbox = this.createHitbox(this.boundingBox);
         this.hitboxType = "solid"
     }
         

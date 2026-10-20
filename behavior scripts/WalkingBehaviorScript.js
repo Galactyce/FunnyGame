@@ -28,13 +28,7 @@ WalkingBehaviorScript.prototype.takeDamage = function(enemy) {
     // This could involve reducing health, playing an animation, etc.
 }
 
-WalkingBehaviorScript.prototype.handleHurtbox = function(enemy) {
-    enemy.takeDamage(10); // Example: inflict 10 damage when hitting a hurtbox
-};
 
-WalkingBehaviorScript.prototype.handlePlayerCollision = function(enemy, player) {
-    player.takeDamage(10); // Example: inflict 10 damage to the player on collision
-};
 
 WalkingBehaviorScript.prototype.handleWallCollision = function(enemy, tileHit) {
     if (tileHit == -1) {

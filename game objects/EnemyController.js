@@ -8,6 +8,7 @@ function EnemyController(ID) {
     this.lastAttackBeat = -1;
     this.lastAttackEventID = null;
     this.attacking = false;
+    this.hurtboxShape = "rectangle";
     this.hurtbox = new powerupjs.Rectangle(this.position.x, this.position.y, 0, 0);
     this.circleHitbox = new powerupjs.Circle(this.position.x, this.position.y, 0);
 }
@@ -17,15 +18,6 @@ EnemyController.prototype = Object.create(
 );
 
 EnemyController.prototype.constructor = EnemyController;
-
-EnemyController.prototype.adjustHitbox = function () {
-    powerupjs.PhysicsGameObject.prototype.adjustHitbox.call(this);
-    this.circleHitbox = new powerupjs.Circle(
-        this.position.x,
-        this.position.y,
-        this.hitbox.width / 2
-    );
-};
 
 EnemyController.prototype.loadAnimations = function() {
     this.behavior.loadAnimations(this);
@@ -73,6 +65,11 @@ EnemyController.prototype.update = function (delta) {
     this.handleProjectileCollision();
     this.handlePlayerCollision();
     this.handleTileCollision();
+};
+
+EnemyController.prototype.canSeePlayer = function() {
+    var player = WorldSettings.player;
+    return !!player && this.raycast(player.position) === null;
 };
 
 EnemyController.prototype.handlePlayerCollision = function() {
@@ -198,13 +195,13 @@ EnemyController.prototype.manageHitboxes = function (sprite) {
     var objSprite = sprite || this.sprite;
     if (!objSprite || !objSprite.image) return;
 
-    this.hurtbox = new powerupjs.Rectangle(
+    this.hurtbox = this.createHitbox(new powerupjs.Rectangle(
         this.boundingBox.x + this.width / 16,
         this.boundingBox.y + this.height / 16,
         this.boundingBox.width - this.width / 8,
         this.boundingBox.height - this.height / 16
-    );
-    this.hitbox = this.boundingBox;
+    ), this.hurtboxShape);
+    this.adjustHitbox();
 };
 
 EnemyController.prototype.defineBoxes = function () {

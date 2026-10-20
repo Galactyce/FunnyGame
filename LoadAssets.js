@@ -39,6 +39,7 @@ powerupjs.Game.loadAssets = function () {
     };
     sprites.milroid = loadSprite("milroid@2.png", true);
     sprites.slime = loadSprite("slime@2.png", true);
+    sprites.dapper = loadSprite("dapper@2.png", true);
     sprites.frame = loadSprite("frame.jpeg")
     sprites.woodenFrame = loadSprite("wooden_frame5x2.png")
     sprites.editorBlockSelector = loadSprite("editorBlockSelectFrame.png")
@@ -114,6 +115,16 @@ powerupjs.Game.initialize = function () {
         sprite: sprites.slime,
         behavior: SlimeBehaviorScript
     });
+    Enemy.registerType({
+        id: "flying",
+        sprite: sprites.enemy,
+        behavior: FlyingBehaviorScript
+    });
+    Enemy.registerType({
+        id: "dapper",
+        sprite: sprites.dapper,
+        behavior: DapperBehaviorScript
+    })
     WorldSettings.editorObjects = [
         { sprite: sprites.warp, tab: "tiles", objectType: "travelPoint", nrSheetElements: sprites.warp.nrSheetElements }
     ];

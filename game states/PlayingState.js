@@ -30,6 +30,11 @@ function PlayingState(layer) {
     this.currentRoomDisplay.position = new powerupjs.Vector2(600, 15);
     this.currentRoomDisplay.ui = true;
     this.add(this.currentRoomDisplay);
+
+    this.playerHealthDisplay = new powerupjs.Label("Pixel", "20px", ID.layer_overlays, 0, powerupjs.Color.white);
+    this.playerHealthDisplay.position = new powerupjs.Vector2(15, 15);
+    this.playerHealthDisplay.ui = true;
+    this.add(this.playerHealthDisplay);
 }
 
 
@@ -370,4 +375,5 @@ PlayingState.prototype.update = function(delta) {
     
     this.handleTravelTileTeleport(); // Check whether the player should trigger a travel-point transition.
     this.currentRoomDisplay.text = "Room: " + (WorldSettings.currentLevel.currentRoomIndex + 1) + "/" + WorldSettings.currentLevel.rooms.length; // Show the current room number in the HUD.
+    this.playerHealthDisplay.text = "Health: " + (WorldSettings.activePlayer ? WorldSettings.activePlayer.health : 0);
 }

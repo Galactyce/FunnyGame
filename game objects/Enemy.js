@@ -120,6 +120,7 @@ Enemy.fromData = function (enemyData) {
 Enemy.prototype.draw = function () {
     powerupjs.AnimatedGameObject.prototype.draw.call(this);
     if (WorldSettings.debugMode) {
+        this.behavior.drawDebug(this);
 
         if (this.hitbox) {
             this.hitbox.draw("blue");

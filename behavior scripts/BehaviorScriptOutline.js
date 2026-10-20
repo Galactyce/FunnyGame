@@ -19,7 +19,12 @@ BehaviorScriptOutline.prototype.update = function(enemy, delta) {
 }
 
 BehaviorScriptOutline.prototype.loadAnimations = function(enemy) {
+    if (!this.useGravity) {
+        enemy.useGravity = false;
+    }
+};
 
+BehaviorScriptOutline.prototype.drawDebug = function(enemy) {
 };
 
 BehaviorScriptOutline.prototype.handleFloorCollision = function(enemy) {
@@ -56,3 +61,13 @@ BehaviorScriptOutline.prototype.takeDamage = function(enemy) {
     // Implement logic for when the enemy takes damage
     // This could involve reducing health, playing a hurt animation, etc.
 }
+
+BehaviorScriptOutline.prototype.handleHurtbox = function(enemy) {
+    // Implement logic for when the enemy hits a hurtbox
+    // This could involve taking damage, playing an animation, etc.
+};
+
+BehaviorScriptOutline.prototype.handlePlayerCollision = function(enemy, player) {
+    // Implement logic for when the enemy collides with the player
+    // This could involve dealing damage to the player, playing an animation, etc.
+};

@@ -98,6 +98,12 @@ var powerupjs = (function (powerupjs) {
         return "(" + this.x + ", " + this.y + ")"; // return formatted string
     };
 
+    Vector2.prototype.distanceTo = function (v) { // distance to another vector
+        var dx = this.x - v.x; // difference in x components
+        var dy = this.y - v.y; // difference in y components
+        return Math.sqrt(dx * dx + dy * dy); // return Euclidean distance
+    };
+
     Vector2.prototype.normalize = function () { // normalize this vector
         var length = this.length; // get length
         if (length === 0) // if length is zero, do nothing

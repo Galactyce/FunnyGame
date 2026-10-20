@@ -12,6 +12,7 @@ var powerupjs = (function (powerupjs) {
         this.mirror = false; // not mirrored by default
         this._sheetIndex = 0; // default sheet index 0
         this.hitbox = null; // no hitbox by default
+        this.hitboxShape = "rectangle";
         this.ui = false; // not a UI element by default
         this.rotation = 0;
         this.scale = 1;
@@ -19,6 +20,20 @@ var powerupjs = (function (powerupjs) {
     }
 
     SpriteGameObject.prototype = Object.create(powerupjs.GameObject.prototype); // inherit from GameObject
+
+    SpriteGameObject.prototype.createHitbox = function(bounds, shape) {
+        shape = typeof shape === "undefined" ? this.hitboxShape : shape;
+        if (shape === "circle") {
+            return new powerupjs.Circle(
+                bounds.center.x, bounds.center.y,
+                Math.max(bounds.width, bounds.height) / 2
+            );
+        }
+        if (shape !== "rectangle") {
+            throw new Error("Unsupported hitboxShape: " + shape);
+        }
+        return bounds;
+    };
 
     Object.defineProperty(SpriteGameObject.prototype, "size",
         {

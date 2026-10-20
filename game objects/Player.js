@@ -19,15 +19,14 @@ Player.prototype.constructor = Player;
 
 
 Player.prototype.adjustHitbox = function () {
-    powerupjs.PhysicsGameObject.prototype.adjustHitbox.call(this);
-    this.hitbox = new powerupjs.Rectangle(
+    var bounds = new powerupjs.Rectangle(
         this.boundingBox.x + this.width / 16,
         this.boundingBox.y + this.height / 16,
         this.boundingBox.width - this.width / 8,
         this.boundingBox.height - this.height / 16
     );
-    this.circleHitbox = new powerupjs.Circle(this.position.x, this.position.y, this.hitbox.width / 2);
-    this.stableBox = new powerupjs.Rectangle(this.hitbox.x + 0.5, this.hitbox.y, this.hitbox.width - 1, this.hitbox.height + 1);
+    powerupjs.PhysicsGameObject.prototype.adjustHitbox.call(this, bounds);
+    this.stableBox = new powerupjs.Rectangle(this.hitbox.left + 0.5, this.hitbox.top, this.hitbox.width - 1, this.hitbox.height + 1);
 };
 
 Player.prototype.update = function (delta) {

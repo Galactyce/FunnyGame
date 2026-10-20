@@ -14,6 +14,7 @@ var powerupjs = (function (powerupjs) {
         this.directionFacing = "right";
         this.accelerationMultiplier = 10;
         this.baseVelocity = 0;
+        this.actualVelocity = powerupjs.Vector2.zero;
         this.hitbox = new powerupjs.Rectangle(0, 0, 1, 1);
         this.circleHitbox = null;
         this.stableBox = null;
@@ -42,16 +43,39 @@ var powerupjs = (function (powerupjs) {
         this.airResistance = 0.65;
     };
 
-    PhysicsGameObject.prototype.getCollisionBounds = function(tile) {
-        if (tile.hitbox.radius != null) {
-            this.circleHitbox.draw();
-            return this.circleHitbox;
-        }
+    PhysicsGameObject.prototype.getCollisionBounds = function() {
+        return this.hitbox;
+    };
 
-        return new powerupjs.Rectangle(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height);
+    function roundedContact(bounds, tileBounds, padding) {
+        padding = padding || 0;
+        if (bounds.radius != null) {
+            return new powerupjs.Circle(bounds.x, bounds.y, bounds.radius + padding).getContact(tileBounds);
+        }
+        var contact = new powerupjs.Circle(
+            tileBounds.x, tileBounds.y, tileBounds.radius + padding
+        ).getContact(bounds);
+        if (contact) contact.normal.multiplyWith(-1);
+        return contact;
+    }
+
+    PhysicsGameObject.prototype.resolveRoundedTileCollision = function(tileBounds, bounds) {
+        var contact = roundedContact(bounds, tileBounds);
+        if (!contact || contact.depth <= 0) return;
+        this.position.addTo(contact.normal.multiply(contact.depth));
+        var inwardSpeed = this.velocity.x * contact.normal.x + this.velocity.y * contact.normal.y;
+        if (inwardSpeed < 0) this.velocity.subtractFrom(contact.normal.multiply(inwardSpeed));
+        if (contact.normal.x > 0.5) this.tileLeft = true;
+        if (contact.normal.x < -0.5) this.tileRight = true;
+        this.adjustHitbox();
+        return contact;
     };
 
     PhysicsGameObject.prototype.resolveTileCollision = function(tile, tileBounds, boundingBox) {
+        if (tileBounds.radius != null || boundingBox.radius != null) {
+            this.resolveRoundedTileCollision(tileBounds, boundingBox);
+            return;
+        }
         var depth = boundingBox.calculateIntersectionDepth(tileBounds);
         var previousBounds = this.previousCollisionBounds;
         var enteredFromSide = previousBounds &&
@@ -98,6 +122,11 @@ var powerupjs = (function (powerupjs) {
     };
 
     PhysicsGameObject.prototype.isStandingOnTile = function(tileBounds) {
+        if (this.hitbox.radius != null || tileBounds.radius != null) {
+            var contact = roundedContact(this.hitbox, tileBounds, 2);
+            return contact !== null && contact.normal.y < -0.5 &&
+                this.velocity.x * contact.normal.x + this.velocity.y * contact.normal.y <= 0.001;
+        }
         var footSensor = new powerupjs.Rectangle(
             this.hitbox.x,
             this.hitbox.bottom - 2,
@@ -117,8 +146,8 @@ var powerupjs = (function (powerupjs) {
 
         var sideDistance = 8;
         var wallSensor = new powerupjs.Rectangle(
-            side < 0 ? this.hitbox.x - sideDistance : this.hitbox.right - 2,
-            this.hitbox.y + 4,
+            side < 0 ? this.hitbox.left - sideDistance : this.hitbox.right - 2,
+            this.hitbox.top + 4,
             sideDistance,
             Math.max(8, this.hitbox.height - 8)
         );
@@ -147,17 +176,112 @@ var powerupjs = (function (powerupjs) {
         return this.hasTileToSide(1);
     };
 
+    function rectangleRayFraction(start, direction, bounds) {
+        var enter = 0;
+        var exit = 1;
+        var axes = [
+            [start.x, direction.x, bounds.left, bounds.right],
+            [start.y, direction.y, bounds.top, bounds.bottom]
+        ];
+        for (var i = 0; i < axes.length; i++) {
+            var axis = axes[i];
+            if (axis[1] === 0) {
+                if (axis[0] < axis[2] || axis[0] > axis[3]) return null;
+                continue;
+            }
+            var near = (axis[2] - axis[0]) / axis[1];
+            var far = (axis[3] - axis[0]) / axis[1];
+            enter = Math.max(enter, Math.min(near, far));
+            exit = Math.min(exit, Math.max(near, far));
+            if (enter > exit) return null;
+        }
+        return enter;
+    }
+
+    function circleRayFraction(start, direction, bounds) {
+        var x = start.x - bounds.x;
+        var y = start.y - bounds.y;
+        var c = x * x + y * y - bounds.radius * bounds.radius;
+        if (c <= 0) return 0;
+        var a = direction.x * direction.x + direction.y * direction.y;
+        if (a === 0) return null;
+        var b = x * direction.x + y * direction.y;
+        var discriminant = b * b - a * c;
+        if (discriminant < 0) return null;
+        var fraction = (-b - Math.sqrt(discriminant)) / a;
+        return fraction >= 0 && fraction <= 1 ? fraction : null;
+    }
+
+    // Cast a finite segment in the same room coordinates used by tile hitboxes.
+    PhysicsGameObject.prototype.raycast = function(target, start) {
+        start = typeof start === "undefined" ? this.position : start;
+        if (!start || !target ||
+            typeof start.x !== "number" || !isFinite(start.x) ||
+            typeof start.y !== "number" || !isFinite(start.y) ||
+            typeof target.x !== "number" || !isFinite(target.x) ||
+            typeof target.y !== "number" || !isFinite(target.y)) {
+            throw new TypeError("raycast requires finite start and target coordinates.");
+        }   // Validate start and target coordinates
+        if (typeof WorldSettings === "undefined" || !WorldSettings.currentLevel ||
+            !WorldSettings.currentLevel.room || !WorldSettings.currentLevel.room.tileFields) {
+            throw new Error("raycast requires a current room with tileFields.");
+        }   // Validate the presence of a current room with tileFields
+
+        var direction = new powerupjs.Vector2(target.x - start.x, target.y - start.y);
+        var fields = WorldSettings.currentLevel.room.tileFields;
+        var nearest = null;
+        for (var i = 0; i < fields.length; i++) {
+            var field = fields.at(i);
+            if (!field) continue;
+            for (var j = 0; j < field.length; j++) {
+                var tile = field.at(j);
+                if (!tile || !tile.hitbox || tile.hitboxType === "none" ||
+                    tile.hitboxType === "void") continue;
+                var bounds = tile.hitbox;
+                var fraction = bounds.radius != null
+                    ? circleRayFraction(start, direction, bounds)
+                    : rectangleRayFraction(start, direction, bounds);
+                if (fraction !== null && (nearest === null || fraction < nearest.fraction)) { // Update nearest intersection if this one is closer
+                    nearest = {
+                        tile: tile,
+                        point: new powerupjs.Vector2(
+                            start.x + direction.x * fraction,
+                            start.y + direction.y * fraction
+                        ),
+                        distance: direction.length * fraction,
+                        fraction: fraction
+                    };
+                }
+            }
+        }
+        return nearest;
+    };
+
+    PhysicsGameObject.prototype.calculateActualVelocity = function(previousPosition, delta) {
+        if (!previousPosition ||
+            typeof previousPosition.x !== "number" || !isFinite(previousPosition.x) ||
+            typeof previousPosition.y !== "number" || !isFinite(previousPosition.y)) {
+            throw new TypeError("calculateActualVelocity requires finite previous position coordinates.");
+        }
+        if (typeof delta !== "number" || !isFinite(delta) || delta < 0) {
+            throw new RangeError("calculateActualVelocity requires a finite, non-negative delta in seconds.");
+        }
+        return delta === 0 ? powerupjs.Vector2.zero : this.position.subtract(previousPosition).divide(delta);
+    };
+
     PhysicsGameObject.prototype.update = function (delta) {
+        var previousPosition = this.position.copy();
         this.updateAnimation(delta);
         this.origin = this.center;
         this.adjustHitbox();
         this.previousCollisionBounds = new powerupjs.Rectangle(
-            this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height
+            this.hitbox.left, this.hitbox.top, this.hitbox.width, this.hitbox.height
         );
         this.position.addTo(this.velocity.multiply(delta));
         this.adjustHitbox();
         this.simulateGravity();
         this.handleCollisions();
+        this.actualVelocity = this.calculateActualVelocity(previousPosition, delta);
         this.previousCollisionBounds = null;
         if (!this.airDrag && this.velocity.x == 0) {
             this.airDrag = true;
@@ -165,18 +289,16 @@ var powerupjs = (function (powerupjs) {
 
     };
 
-    PhysicsGameObject.prototype.adjustHitbox = function () {
-        if (this.boundingBox && typeof this.width !== 'undefined' && typeof this.height !== 'undefined') {
-            this.hitbox = new powerupjs.Rectangle(
-                this.boundingBox.x,
-                this.boundingBox.y,
-                this.boundingBox.width,
-                this.boundingBox.height
-            );
-            return;
+    PhysicsGameObject.prototype.adjustHitbox = function (bounds) {
+        if (!bounds) {
+            bounds = this.boundingBox && typeof this.width !== 'undefined' && typeof this.height !== 'undefined'
+                ? this.boundingBox
+                : new powerupjs.Rectangle(this.position.x, this.position.y, 1, 1);
         }
-
-        this.hitbox = new powerupjs.Rectangle(this.position.x, this.position.y, 1, 1);
+        this.hitbox = this.createHitbox(bounds);
+        this.circleHitbox = new powerupjs.Circle(
+            bounds.center.x, bounds.center.y, Math.max(bounds.width, bounds.height) / 2
+        );
     };
 
     PhysicsGameObject.prototype.simulateGravity = function () {
@@ -223,7 +345,7 @@ var powerupjs = (function (powerupjs) {
                     continue;
                 }
                 // A shared edge is contact, not penetration into a neighboring tile.
-                if (tileBounds.radius == null &&
+                if (tileBounds.radius == null && boundingBox.radius == null &&
                     (boundingBox.right <= tileBounds.left + 0.001 ||
                     boundingBox.left >= tileBounds.right - 0.001 ||
                     boundingBox.bottom <= tileBounds.top + 0.001 ||
@@ -251,10 +373,16 @@ var powerupjs = (function (powerupjs) {
                 var tile = field.at(l);
                 if (tile == null ||
                     (tile.hitboxType != "solid" && tile.hitboxType != "hurt") ||
-                    tile.hitbox.radius != null) continue;
+                    (tile.hitboxType == "hurt" && tile.hitbox.radius != null)) continue;
                 if (this.isStandingOnTile(tile.hitbox)) {
                     this.grounded = true;
-                    this.velocity.y = 0;
+                    if (this.hitbox.radius != null || tile.hitbox.radius != null) {
+                        var contact = roundedContact(this.hitbox, tile.hitbox, 2);
+                        var inwardSpeed = this.velocity.x * contact.normal.x + this.velocity.y * contact.normal.y;
+                        if (inwardSpeed < 0) this.velocity.subtractFrom(contact.normal.multiply(inwardSpeed));
+                    } else {
+                        this.velocity.y = 0;
+                    }
                     this.baseVelocity = tile.velocity.x;
                     return;
                 }
@@ -403,9 +531,9 @@ var powerupjs = (function (powerupjs) {
         }
     });
 
-    Object.defineProperty(PhysicsGameObject.prototype, "tileColliding", {
+    Object.defineProperty(PhysicsGameObject.prototype, "tileCcoolliding", {
         get: function() {
-            return this.collidingTiles;
+            return this.collidingTiles.length > 0;
         }
     });
 
