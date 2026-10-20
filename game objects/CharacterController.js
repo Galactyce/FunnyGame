@@ -25,13 +25,19 @@ CharacterController.prototype.initialize = function () {
 	this.jumpForce = -460;
 	this.wallJumpForce = 300;
 	this.wallSlideDirection = 0;
+	this.invincibilityFrameTimer = 0;
+    this.health = 100;
 	this.wallSlideRequested = false;
 };
 
 CharacterController.prototype.update = function (delta) {
 	powerupjs.PhysicsGameObject.prototype.update.call(this, delta);
+	this.invincibilityFrameTimer += delta;
+
 	this.updateDetachState(delta);
 };
+
+
 
 CharacterController.prototype.move = function (direction, delta) {
 	if (typeof direction === "string") {
@@ -59,6 +65,25 @@ CharacterController.prototype.move = function (direction, delta) {
 	if (!this.grounded && (this.tileLeft || this.tileRight)) this.detachFromWall();
 };
 
+CharacterController.prototype.hitHurtbox = function(damage) {
+	powerupjs.PhysicsGameObject.prototype.hitHurtbox.call(this, damage);
+	this.takeDamage(damage);
+};
+
+CharacterController.prototype.takeDamage = function(amount) {
+    if (this.invincibilityFrameTimer < WorldSettings.invincibilityFrameTime) return;
+	console.log("Taking damage: " + amount);
+    this.invincibilityFrameTimer = 0;
+    this.health -= amount;
+    if (this.health <= 0) {
+        this.die();
+    }
+};
+
+CharacterController.prototype.die = function() {
+    // Implement death behavior here, e.g., respawn or game over
+};
+
 CharacterController.prototype.stopMoving = function () {
 	if ((this.grounded || this.timeAfterWallJump > this.neutralJumpTime) &&
 		Math.abs(this.baseVelocity) < 1 && this.airDrag) {
@@ -82,7 +107,7 @@ CharacterController.prototype.simulateGravity = function () {
 		this.velocity.y = WorldSettings.wallSlideSpeed * this.scale;
 	}
 	else {
-		this.velocity.y += WorldSettings.gravity * this.scale;
+		powerupjs.PhysicsGameObject.prototype.simulateGravity.call(this);
 	}
 
 	if (this.velocity.y > WorldSettings.terminalVelocity * this.scale) {

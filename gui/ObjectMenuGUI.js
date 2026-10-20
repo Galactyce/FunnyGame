@@ -122,12 +122,30 @@ ObjectMenuGUI.prototype.updateTabVisualState = function () {
 ObjectMenuGUI.prototype.populateBlocks = function () {
     if (this.blocks.length > 0) return;
 
-    var menuEntries = (WorldSettings.blockSprites || []).concat(WorldSettings.editorObjects || []);
+    var enemyTypeEntries = [];
+    for (var typeIndex = 0; typeIndex < Enemy.types.length; typeIndex++) {
+        var enemyType = Enemy.types[typeIndex];
+        if (!enemyType || !enemyType.sprite) continue;
+        enemyTypeEntries.push({
+            sprite: enemyType.sprite,
+            tab: "enemies",
+            enemyType: enemyType.id
+        });
+    }
+
+    var menuEntries = (WorldSettings.blockSprites || []).filter(function (block) {
+        return enemyTypeEntries.length === 0 || this.getBlockTab(block) !== "enemies";
+    }, this).concat(WorldSettings.editorObjects || [], enemyTypeEntries);
     for (var i = 0; i < menuEntries.length; i++) { // for each block sprite or editor object
         var block = menuEntries[i];
         var blockSprite = block.sprite || block;
         if (!block.objectType && (blockSprite === sprites.portal || blockSprite === sprites.warp)) continue;
         var blockTab = this.getBlockTab(block);
+        var enemyType = block.enemyType;
+        if (!enemyType && blockTab === "enemies") {
+            var resolvedEnemyType = Enemy.resolveType(blockSprite);
+            if (resolvedEnemyType) enemyType = resolvedEnemyType.id;
+        }
         if (blockSprite.isAnimated) {
             var animatedPiece = new powerupjs.AnimatedGameObject(); // create sprite game object
             animatedPiece.loadAnimation(blockSprite, "moving");
@@ -136,6 +154,7 @@ ObjectMenuGUI.prototype.populateBlocks = function () {
             animatedPiece.origin = animatedPiece.center; // set origin to center
             animatedPiece.tab = blockTab;
             animatedPiece.objectType = block.objectType;
+            animatedPiece.enemyType = enemyType || null;
             this.blocks.add(animatedPiece);
         }
         else {
@@ -146,6 +165,7 @@ ObjectMenuGUI.prototype.populateBlocks = function () {
                 staticPiece.origin = staticPiece.center; // set origin to center
                 staticPiece.tab = blockTab;
                 staticPiece.objectType = block.objectType;
+                staticPiece.enemyType = enemyType || null;
                 this.blocks.add(staticPiece);
             }
         }
@@ -214,8 +234,8 @@ ObjectMenuGUI.prototype.draw = function() {
         }
 };
 
-ObjectMenuGUI.prototype.placeEnemyFromMenu = function (sprite, position) {
-    if (!sprite || !position) return;
+ObjectMenuGUI.prototype.placeEnemyFromMenu = function (sprite, position, sourceBlock) {
+    if (!sprite || !position || !sourceBlock) return;
 
     var playingState = powerupjs.GameStateManager.get(ID.game_state_playing);
     if (!playingState || !playingState.enemies || typeof playingState.enemies.addEnemy !== "function") return;
@@ -226,10 +246,7 @@ ObjectMenuGUI.prototype.placeEnemyFromMenu = function (sprite, position) {
         existingEnemy.destroy();
     }
 
-    var enemy = new Enemy(sprite, enemySpawnPosition.x, enemySpawnPosition.y);
-    enemy.position = enemySpawnPosition.copy();
-    enemy.origin = enemy.center;
-    enemy.manageHitboxes(sprite);
+    var enemy = Enemy.create(sprite, enemySpawnPosition, sourceBlock.enemyType);
     playingState.enemies.addEnemy(enemy);
 };
 
@@ -251,6 +268,7 @@ ObjectMenuGUI.prototype.handleInput = function (delta) {
         this.parent.editingTiles = false;
     }
 
+    // Selecting a tab in the object menu
     for (var i = 0; i < this.tabButtons.length; i++) {
         var tabButton = this.tabButtons[i];
         if (tabButton && tabButton.boundingBox && powerupjs.Mouse.containsMousePress(tabButton.boundingBox)) {
@@ -267,6 +285,7 @@ ObjectMenuGUI.prototype.handleInput = function (delta) {
         }
     }
 
+    // Placing an enemy from the object menu
     if (this.activeTab === "enemies" && powerupjs.Mouse.left.pressed) {
         for (var j = 0; j < this.blockIcons.length; j++) { // for each block
             var boundingBox = this.blockIcons.at(j).boundingBox; // get block bounding box
@@ -279,6 +298,7 @@ ObjectMenuGUI.prototype.handleInput = function (delta) {
         }
     }
 
+    // Selecting a block from the object menu
     var selectedBlock = WorldSettings.currentBlock;
     var hasSelectedBlock = !!(selectedBlock && selectedBlock.sprite && typeof selectedBlock.sheetIndex !== 'undefined');
     if (!hasSelectedBlock) this.blockSelector.visible = false; // hide selector when no valid block selection exists

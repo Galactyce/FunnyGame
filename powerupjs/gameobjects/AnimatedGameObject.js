@@ -30,7 +30,7 @@ var powerupjs = (function (powerupjs) {
         return !this._current.looping && this.sheetIndex >= this.sprite.nrSheetElements - 1; // return true if not looping and sheet index at last frame
     };
 
-    AnimatedGameObject.prototype.update = function (delta) { // update animated game object
+    AnimatedGameObject.prototype.updateAnimation = function (delta) {
         this._time += delta; // accumulate time
         while (this._time > this._current.frameTime) { // while enough time has passed for a frame change
             this._time -= this._current.frameTime; // decrement time
@@ -41,6 +41,10 @@ var powerupjs = (function (powerupjs) {
                 else // not looping
                     this._sheetIndex = this.sprite.nrSheetElements - 1; // stay at last frame
         }
+    };
+
+    AnimatedGameObject.prototype.update = function (delta) { // update animated game object
+        this.updateAnimation(delta);
         powerupjs.SpriteGameObject.prototype.update.call(this, delta); // call base update
     };
 

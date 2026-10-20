@@ -51,4 +51,3 @@ var powerupjs = (function (powerupjs) {
     return powerupjs;
 
 })(powerupjs || {});
-

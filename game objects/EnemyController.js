@@ -1,6 +1,7 @@
 function EnemyController(ID) {
     powerupjs.PhysicsGameObject.call(this);
-    this.applyGravity = false;
+    this.behavior = new BehaviorScriptOutline();
+    this.applyGravity = true;
     this.enemyID = ID;
     this.health = 100;
     this.attacks = {}; // eventID -> attack function
@@ -26,7 +27,12 @@ EnemyController.prototype.adjustHitbox = function () {
     );
 };
 
+EnemyController.prototype.loadAnimations = function() {
+    this.behavior.loadAnimations(this);
+};
+
 EnemyController.prototype.die = function () {
+    this.behavior.die(this);
     this.destroy();
 };
 
@@ -47,17 +53,56 @@ Object.defineProperty(EnemyController.prototype, "hitbox", {
     }
 });
 
-EnemyController.prototype.update = function (delta) {
-    powerupjs.PhysicsGameObject.prototype.update.call(this, delta);
-    this.manageHitboxes();
+EnemyController.prototype.hitHurtbox = function() {
+    powerupjs.PhysicsGameObject.prototype.hitHurtbox.call(this);
+    this.behavior.handleHurtbox(this);
+};
 
+EnemyController.prototype.update = function (delta) {
+    if (WorldSettings.currentState === "editing") {
+        this.adjustHitbox();
+        this.manageHitboxes();
+        return;
+    }
+
+    this.tileLeft = false;
+    this.tileRight = false;
+    powerupjs.PhysicsGameObject.prototype.update.call(this, delta);
+    this.behavior.update(this, delta);
+    this.manageHitboxes();
+    this.handleProjectileCollision();
+    this.handlePlayerCollision();
+    this.handleTileCollision();
+};
+
+EnemyController.prototype.handlePlayerCollision = function() {
+    if (this.hitbox && WorldSettings && WorldSettings.playingState && WorldSettings.playingState.player) {
+        var player = WorldSettings.playingState.player;
+        if (player.hitbox && this.hitbox.intersects(player.hitbox)) {
+            this.behavior.handlePlayerCollision(this, player);
+        }
+    }
+};
+
+EnemyController.prototype.handleTileCollision = function() {
+    var tileHit = this.tileLeft ? -1 : this.tileRight ? 1 : 0;
+    if (tileHit !== 0) {
+        this.behavior.handleWallCollision(this, tileHit);
+    }
+    if (this.grounded) {
+        this.behavior.handleFloorCollision(this);
+    }
+};
+
+EnemyController.prototype.handleProjectileCollision = function(projectile) {
+    // Handle collision with projectiles in the playing state
     var playingState = WorldSettings && WorldSettings.playingState;
     if (!playingState || !playingState.projectiles || !playingState.projectiles.length) return;
 
     for (var i = 0; i < playingState.projectiles.length; i++) {
         var projectile = playingState.projectiles.at(i);
-        if (!projectile || projectile.tag !== "sword") continue;
-        if (!projectile.position || !this.hitbox) continue;
+        if (!projectile || projectile.tag !== "sword") continue; // Only consider sword projectiles
+        if (!projectile.position || !this.hitbox) continue; // Skip if projectile or hitbox is not properly defined
 
         var projectileRect = new powerupjs.Rectangle(
             projectile.position.x - (projectile.width || 8) / 2,
@@ -78,8 +123,9 @@ EnemyController.prototype.update = function (delta) {
 
 EnemyController.prototype.takeDamage = function (amount) {
     this.health -= amount;
-    console.log("Enemy took damage: " + amount + ", remaining health: " + this.health);
+    this.behavior.takeDamage(this);
     if (this.health <= 0) {
+        this.behavior.die(this);
         this.destroy();
     }
 };
@@ -141,6 +187,10 @@ EnemyController.prototype.onBeat = function (beat, songTime, node) {
 
 EnemyController.prototype.attack = function (beat, songTime, node) {
     this.attacking = true;
+    if (this.behavior && typeof this.behavior.attack === "function") {
+        this.behavior.attack(this, beat, songTime, node);
+        return;
+    }
     attackManager.perform("radial", this, this.position);
 };
 
@@ -161,7 +211,7 @@ EnemyController.prototype.defineBoxes = function () {
     this.manageHitboxes();
 };
 
-EnemyController.prototype.destroy = function () {
+EnemyController.prototype.destroy = function () { // Remove object from lists
     this.visible = false;
     this._visible = false;
 

@@ -182,7 +182,7 @@ GameplayEditorState.prototype.saveLevel = function () {
   roomData.enemies = [];
   for (var e = 0; e < this.editorPlacedEnemies.length; e++) {
     var editorEnemy = this.editorPlacedEnemies.at(e);
-    if (!editorEnemy || !editorEnemy.position) continue;
+    if (!editorEnemy || !editorEnemy.position || editorEnemy === this.previewEnemy) continue;
     roomData.enemies.push({
       x: editorEnemy.position.x,
       y: editorEnemy.position.y,
@@ -192,6 +192,8 @@ GameplayEditorState.prototype.saveLevel = function () {
           : sprites.enemy && sprites.enemy.image
             ? sprites.enemy.image.src
             : "",
+      behavior: editorEnemy.behavior ? editorEnemy.behavior.constructor.name : "",
+      type: editorEnemy.enemyType || ""
     });
   }
 
@@ -266,8 +268,20 @@ GameplayEditorState.prototype.updateEnemyPreview = function () {
     return;
   }
 
-  if (!this.previewEnemy) {
-    this.previewEnemy = new Enemy(selectedBlock.sprite || sprites.enemy, 0, 0);
+  var previewSprite = selectedBlock.sprite || sprites.enemy;
+  var resolvedType = Enemy.resolveType(previewSprite, selectedBlock.enemyType);
+  var previewType = resolvedType ? resolvedType.id : null;
+  if (
+    !this.previewEnemy ||
+    this.previewEnemy.enemyType !== previewType ||
+    this.previewEnemy.sprite !== previewSprite
+  ) {
+    if (this.previewEnemy) this.editorPlacedEnemies.remove(this.previewEnemy);
+    this.previewEnemy = Enemy.create(
+      previewSprite,
+      powerupjs.Vector2.zero,
+      previewType,
+    );
     this.editorPlacedEnemies.add(this.previewEnemy);
   }
 
@@ -674,10 +688,10 @@ GameplayEditorState.prototype.placeEnemy = function (selectedBlock) {
 
   var spawnPosition = powerupjs.Mouse.position.copy();
   playingState.enemies.addEnemy(
-    Enemy.create(selectedBlock.sprite, spawnPosition),
+    Enemy.create(selectedBlock.sprite, spawnPosition, selectedBlock.enemyType),
   );
   this.editorPlacedEnemies.add(
-    Enemy.create(selectedBlock.sprite, spawnPosition),
+    Enemy.create(selectedBlock.sprite, spawnPosition, selectedBlock.enemyType),
   );
   if (this.previewEnemy) this.previewEnemy.visible = false;
 };

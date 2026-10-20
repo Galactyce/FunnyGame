@@ -51,6 +51,15 @@ Player.prototype.manageWeapon = function(delta) {
     }
 }
 
+Player.prototype.die = function () {
+    CharacterController.prototype.die.call(this);
+    this.position = this.spawnPosition.copy();
+    this.velocity = new powerupjs.Vector2(0, 0);
+    powerupjs.Camera.position = this.centerOfCamera;
+    this.health = 100;
+};
+
+
 Player.prototype.handleCameraPos = function(delta) {
     var V = this.centerOfCamera.subtract(powerupjs.Camera.position);
     // if (Math.abs(V.y) < 2 && Math.abs(V.x) < 2) {

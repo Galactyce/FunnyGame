@@ -26,6 +26,13 @@ function TitleMenuState(layer) {
     this.playButton.position = new powerupjs.Vector2(powerupjs.Game.screenCenter.x, 400);
     this.add(this.playButton);
     this.levelSelectedIndex = 0;
+
+    this.milroid = new powerupjs.AnimatedGameObject();
+    this.milroid.loadAnimation(sprites.milroid, "idle", true);
+    this.milroid.playAnimation("idle");
+    this.milroid.scale = 3.5;
+    this.milroid.position = new powerupjs.Vector2(powerupjs.Game.screenCenter.x, 550);
+    this.add(this.milroid);
 }
 
 TitleMenuState.prototype = Object.create(powerupjs.GameObjectList.prototype);

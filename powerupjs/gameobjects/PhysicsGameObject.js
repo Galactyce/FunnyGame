@@ -18,6 +18,7 @@ var powerupjs = (function (powerupjs) {
         this.circleHitbox = null;
         this.stableBox = null;
         this.collidingTiles = new powerupjs.GameObjectList();
+        this.useGravity = true;
         this.initialize();
     }
 
@@ -52,29 +53,20 @@ var powerupjs = (function (powerupjs) {
 
     PhysicsGameObject.prototype.resolveTileCollision = function(tile, tileBounds, boundingBox) {
         var depth = boundingBox.calculateIntersectionDepth(tileBounds);
-
-        if (this.resolveHorizontalTileCollision(depth, tileBounds)) {
-            boundingBox = this.getCollisionBounds(tile);
-            boundingBox.height += 0.5;
-            depth = boundingBox.calculateIntersectionDepth(tileBounds);
+        var previousBounds = this.previousCollisionBounds;
+        var enteredFromSide = previousBounds &&
+            (previousBounds.right <= tileBounds.left + 0.001 ||
+            previousBounds.left >= tileBounds.right - 0.001);
+        if (enteredFromSide || Math.abs(depth.x) < Math.abs(depth.y)) {
+            this.resolveHorizontalTileCollision(depth, tileBounds);
+            return;
         }
-
         this.resolveVerticalTileCollision(tile, tileBounds, boundingBox, depth);
     };
 
     PhysicsGameObject.prototype.resolveHorizontalTileCollision = function(depth, tileBounds) {
-        if (Math.abs(depth.x) >= Math.abs(depth.y)) return false;
-
-        this.position.x += depth.x * 1.1;
+        this.position.x += depth.x;
         this.adjustHitbox();
-
-        if (this.hitbox.intersects(tileBounds)) {
-            var horizontalNudge = depth.x > 0 ? 0.75 : -0.75;
-            for (var i = 0; i < 5 && this.hitbox.intersects(tileBounds); i++) {
-                this.position.x += horizontalNudge;
-                this.adjustHitbox();
-            }
-        }
 
         this.tileLeft = (depth.x > 0);
         this.tileRight = (depth.x < 0);
@@ -91,7 +83,7 @@ var powerupjs = (function (powerupjs) {
         if (landedOnTile) {
             this.velocity.y = 0;
             this.baseVelocity = tile.velocity.x;
-            this.position.y += (depth.y * 1.1);
+            this.position.y += depth.y;
             this.adjustHitbox();
             return true;
         }
@@ -100,7 +92,7 @@ var powerupjs = (function (powerupjs) {
             this.capMoveSpeed(1.5);
         }
 
-        this.position.y += (depth.y * 1.1);
+        this.position.y += depth.y;
         this.adjustHitbox();
         return false;
     };
@@ -114,8 +106,10 @@ var powerupjs = (function (powerupjs) {
         );
 
         return this.velocity.y >= 0 &&
+            this.hitbox.right > tileBounds.left + 0.001 &&
+            this.hitbox.left < tileBounds.right - 0.001 &&
             tileBounds.intersects(footSensor) &&
-            this.hitbox.bottom <= tileBounds.bottom + 4;
+            Math.abs(this.hitbox.bottom - tileBounds.top) <= 2;
     };
 
     PhysicsGameObject.prototype.hasTileToSide = function(side) {
@@ -154,11 +148,17 @@ var powerupjs = (function (powerupjs) {
     };
 
     PhysicsGameObject.prototype.update = function (delta) {
-        powerupjs.AnimatedGameObject.prototype.update.call(this, delta);
+        this.updateAnimation(delta);
         this.origin = this.center;
+        this.adjustHitbox();
+        this.previousCollisionBounds = new powerupjs.Rectangle(
+            this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height
+        );
+        this.position.addTo(this.velocity.multiply(delta));
         this.adjustHitbox();
         this.simulateGravity();
         this.handleCollisions();
+        this.previousCollisionBounds = null;
         if (!this.airDrag && this.velocity.x == 0) {
             this.airDrag = true;
         }
@@ -181,9 +181,19 @@ var powerupjs = (function (powerupjs) {
 
     PhysicsGameObject.prototype.simulateGravity = function () {
         if (!this.applyGravity) return;
-        this.velocity.y += WorldSettings.gravity * this.scale;
+        if (!this.useGravity) return;
 
-        if (this.velocity.y > WorldSettings.terminalVelocity * this.scale) this.velocity.y = WorldSettings.terminalVelocity * this.scale;
+        var gravity = WorldSettings.gravityDefault;
+        if (typeof gravity !== "number" || !isFinite(gravity)) gravity = 0;
+
+        this.velocity.y += gravity * this.scale;
+
+        var terminalVelocity = WorldSettings.terminalVelocity;
+        if (typeof terminalVelocity !== "number" || !isFinite(terminalVelocity)) {
+            terminalVelocity = 530;
+        }
+        terminalVelocity *= this.scale;
+        if (this.velocity.y > terminalVelocity) this.velocity.y = terminalVelocity;
     };
 
     PhysicsGameObject.prototype.handleCollisions = function () {
@@ -191,6 +201,13 @@ var powerupjs = (function (powerupjs) {
         this.debugCollisionTiles = [];
         this.grounded = false;
 
+        this.checkTileCollisions();
+        this.refreshGroundedState();
+        this.previousYPosition = this.position.y;
+        this.updatePhysicsDebugArea();
+    };
+
+    PhysicsGameObject.prototype.checkTileCollisions = function () {
         for (var i = 0; i < WorldSettings.currentLevel.room.tileFields.length; i++) {
             var field = WorldSettings.currentLevel.room.tileFields.at(i);
 
@@ -200,28 +217,31 @@ var powerupjs = (function (powerupjs) {
 
                 var tileBounds = tile.hitbox;
                 var boundingBox = this.getCollisionBounds(tile);
-                boundingBox.height += 0.5;
 
                 if (!tileBounds.intersects(boundingBox) || tile.hitboxType == "void") {
                     this.collidingTiles.remove(tile);
                     continue;
                 }
+                // A shared edge is contact, not penetration into a neighboring tile.
+                if (tileBounds.radius == null &&
+                    (boundingBox.right <= tileBounds.left + 0.001 ||
+                    boundingBox.left >= tileBounds.right - 0.001 ||
+                    boundingBox.bottom <= tileBounds.top + 0.001 ||
+                    boundingBox.top >= tileBounds.bottom - 0.001)) continue;
 
                 tile.physicsHighlighted = WorldSettings.debugMode;
                 this.collidingTiles.add(tile);
-                this.debugCollisionTiles.push(tile);
+                var firstContact = this.debugCollisionTiles.indexOf(tile) === -1;
+                if (firstContact) this.debugCollisionTiles.push(tile);
 
                 if (tile.hitboxType == "hurt") {
-                    this.die();
-                    continue;
+                    if (firstContact) this.hitHurtbox(tile.damage);
+                    if (tileBounds.radius != null) continue;
                 }
 
                 this.resolveTileCollision(tile, tileBounds, boundingBox);
             }
         }
-        this.refreshGroundedState();
-        this.previousYPosition = this.position.y;
-        this.updatePhysicsDebugArea();
     };
 
     PhysicsGameObject.prototype.refreshGroundedState = function() {
@@ -229,7 +249,9 @@ var powerupjs = (function (powerupjs) {
             var field = WorldSettings.currentLevel.room.tileFields.at(i);
             for (var l = 0; l < field.length; l++) {
                 var tile = field.at(l);
-                if (tile == null || tile.hitboxType != "solid") continue;
+                if (tile == null ||
+                    (tile.hitboxType != "solid" && tile.hitboxType != "hurt") ||
+                    tile.hitbox.radius != null) continue;
                 if (this.isStandingOnTile(tile.hitbox)) {
                     this.grounded = true;
                     this.velocity.y = 0;
@@ -249,6 +271,11 @@ var powerupjs = (function (powerupjs) {
                 tile.physicsHighlighted = false;
             }
         }
+    };
+
+    PhysicsGameObject.prototype.hitHurtbox = function() {
+        // Implement the logic for when the object hits a hurtbox
+        // This could involve taking damage, playing an animation, etc.
     };
 
     PhysicsGameObject.prototype.updatePhysicsDebugArea = function() {
@@ -281,11 +308,7 @@ var powerupjs = (function (powerupjs) {
         debugArea.textContent = lines.join("\n");
     };
 
-    PhysicsGameObject.prototype.die = function () {
-        this.position = this.spawnPosition.copy();
-        this.velocity = new powerupjs.Vector2(0, 0);
-        powerupjs.Camera.position = this.centerOfCamera;
-    };
+    
 
     Object.defineProperty(PhysicsGameObject.prototype, "centerOfCamera", {
         get: function () {

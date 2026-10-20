@@ -13,8 +13,8 @@ function WorldSettingsSingleton() {
     this.music = null;
     this.debugMode = false;
     //  GLOBAL PROPERTIES   //
-
-    this.gravity = 25;
+    this.invincibilityFrameTime = 0.3; // in seconds
+    this.gravityDefault = 25;
     this.wallSlideSpeed = 30;
     this.cameraSmoothingFactor = 5.5;
     this._terminalVelocity = 530; // max downward speed
@@ -350,7 +350,10 @@ WorldSettingsSingleton.prototype.normalizeLevelData = function(levelData) { // N
                     return {
                         x: enemy.x,
                         y: enemy.y,
-                        sprite: typeof enemy.sprite === 'string' ? enemy.sprite : ''
+                        sprite: typeof enemy.sprite === 'string' ? enemy.sprite : '',
+                        type: typeof enemy.type === 'string' ? enemy.type :
+                            (typeof enemy.enemyType === 'string' ? enemy.enemyType : ''),
+                        behavior: typeof enemy.behavior === 'string' ? enemy.behavior : ''
                     };
                 });
         }
@@ -547,6 +550,17 @@ Object.defineProperty(WorldSettingsSingleton.prototype, "cameraBounds", { // get
 WorldSettingsSingleton.prototype.getLevel = function(levelIndex) { // get level at index
     return this.levels[levelIndex];
 }
+
+WorldSettingsSingleton.prototype.clearAllData = function() { // clear all game data
+    this.levels = [];
+    this.currentLevelIndex = 0;
+    this.currentLevel = null;
+    this.activePlayer = null;
+    this._terminalVelocity = null;
+    this.currentState = "title";
+    localStorage.clear();
+    window.location.reload();
+};
 
 WorldSettingsSingleton.prototype.playLevel = function(levelIndex) { // load current level
     this.currentLevelIndex = levelIndex; // set current level index

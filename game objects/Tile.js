@@ -4,6 +4,7 @@ function Tile(sprite) {
     this.key;
     this.hitboxType;
     this.index;
+    this.damage = 0;
     this.renderOverlap = 0.06;
     this.physicsHighlighted = false;
     this.loadAnimation(sprite, "normal", true, 0.2);
@@ -29,6 +30,16 @@ Tile.prototype.draw = function () {
         if (this.physicsHighlighted) this.hitbox.draw("yellow");
     }
 }
+
+Tile.prototype.setDamage = function() {
+    var spriteName = this.sprite ? this.sprite.image.src : "";
+    console.log("Sprite name: " + spriteName);
+    if (spriteName == sprites.spike.image.src || spriteName == sprites.saw.image.src) {
+        this.damage = 10; 
+    } else {
+        this.damage = 0;
+    }
+};
 
 Tile.prototype.update = function (delta) {
     if (this.sprite.isAnimated) {

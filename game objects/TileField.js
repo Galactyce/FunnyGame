@@ -159,7 +159,8 @@ TileField.prototype.update = function (delta) {
     powerupjs.GameObjectList.prototype.update.call(this, delta);
 }
 
-TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
+// Reuse deserialized tiles so type-specific state survives the shared placement path.
+TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation, loadedTile) {
     index = this.normalizeIndex(index);
     if (!index) return;
 
@@ -172,9 +173,10 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
     _sprite = typeof sprite !== 'undefined' ? _sprite : sprites.defaultTile; // default sprite if none provided
     rotation = typeof rotation !== 'undefined' ? rotation : 0;
     this.removeTilesAtIndex(index);
-    var tile = TileDataManager.handleObject(_sprite);
+    var tile = loadedTile || TileDataManager.handleObject(_sprite);
     if (!tile) return;
-    if (this.tileKey !== null) tile.key = this.tileKey; // use current tile key
+    if (loadedTile) tile.key = tileKey;
+    else if (this.tileKey !== null) tile.key = this.tileKey; // use current tile key
     else tile.key = tileKey;
     tile.position = new powerupjs.Vector2(
         (index.x * this.cellWidth * this.scale) + ((this.cellWidth * this.scale) / 2),
@@ -185,17 +187,22 @@ TileField.prototype.addTileAt = function (index, tileKey, sprite, rotation) {
     tile.playAnimation("normal");
     tile.sheetIndex = sheetIndex;
     tile.origin = tile.center;
-    tile.baseScale = tile.scale;
+    if (!loadedTile || typeof tile.baseScale === 'undefined' || tile.baseScale === null || isNaN(tile.baseScale)) {
+        tile.baseScale = tile.scale;
+    }
     tile.scale = this.scale * tile.baseScale;
     tile.index = index.copy();
-    powerupjs.GameStateManager.get(ID.game_state_editor).editingMenu.selectedObj = tile;
+    if (!loadedTile) {
+        powerupjs.GameStateManager.get(ID.game_state_editor).editingMenu.selectedObj = tile;
+    }
     tile.parent = this;
     this.add(tile);
     tile.manageHitboxes(_sprite); // set hitbox based on sprite
     if (tile.isTravelPointTile) {
         tile.travelPointID = this.getRoomTravelPointId();
-        this.mergeAdjacentTravelTileCluster(tile);
+        if (!loadedTile) this.mergeAdjacentTravelTileCluster(tile);
     }
+    return tile;
 }
 
 TileField.prototype.normalizeTiles = function () {
@@ -279,21 +286,16 @@ TileField.prototype.loadTiles = function () {
 
         var tile = TileDataManager.convertDataToTile(splitData[i])
         if (!tile) continue;
-        tile.index = this.normalizeIndex(tile.index);
-        if (!tile.index) continue;
-        if (typeof tile.baseScale === 'undefined' || tile.baseScale === null || isNaN(tile.baseScale)) {
-            tile.baseScale = tile.scale;
+        var addedTile = this.addTileAt(
+            tile.index, // The position index of the tile within the tile field
+            tile.key, // The key identifying the type of tile
+            { sprite: tile.sprite, sheetIndex: tile.sheetIndex }, // The visual representation of the tile
+            tile.rotation, // The rotation of the tile
+            tile // The original tile object containing additional metadata
+        );
+        if (addedTile) {
+            addedTile.setDamage();
         }
-        tile.scale = this.scale * tile.baseScale;
-        tile.position = new powerupjs.Vector2((tile.index.x * this.cellWidth * this.scale) + ((this.cellWidth * this.scale) / 2), 
-            (tile.index.y * this.cellHeight * this.scale) + ((this.cellHeight * this.scale) / 2))
-        this.snapTileToSubTile(tile);
-        this.add(tile)
-        tile.manageHitboxes(tile.sprite); // set hitbox based on sprite
-        if (tile.isTravelPointTile) {
-            tile.travelPointID = this.getRoomTravelPointId();
-        }
-
     }
     for (var t = 0; t < this.length; t++) {
         var travelTile = this.at(t);

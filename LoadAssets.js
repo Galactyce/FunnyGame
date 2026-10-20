@@ -37,6 +37,8 @@ powerupjs.Game.loadAssets = function () {
              "pressed" : loadSprite("Windows_Buttons_Pressed@7.png")},
         "toggle": { "default" : loadSprite("Windows_Toggle_Active.png"), "selected" : loadSprite("Windows_Toggle_Selected.png")}
     };
+    sprites.milroid = loadSprite("milroid@2.png", true);
+    sprites.slime = loadSprite("slime@2.png", true);
     sprites.frame = loadSprite("frame.jpeg")
     sprites.woodenFrame = loadSprite("wooden_frame5x2.png")
     sprites.editorBlockSelector = loadSprite("editorBlockSelectFrame.png")
@@ -107,6 +109,11 @@ powerupjs.Game.initialize = function () {
         sprites.portal,
         sprites.enemy
     ]
+    Enemy.registerType({
+        id: "slime",
+        sprite: sprites.slime,
+        behavior: SlimeBehaviorScript
+    });
     WorldSettings.editorObjects = [
         { sprite: sprites.warp, tab: "tiles", objectType: "travelPoint", nrSheetElements: sprites.warp.nrSheetElements }
     ];
