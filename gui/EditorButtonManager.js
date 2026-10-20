@@ -285,4 +285,5 @@ EditorButtonManager.prototype.handleLayerButtons = function () {
       this.editorState.currentEditorLayer = 0;
     }
   }
+  // editorState.currentField derives from currentEditorLayer, no sync needed here
 };

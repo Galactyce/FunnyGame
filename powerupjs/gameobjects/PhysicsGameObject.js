@@ -4,6 +4,7 @@ var powerupjs = (function (powerupjs) {
 
     function PhysicsGameObject(layer, id) {
         powerupjs.AnimatedGameObject.call(this, layer, id);
+        this.applyGravity = true;
         this.mass = 1;
         this.currentLevelIndex;
         this.previousYPosition;
@@ -179,6 +180,7 @@ var powerupjs = (function (powerupjs) {
     };
 
     PhysicsGameObject.prototype.simulateGravity = function () {
+        if (!this.applyGravity) return;
         this.velocity.y += WorldSettings.gravity * this.scale;
 
         if (this.velocity.y > WorldSettings.terminalVelocity * this.scale) this.velocity.y = WorldSettings.terminalVelocity * this.scale;
@@ -331,6 +333,14 @@ var powerupjs = (function (powerupjs) {
     Object.defineProperty(PhysicsGameObject.prototype, "speed", {
         get: function() {
             return this.velocity.length();
+        }
+    });
+
+    Object.defineProperty(PhysicsGameObject.prototype, "tileHit", {
+        get: function() {
+            if (this.hasTileToRight()) return 1;
+            else if (this.hasTileToLeft()) return -1;
+            else return 0;
         }
     });
 

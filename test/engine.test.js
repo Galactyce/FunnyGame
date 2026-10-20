@@ -481,6 +481,32 @@ test('Animation stores frame timing and looping settings', async () => {
   assert.equal(anim.sprite, sandbox.sprites.blank);
 });
 
+test('Enemy inherits enemy mechanics from EnemyController', async () => {
+  const sandbox = loadGameplayScripts();
+  sandbox.sprites.enemy = sandbox.sprites.blank;
+  const root = path.join(__dirname, '..');
+  loadScript(path.join(root, 'game objects', 'EnemyController.js'), sandbox);
+  loadScript(path.join(root, 'game objects', 'Enemy.js'), sandbox);
+
+  const enemy = new sandbox.Enemy(sandbox.sprites.enemy, 12, 24);
+
+  assert.ok(enemy instanceof sandbox.EnemyController);
+  assert.ok(enemy instanceof sandbox.powerupjs.PhysicsGameObject);
+  assert.equal(Object.hasOwn(sandbox.Enemy.prototype, 'takeDamage'), false);
+  assert.equal(Object.hasOwn(sandbox.Enemy.prototype, 'registerAttack'), false);
+  assert.equal(Object.hasOwn(sandbox.EnemyController.prototype, 'takeDamage'), true);
+  assert.equal(Object.hasOwn(sandbox.EnemyController.prototype, 'registerAttack'), true);
+  assert.equal(typeof enemy.takeDamage, 'function');
+  assert.equal(typeof enemy.registerAttack, 'function');
+  assert.equal(enemy.position.x, 12);
+  assert.equal(enemy.position.y, 24);
+
+  enemy.adjustHitbox();
+  assert.ok(enemy.circleHitbox instanceof sandbox.powerupjs.Circle);
+  assert.equal(enemy.circleHitbox.x, 12);
+  assert.equal(enemy.circleHitbox.y, 24);
+});
+
 test('Label updates text size and can reset to original contents', async () => {
   await quizBefore('Label text sizing',
     'Tests that labels measure rendered text dimensions and can restore original text content');

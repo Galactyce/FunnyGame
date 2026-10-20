@@ -167,7 +167,7 @@ PlayingState.prototype.moveTileEnemiesToManager = function (room) {
     }
 };
 
-// Load the current room data, place the player, and optionally re-center the camera.
+// Load the current room data, place the player, and optionally re-center the camer1a.
 PlayingState.prototype.loadLevel = function (spawnOverride, alignCameraToSpawn) {
     var playerStartPosition = this.resolveSpawnPosition(spawnOverride);
     this.resetPlayerAt(playerStartPosition);

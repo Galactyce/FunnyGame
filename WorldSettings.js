@@ -16,7 +16,7 @@ function WorldSettingsSingleton() {
 
     this.gravity = 25;
     this.wallSlideSpeed = 30;
-    this.cameraSmoothingFactor = 1.5;
+    this.cameraSmoothingFactor = 5.5;
     this._terminalVelocity = 530; // max downward speed
 
     // MANAGING PLAYER PROPERTIES CAN BE DONE IN "PlayerProperties.js"
@@ -504,6 +504,12 @@ Object.defineProperty(WorldSettingsSingleton.prototype, "player", { // get/set a
         this.activePlayer = value;
     }
 });
+
+Object.defineProperty(WorldSettingsSingleton.prototype, "playerPosition", {
+    get: function() {
+        return this.activePlayer.position;
+    }
+})
 
 Object.defineProperty(WorldSettingsSingleton.prototype, "terminalVelocity", { // get/set current game state
     get: function() {

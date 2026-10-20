@@ -53,15 +53,15 @@ Player.prototype.manageWeapon = function(delta) {
 
 Player.prototype.handleCameraPos = function(delta) {
     var V = this.centerOfCamera.subtract(powerupjs.Camera.position);
-    if (Math.abs(V.y) < 4 && Math.abs(V.x) < 4) {
-        powerupjs.Camera.position = this.centerOfCamera;
-        return;
-    }
+    // if (Math.abs(V.y) < 2 && Math.abs(V.x) < 2) {
+    //     powerupjs.Camera.position = this.centerOfCamera;
+    //     return;
+    // }
 
-    var strictSmoothing = Math.max(1, powerupjs.Camera.smoothingFactor * 0.6);
-    V = V.multiply(1 / strictSmoothing);
+    V = V.multiply(WorldSettings.cameraSmoothingFactor);
+    
     powerupjs.Camera.velocity = V;
-    var cameraSpeedCap = this.moveSpeed * 2;
+    var cameraSpeedCap = this.moveSpeed * 6;
     if (powerupjs.Camera.velocity.x > cameraSpeedCap) powerupjs.Camera.velocity.x = cameraSpeedCap;
     if (powerupjs.Camera.velocity.x < -cameraSpeedCap) powerupjs.Camera.velocity.x = -cameraSpeedCap;
     powerupjs.Camera.update(delta);
