@@ -38,8 +38,10 @@ powerupjs.Game.loadAssets = function () {
         "toggle": { "default" : loadSprite("Windows_Toggle_Active.png"), "selected" : loadSprite("Windows_Toggle_Selected.png")}
     };
     sprites.milroid = loadSprite("milroid@2.png", true);
-    sprites.slime = loadSprite("slime@2.png", true);
-    sprites.dapper = loadSprite("dapper@2.png", true);
+    sprites.slime = loadSprite("enemies/slime@2.png", true);
+    sprites.dapper = loadSprite("enemies/dapper@2.png", true);
+    sprites.enemy = loadSprite("enemies/enemy.png");
+    sprites.butterfly = loadSprite("enemies/butterfly.png");
     sprites.frame = loadSprite("frame.jpeg")
     sprites.woodenFrame = loadSprite("wooden_frame5x2.png")
     sprites.editorBlockSelector = loadSprite("editorBlockSelectFrame.png")
@@ -57,7 +59,7 @@ powerupjs.Game.loadAssets = function () {
     sprites.greenTiles = loadSprite("BasicGreen@10x4.png");
     sprites.sword = loadSprite("sword.png");
     sprites.projectile = loadSprite("projectile.png");
-    sprites.enemy = loadSprite("enemy.png");
+    sprites.projectileTemplate = loadSprite("template_projectile.png");
     sprites.tab = loadSprite("tab.png");
 
     sounds.song1 = loadSound("music/Iris of a Puppeteer.mp3", true);
@@ -125,6 +127,11 @@ powerupjs.Game.initialize = function () {
         sprite: sprites.dapper,
         behavior: DapperBehaviorScript
     })
+    Enemy.registerType({
+        id: "projectile",
+        sprite: sprites.butterfly,
+        behavior: ProjectileBehaviorScript
+    });
     WorldSettings.editorObjects = [
         { sprite: sprites.warp, tab: "tiles", objectType: "travelPoint", nrSheetElements: sprites.warp.nrSheetElements }
     ];

@@ -33,8 +33,23 @@ Player.prototype.update = function (delta) {
     CharacterController.prototype.update.call(this, delta);
     this.handleCameraPos(delta);
     this.manageWeapon(delta);
+    this.handleProjectileCollision();
     if (this.position.y > WorldSettings.mapBottom) {
         this.die();
+    }
+};
+
+Player.prototype.handleProjectileCollision = function() {
+    var playingState = WorldSettings && WorldSettings.playingState;
+    if (!playingState || !playingState.projectiles) return;
+    for (var i = 0; i < playingState.projectiles.length; i++) {
+        var projectile = playingState.projectiles.at(i);
+        if (!projectile || !this.hitbox || !projectile.hitbox) continue;
+        if (this.hitbox.intersects(projectile.hitbox) && projectile.tag == "hurt") {
+            this.takeDamage(projectile.damage || 0);
+            projectile.destroy();
+            i--; // Adjust the index after removal.
+        }
     }
 };
 

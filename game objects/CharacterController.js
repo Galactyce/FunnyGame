@@ -33,7 +33,7 @@ CharacterController.prototype.initialize = function () {
 CharacterController.prototype.update = function (delta) {
 	powerupjs.PhysicsGameObject.prototype.update.call(this, delta);
 	this.invincibilityFrameTimer += delta;
-
+	
 	this.updateDetachState(delta);
 };
 

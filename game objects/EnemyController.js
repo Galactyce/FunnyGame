@@ -110,9 +110,8 @@ EnemyController.prototype.handleProjectileCollision = function(projectile) {
 
         if (this.hitbox.intersects(projectileRect)) {
             this.takeDamage(projectile.damage || 0);
-            if (typeof playingState.projectiles.remove === "function") {
-                playingState.projectiles.remove(projectile);
-            }
+            projectile.destroy();
+            projectile = null;
             break;
         }
     }

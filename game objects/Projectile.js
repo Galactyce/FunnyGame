@@ -6,6 +6,7 @@ function Projectile(sprite, speed, direction, damage, tag) {
     this.damage = damage || 0;
     this.direction = direction && direction.copy ? direction.copy() : new powerupjs.Vector2(1, 0);
     this.direction.normalize();
+    
     this.rotation = Math.atan2(this.direction.y, this.direction.x);
     this.tag = tag || "projectile";
     var playingState = WorldSettings && WorldSettings.playingState;
@@ -26,4 +27,12 @@ Projectile.prototype.update = function(delta) {
     if (!this.direction) return;
     this.position = this.position.add(this.direction.multiply(this.speed * delta));
     this.rotation = Math.atan2(this.direction.y, this.direction.x);
+    this.hitbox = this.boundingBox;
 }
+
+Projectile.prototype.destroy = function() {
+    var playingState = WorldSettings && WorldSettings.playingState;
+    if (playingState && playingState.projectiles) {
+        playingState.projectiles.remove(this);
+    }
+};

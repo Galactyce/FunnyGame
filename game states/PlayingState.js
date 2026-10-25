@@ -376,4 +376,13 @@ PlayingState.prototype.update = function(delta) {
     this.handleTravelTileTeleport(); // Check whether the player should trigger a travel-point transition.
     this.currentRoomDisplay.text = "Room: " + (WorldSettings.currentLevel.currentRoomIndex + 1) + "/" + WorldSettings.currentLevel.rooms.length; // Show the current room number in the HUD.
     this.playerHealthDisplay.text = "Health: " + (WorldSettings.activePlayer ? WorldSettings.activePlayer.health : 0);
+
+    for (var i = 0; i < this.projectiles.length; i++) {
+        var projectile = this.projectiles.at(i);
+        if (!projectile || !projectile.position) continue;
+        if (!WorldSettings.cameraBounds.contains(projectile.position)) {
+            this.projectiles.remove(projectile); // Remove projectiles that are outside the camera bounds.
+            i--; // Adjust the index after removal.
+        }
+    }
 }
